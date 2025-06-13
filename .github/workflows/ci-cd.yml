@@ -15,7 +15,6 @@ jobs:
               with:
                   distribution: 'corretto'
                   java-version: '21'
-            - run: java BackendApplication.java
 
             - name: Build with Maven
               run: mvn clean package --file backend/pom.xml -DskipTests
