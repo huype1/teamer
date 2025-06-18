@@ -1,19 +1,23 @@
 server:
   port: 8080
   servlet:
-    context-path: /identity
-
+    context-path: /api
 spring:
-  security:
-    oauth2:
-      client:
-        registration:
-          google:
-            client-id: ${GOOGLE_OAUTH_CLIENT_ID}
-            client-secret: ${GOOGLE_OAUTH_CLIENT_SECRET}
-          github:
-            client-id: ${GITHUB_OAUTH_CLIENT_ID}
-            client-secret: ${GITHUB_OAUTH_CLIENT_SECRET}
+#  security:
+#    oauth2:
+#      resource-server:
+#        jwt:
+#          client:
+#            registration:
+#              google:
+#                client-id: ${GOOGLE_OAUTH_CLIENT_ID}
+#                client-secret: ${GOOGLE_OAUTH_CLIENT_SECRET}
+#                redirect-uri: http://localhost:8080/api/oauth2/callback/google
+##            scope: email, profile
+##          github:
+##            client-id: ${GITHUB_OAUTH_CLIENT_ID}
+##            client-secret: ${GITHUB_OAUTH_CLIENT_SECRET}
+#
   datasource:
     url: jdbc:postgresql://${DB_HOST}:${DB_PORT}/${DB_NAME}
     username: ${DB_USER}
@@ -27,7 +31,8 @@ spring:
       hibernate:
         dialect: org.hibernate.dialect.PostgreSQLDialect
 
-#jwt:
-#  signerKey: "OH3pA9cVoUqXWvZd+avsLIXejoKUGIzMdaQ76ctO4uWO2XDjw3/25r8a0/qbg5++\n"
-#  valid-duration: 86000 #seconds
-#  refreshable-duration: 360000
+
+jwt:
+  signerKey: "OH3pA9cVoUqXWvZd+avsLIXejoKUGIzMdaQ76ctO4uWO2XDjw3/25r8a0/qbg5++\n"
+  valid-duration: 86000 #seconds
+  refreshable-duration: 360000

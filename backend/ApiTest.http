@@ -1,0 +1,70 @@
+### GET request to the API root endpoint
+GET http://localhost:8080/api
+
+###
+POST http://localhost:8080/api/auth/register
+Content-Type: application/json
+
+{
+  "email": "admin@gmail.com",
+  "name": "Admin",
+  "password": "12345678",
+  "provider": "EMAIL_PASSWORD",
+  "avatarUrl": null
+}
+
+###
+GET http://localhost:8080/api/users
+
+###
+DELETE http://localhost:8080/api/auth/delete/4f7944b4-2e84-43a1-be37-f22212a20edf
+
+###
+POST http://localhost:8080/api/auth/login
+Content-Type: application/json
+
+{
+  "name": "admin@gmail.com",
+  "password": "12345678"
+}
+
+### ref: https://www.jetbrains.com/help/idea/http-client-in-product-code-editor.html#create-custom-http-methods
+###
+POST http://localhost:8080/api/auth/introspect
+Content-Type: application/json
+
+{
+  "token": "eyJhbGciOiJIUzUxMiJ9.eyJpc3MiOiJhZG1pbkBnbWFpbC5jb20iLCJzdWIiOiJBZG1pbiIsImV4cCI6MTc1MDMyNzc5NSwiaWF0IjoxNzUwMjQxNzk1LCJqdGkiOiI1Yzk5MjRlMS00YmFhLTQ1YWYtOTFhNS00MmNiYmEwYjgzNGEifQ.bKeCo0wIDxs_ATTSynvBxgrsEB1vRQD_LIbVMVuFLfbAEm_DHbrwWUsLr9W-Pu-wP3nsBJJ3PUxQk5WGlZYZQw"
+}
+###
+POST http://localhost:8080/api/auth/refresh
+Content-Type: application/json
+
+{
+  "token": "eyJhbGciOiJIUzUxMiJ9.eyJpc3MiOiJhZG1pbkBnbWFpbC5jb20iLCJzdWIiOiJBZG1pbiIsImV4cCI6MTc1MDMyNzc5NSwiaWF0IjoxNzUwMjQxNzk1LCJqdGkiOiI1Yzk5MjRlMS00YmFhLTQ1YWYtOTFhNS00MmNiYmEwYjgzNGEifQ.bKeCo0wIDxs_ATTSynvBxgrsEB1vRQD_LIbVMVuFLfbAEm_DHbrwWUsLr9W-Pu-wP3nsBJJ3PUxQk5WGlZYZQw"
+}
+### logout
+POST http://localhost:8080/api/auth/logout
+Content-Type: application/json
+
+{
+  "token": "eyJhbGciOiJIUzUxMiJ9.eyJpc3MiOiJhZG1pbkBnbWFpbC5jb20iLCJzdWIiOiJBZG1pbiIsImV4cCI6MTc1MDMyNzc5NSwiaWF0IjoxNzUwMjQxNzk1LCJqdGkiOiI1Yzk5MjRlMS00YmFhLTQ1YWYtOTFhNS00MmNiYmEwYjgzNGEifQ.bKeCo0wIDxs_ATTSynvBxgrsEB1vRQD_LIbVMVuFLfbAEm_DHbrwWUsLr9W-Pu-wP3nsBJJ3PUxQk5WGlZYZQw"
+}
+####
+#PUT http://localhost:8080/FinancialManagement/api/accounting/record/67b77bdb87394315af5bad37
+#Content-Type: application/json
+#
+#{
+#  "user_id" : "67b5ff8e8332ff332b65f6fe",
+#  "date":"2022-01-01T22:12:00.100Z",
+#  "code": "REF123",
+#  "name": "Giao dịch phương tiện vận tải",
+#  "description": "Lamborghini Aventador",
+#  "debit": 200.0,
+#  "credit": 70.0,
+#  "category": "SALE_AND_SERVICES_REVENUE"
+#}
+#
+####
+#
+#

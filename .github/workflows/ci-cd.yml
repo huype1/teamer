@@ -22,8 +22,8 @@ jobs:
             - name: Deploy to AWS Elastic Beanstalk
               uses: einaregilsson/beanstalk-deploy@v22
               with:
-                application_name: 'Teamer-backend'
-                environment_name: 'Teamer-backend-env'
+                application_name: 'teamer-backend'
+                environment_name: 'Teamer-backend-prod'
                 version_label: ${{ github.sha }}
                 aws_access_key: ${{ secrets.AWS_ACCESS_KEY_ID }}
                 aws_secret_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
