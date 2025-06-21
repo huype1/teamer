@@ -17,14 +17,14 @@ Content-Type: application/json
 GET http://localhost:8080/api/users
 
 ###
-DELETE http://localhost:8080/api/auth/delete/4f7944b4-2e84-43a1-be37-f22212a20edf
+DELETE http://localhost:8080/api/auth/delete/a98d2082-bf60-4101-b1e5-6bc66a0bfb81
 
 ###
 POST http://localhost:8080/api/auth/login
 Content-Type: application/json
 
 {
-  "name": "admin@gmail.com",
+  "email": "admin@gmail.com",
   "password": "12345678"
 }
 

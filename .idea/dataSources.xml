@@ -1,11 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="DataSourceManagerImpl" format="xml" multifile-model="true">
-    <data-source source="LOCAL" name="postgres@rds" uuid="7a05dbc6-70c8-4366-afe1-8c95ae428a72">
+    <data-source source="LOCAL" name="postgres@heroku" uuid="d11b5120-e795-4a13-aa22-c4d317fed755">
       <driver-ref>postgresql</driver-ref>
       <synchronize>true</synchronize>
       <jdbc-driver>org.postgresql.Driver</jdbc-driver>
-      <jdbc-url>jdbc:postgresql://teamerdb.cdiw6w8uuhot.ap-southeast-1.rds.amazonaws.com:5432/teamer</jdbc-url>
+      <jdbc-url>jdbc:postgresql://c5cnr847jq0fj3.cluster-czrs8kj4isg7.us-east-1.rds.amazonaws.com:5432/d1kdcmoah5npok</jdbc-url>
       <jdbc-additional-properties>
         <property name="com.intellij.clouds.kubernetes.db.host.port" />
         <property name="com.intellij.clouds.kubernetes.db.enabled" value="false" />

@@ -1,11 +1,10 @@
 package com.example.backend.dto.response;
 
+import java.time.OffsetDateTime;
+import java.util.UUID;
 
 import lombok.*;
 import lombok.experimental.FieldDefaults;
-
-import java.time.OffsetDateTime;
-import java.util.UUID;
 
 @Getter
 @Setter
@@ -22,4 +21,3 @@ public class UserResponse {
     OffsetDateTime createdAt;
     OffsetDateTime updatedAt;
 }
-

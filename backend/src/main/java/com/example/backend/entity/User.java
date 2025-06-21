@@ -1,13 +1,18 @@
 package com.example.backend.entity;
 
+import java.time.OffsetDateTime;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.UUID;
+
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
-import lombok.*;
-import lombok.experimental.FieldDefaults;
+
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
-import java.time.OffsetDateTime;
-import java.util.UUID;
+import lombok.*;
+import lombok.experimental.FieldDefaults;
 
 @Entity
 @Table(name = "users")
@@ -28,7 +33,7 @@ public class User {
     @Column(nullable = true)
     String password;
 
-    @Column(nullable = false, unique = true)
+    @Column(nullable = false)
     String name;
 
     @Column(name = "avatar_url")
@@ -44,5 +49,32 @@ public class User {
     @UpdateTimestamp
     @Column(name = "updated_at")
     OffsetDateTime updatedAt;
-}
 
+    @JsonIgnore
+    @OneToMany(mappedBy = "assignee", cascade = CascadeType.ALL)
+    List<Issue> assignedIssues = new ArrayList<>();
+
+    @JsonIgnore
+    @OneToMany(mappedBy = "reporter", cascade = CascadeType.ALL)
+    List<Issue> reportedIssues = new ArrayList<>();
+
+    @JsonIgnore
+    @OneToMany(mappedBy = "creator", cascade = CascadeType.ALL)
+    List<Project> createdProjects = new ArrayList<>();
+
+    @JsonIgnore
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
+    List<Comment> comments = new ArrayList<>();
+
+    @JsonIgnore
+    @OneToMany(mappedBy = "invitedBy", cascade = CascadeType.ALL)
+    List<Invitation> sentInvitations = new ArrayList<>();
+
+    @JsonIgnore
+    @OneToMany(mappedBy = "createdBy", cascade = CascadeType.ALL)
+    List<Team> createdTeams = new ArrayList<>();
+
+    @JsonIgnore
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
+    List<TeamMember> teamMemberships = new ArrayList<>();
+}

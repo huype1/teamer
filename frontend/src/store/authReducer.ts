@@ -1,5 +1,7 @@
 import AuthService from "@/service/authService";
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
+import type {GoogleCredentials, LoginRequest} from "@/types/auth.ts";
+import UserService from "@/service/userService";
 
 interface AuthState {
   token: string | null;
@@ -21,21 +23,19 @@ interface UserResponse {
 const initialState: AuthState = {
   token: localStorage.getItem("token"),
   user: null,
-  loading: false,
+  loading: !!localStorage.getItem("token"),
   error: null,
   isAuthenticated: !!localStorage.getItem("token"),
 };
 
-// Convert login to an async thunk to properly handle async operation
 export const login = createAsyncThunk(
   "auth/login",
-  async (code: string | null, { rejectWithValue }) => {
+  async (body: LoginRequest, { dispatch, rejectWithValue }) => {
     try {
-      if (!code) {
-        return rejectWithValue("No authorization code provided");
-      }
-      const response = await AuthService.login(code);
-      return response.result; // Assuming your API returns { result: { token, user } }
+      const response = await AuthService.login(body);
+      // Fetch user info immediately after successful login
+      await dispatch(fetchUserInfo());
+      return response.result;
     } catch (error: any) {
       console.error("Login error:", error);
       return rejectWithValue(
@@ -45,22 +45,55 @@ export const login = createAsyncThunk(
   }
 );
 
+export const googleLogin = createAsyncThunk(
+  "auth/googleLogin",
+  async (credentials: GoogleCredentials, { dispatch, rejectWithValue }) => {
+    try {
+      const response = await AuthService.googleLogin(credentials);
+      // Fetch user info immediately after successful Google login
+      await dispatch(fetchUserInfo());
+      return response.result;
+    } catch (error: any) {
+      console.error("Google login error:", error);
+      return rejectWithValue(
+        error.response?.data?.message || "Google login failed"
+      );
+    }
+  }
+);
+
+export const logout = createAsyncThunk(
+  "auth/logout",
+  async (_, { rejectWithValue }) => {
+    try {
+      await AuthService.logout();
+      return true;
+    } catch (error: any) {
+      return rejectWithValue(
+        error.response?.data?.message || "Logout failed"
+      );
+    }
+  }
+);
+
+export const fetchUserInfo = createAsyncThunk(
+  "auth/fetchUserInfo",
+  async (_, { rejectWithValue }) => {
+    try {
+      const response = await UserService.getMyInfo();
+      return response.result;
+    } catch (error: any) {
+      return rejectWithValue(
+        error.response?.data?.message || "Failed to fetch user info"
+      );
+    }
+  }
+);
+
 const authSlice = createSlice({
   name: "auth",
   initialState,
   reducers: {
-    removeCurrUser: (state) => {
-      localStorage.removeItem("token");
-      state.token = null;
-      state.user = null;
-      state.isAuthenticated = false;
-    },
-    addCurrUser: (state, action) => {
-      localStorage.setItem("token", action.payload.token);
-      state.token = action.payload.token;
-      state.user = action.payload.user;
-      state.isAuthenticated = true;
-    },
   },
   extraReducers: (builder) => {
     builder
@@ -74,22 +107,59 @@ const authSlice = createSlice({
           state.token = action.payload.token;
           state.user = action.payload.user;
           state.isAuthenticated = true;
-          state.loading = false;
         }
+      state.loading = false;
       })
       .addCase(login.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload as string;
+      })
+      .addCase(googleLogin.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(googleLogin.fulfilled, (state, action) => {
+        if (action.payload) {
+          localStorage.setItem("token", action.payload.token);
+          state.token = action.payload.token;
+          state.isAuthenticated = true;
+        }
+        state.loading = false;
+      })
+      .addCase(googleLogin.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload as string;
+      })
+      .addCase(logout.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(logout.fulfilled, (state) => {
+        localStorage.removeItem("token");
+        state.token = null;
+        state.user = null;
+        state.isAuthenticated = false;
+        state.loading = false;
+      })
+      .addCase(logout.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload as string;
+      })
+      .addCase(fetchUserInfo.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(fetchUserInfo.fulfilled, (state, action) => {
+        state.user = action.payload;
+        state.loading = false;
+        state.isAuthenticated = true;
+      })
+      .addCase(fetchUserInfo.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload as string;
+        // Don't remove token or auth state on fetchUserInfo failure
       });
   },
 });
-
-export const { removeCurrUser, addCurrUser } = authSlice.actions;
-
-export const logout = () => {
-  return (dispatch) => {
-    dispatch(removeCurrUser());
-  };
-};
 
 export default authSlice.reducer;

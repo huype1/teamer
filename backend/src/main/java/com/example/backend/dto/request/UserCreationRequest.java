@@ -2,6 +2,7 @@ package com.example.backend.dto.request;
 
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
+
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 
@@ -25,7 +26,4 @@ public class UserCreationRequest {
     String provider;
 
     String avatarUrl;
-
 }
-
-

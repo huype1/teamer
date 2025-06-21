@@ -1,0 +1,23 @@
+server:
+  port: ${PORT:8080}
+  servlet:
+    context-path: /api
+
+spring:
+  datasource:
+    url: ${JDBC_DATABASE_URL}
+    username: ${JDBC_DATABASE_USERNAME}
+    password: ${JDBC_DATABASE_PASSWORD}
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+
+jwt:
+  signerKey: "OH3pA9cVoUqXWvZd+avsLIXejoKUGIzMdaQ76ctO4uWO2XDjw3/25r8a0/qbg5++\n"
+  valid-duration: 86400 #seconds
+  refreshable-duration: 360000

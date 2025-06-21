@@ -19,6 +19,7 @@
     </annotationProcessing>
   </component>
   <component name="JavacSettings">
+    <option name="GENERATE_NO_WARNINGS" value="true" />
     <option name="ADDITIONAL_OPTIONS_OVERRIDE">
       <module name="backend" options="-parameters" />
     </option>

@@ -1,4 +1,5 @@
 package com.example.backend.exception;
+
 import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
 

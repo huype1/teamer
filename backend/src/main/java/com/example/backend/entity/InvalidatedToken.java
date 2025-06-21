@@ -1,10 +1,11 @@
 package com.example.backend.entity;
 
+import java.util.Date;
+
 import jakarta.persistence.*;
+
 import lombok.*;
 import lombok.experimental.FieldDefaults;
-
-import java.util.Date;
 
 @Entity
 @Table(name = "invalidated_tokens")
@@ -17,6 +18,8 @@ import java.util.Date;
 public class InvalidatedToken {
     @Id
     String id;
+
+    String token;
 
     Date expiryTime;
 }

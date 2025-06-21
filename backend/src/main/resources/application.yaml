@@ -19,13 +19,13 @@ spring:
 ##            client-secret: ${GITHUB_OAUTH_CLIENT_SECRET}
 #
   datasource:
-    url: jdbc:postgresql://${DB_HOST}:${DB_PORT}/${DB_NAME}
-    username: ${DB_USER}
-    password: ${DB_PASS}
+    url: jdbc:postgresql://c5cnr847jq0fj3.cluster-czrs8kj4isg7.us-east-1.rds.amazonaws.com:5432/d1kdcmoah5npok
+    username: uvs6na7c524um
+    password: pfbe4b01acec25b74b6f9b658ad23f36cb60a1bb148554c0ea131894f68c2a80b
     driver-class-name: org.postgresql.Driver
   jpa:
     hibernate:
-      ddl-auto: update
+      ddl-auto: none
     show-sql: true
     properties:
       hibernate:
@@ -34,5 +34,10 @@ spring:
 
 jwt:
   signerKey: "OH3pA9cVoUqXWvZd+avsLIXejoKUGIzMdaQ76ctO4uWO2XDjw3/25r8a0/qbg5++\n"
-  valid-duration: 86000 #seconds
+  valid-duration: 86400 #seconds
   refreshable-duration: 360000
+
+springdoc:
+  api-docs:
+    enabled: true
+    path: /api-docs
