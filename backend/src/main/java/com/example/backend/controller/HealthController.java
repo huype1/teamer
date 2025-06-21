@@ -16,7 +16,7 @@ public class HealthController {
         log.info("Health check endpoint called");
         return ApiResponse.<String>builder()
                 .message("Teamer API is running!")
-                .result("OK")
+                .result("OK - Visit /health for status or /auth for authentication endpoints")
                 .build();
     }
 

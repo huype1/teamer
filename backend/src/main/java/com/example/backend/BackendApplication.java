@@ -9,10 +9,6 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 public class BackendApplication {
 
-    @GetMapping("/")
-    public String hello() {
-        return "Hello, World!";
-    }
 
     public static void main(String[] args) {
         SpringApplication.run(BackendApplication.class, args);
