@@ -67,10 +67,6 @@ public class User {
     List<Comment> comments = new ArrayList<>();
 
     @JsonIgnore
-    @OneToMany(mappedBy = "invitedBy", cascade = CascadeType.ALL)
-    List<Invitation> sentInvitations = new ArrayList<>();
-
-    @JsonIgnore
     @OneToMany(mappedBy = "createdBy", cascade = CascadeType.ALL)
     List<Team> createdTeams = new ArrayList<>();
 

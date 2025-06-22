@@ -36,11 +36,10 @@ public class Invitation  {
     @Column(name = "expiration_date")
     LocalDate expirationDate = LocalDate.now().plusDays(7);
 
-    @ManyToOne
-    @JoinColumn(name = "invited_by", nullable = false)
-    User invitedBy;
+    @Column(name = "role")
+    String role = "MEMBER"; // ADMIN, PM, MEMBER, VIEWER
 
-    String status; // PENDING, ACCEPTED, REJECTED
+    String status = "PENDING"; // PENDING, ACCEPTED, REJECTED
 
     @CreationTimestamp
     @Column(name = "created_at", updatable = false)

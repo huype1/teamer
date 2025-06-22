@@ -38,7 +38,7 @@ public class Issue {
     @Column(nullable = false) // P0, P1, P2, P3, P4, P5
     String priority="P5";
 
-    @Column(nullable = false) // TO_DO, IN_PROGRESS, IN_REVIEW , DONE
+    @Column(nullable = false) // TO_DO, IN_PROGRESS, IN_REVIEW, DONE
     String status="TO_DO";
 
     @Column(name = "issue_type", nullable = false) // SUBTASK, BUG, TASK, STORY, EPIC

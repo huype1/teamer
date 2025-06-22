@@ -3,21 +3,6 @@ server:
   servlet:
     context-path: /api
 spring:
-#  security:
-#    oauth2:
-#      resource-server:
-#        jwt:
-#          client:
-#            registration:
-#              google:
-#                client-id: ${GOOGLE_OAUTH_CLIENT_ID}
-#                client-secret: ${GOOGLE_OAUTH_CLIENT_SECRET}
-#                redirect-uri: http://localhost:8080/api/oauth2/callback/google
-##            scope: email, profile
-##          github:
-##            client-id: ${GITHUB_OAUTH_CLIENT_ID}
-##            client-secret: ${GITHUB_OAUTH_CLIENT_SECRET}
-#
   datasource:
     url: jdbc:postgresql://c5cnr847jq0fj3.cluster-czrs8kj4isg7.us-east-1.rds.amazonaws.com:5432/d1kdcmoah5npok
     username: uvs6na7c524um
@@ -30,6 +15,15 @@ spring:
     properties:
       hibernate:
         dialect: org.hibernate.dialect.PostgreSQLDialect
+  mail:
+    host: smtp.gmail.com
+    port: 587
+    username: huype2004@gmail.com
+    password: tebc sfwr ylou yjoh
+    properties:
+        mail.smtp.auth: true
+        mail.smtp.starttls.enable: true
+        mail.smtp.ssl.trust: smtp.gmail.com
 
 
 jwt:
@@ -41,3 +35,5 @@ springdoc:
   api-docs:
     enabled: true
     path: /api-docs
+
+

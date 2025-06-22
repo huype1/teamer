@@ -1,0 +1,200 @@
+package com.example.backend.service;
+
+import com.example.backend.dto.response.ProjectResponse;
+import com.example.backend.entity.*;
+import com.example.backend.exception.AppException;
+import com.example.backend.exception.ErrorCode;
+import com.example.backend.mapper.ProjectMapper;
+import com.example.backend.repository.ProjectMemberRepository;
+import com.example.backend.repository.ProjectRepository;
+import lombok.AccessLevel;
+import lombok.RequiredArgsConstructor;
+import lombok.experimental.FieldDefaults;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Service;
+
+import java.time.OffsetDateTime;
+import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
+
+@Slf4j
+@Service
+@RequiredArgsConstructor
+@FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
+public class ProjectService {
+    ProjectRepository projectRepository;
+    ChatService chatService;
+    ProjectMemberRepository projectMemberRepository;
+    private final ProjectMapper projectMapper;
+
+    public Project createProject(Project project, User creator, UUID teamId) throws AppException {
+        // Validate project key uniqueness
+        if (projectRepository.existsByKey(project.getKey())) {
+            log.error("Project key already exists: {}", project.getKey());
+            throw new AppException(ErrorCode.PROJECT_KEY_EXISTS);
+        }
+
+        Project createdProject = new Project();
+        createdProject.setCreator(creator);
+        createdProject.setName(project.getName());
+        createdProject.setKey(project.getKey());
+        createdProject.setDescription(project.getDescription());
+        createdProject.setAvatarUrl(project.getAvatarUrl());
+
+//        if (teamId != null) {
+//            Team team = teamService.findById(teamId)
+//                    .orElseThrow(() -> {
+//                        log.error("Team not found for id: {}", teamId);
+//                        return new AppException(ErrorCode.TEAM_NOT_FOUND);
+//                    });
+//            createdProject.setTeam(team);
+//        }
+
+        Project savedProject = projectRepository.save(createdProject);
+
+        // Create chat for the project
+        Chat chat = new Chat();
+        chat.setName("Project Chat - " + savedProject.getName());
+        Chat chatProject = chatService.createChat(chat);
+        
+        // Set the chat relationship (one-way from Project to Chat)
+        savedProject.setChat(chatProject);
+
+        // Save the project to persist the chat relationship
+        Project finalProject = projectRepository.save(savedProject);
+
+        // Add the creator as admin member
+        addUserToProject(finalProject.getId(), creator.getId(), "ADMIN");
+
+        return finalProject;
+    }
+
+    public List<Project> getProjectAsMember(UUID userId) throws AppException {
+        List<Project> projects = projectRepository.findByTeamContainingOrCreator(userId);
+        return projects;
+    }
+
+    public Project getProjectById(UUID id) throws AppException {
+        Optional<Project> project = projectRepository.findById(id);
+        if (project.isEmpty()) {
+            log.error("Project not found for id: {}", id);
+            throw new AppException(ErrorCode.NOT_FOUND);
+        }
+        return project.get();
+    }
+
+    public void deleteProject(UUID projectId) throws AppException {
+        Project project = getProjectById(projectId);
+        projectRepository.deleteById(projectId);
+    }
+
+    public Project updateProject(Project updatedProject, UUID id) throws AppException {
+        Project project = getProjectById(id);
+
+        project.setName(updatedProject.getName());
+        project.setDescription(updatedProject.getDescription());
+        project.setAvatarUrl(updatedProject.getAvatarUrl());
+        project.setKey(updatedProject.getKey());
+        project.setIsPublic(updatedProject.getIsPublic());
+
+        return projectRepository.save(project);
+    }
+
+    public void addUserToProject(UUID projectId, UUID userId, String role) throws AppException {
+        Project project = getProjectById(projectId);
+        
+        // Check if user is already a member
+        if (projectMemberRepository.existsByProjectIdAndUserId(projectId, userId)) {
+            log.error("User with id: {} is already a member of project with id: {}", userId, projectId);
+            throw new AppException(ErrorCode.USER_EXISTED);
+        }
+        
+        ProjectMember projectMember = new ProjectMember();
+        projectMember.setProjectId(projectId);
+        projectMember.setUserId(userId);
+        projectMember.setRole(role);
+        projectMember.setJoinedAt(OffsetDateTime.now());
+
+        projectMemberRepository.save(projectMember);
+        log.info("User with id: {} added to project with id: {}", userId, projectId);
+    }
+
+    public void removeUserFromProject(UUID projectId, UUID userId) throws AppException {
+        if (!projectMemberRepository.existsByProjectIdAndUserId(projectId, userId)) {
+            log.error("User with id: {} is not a member of project with id: {}", userId, projectId);
+            throw new AppException(ErrorCode.NOT_FOUND);
+        }
+        
+        projectMemberRepository.deleteById(new ProjectMemberId(projectId, userId));
+        log.info("User with id: {} removed from project with id: {}", userId, projectId);
+    }
+
+    public Chat getChatByProjectId(UUID projectId) throws AppException {
+        Project project = getProjectById(projectId);
+        Chat chat = project.getChat();
+        
+        // Security validation: Ensure chat exists
+        if (chat == null) {
+            log.error("Chat not found for project: {}", projectId);
+            throw new AppException(ErrorCode.NOT_FOUND);
+        }
+        
+        return chat;
+    }
+
+    public List<ProjectResponse> searchProjects(String keywords, UUID userId) {
+        List<Project> projects = projectRepository.findByNameContainingIgnoreCaseOrKeyContainingIgnoreCase(keywords, userId);
+        return projectMapper.toResponseList(projects);
+    }
+
+
+    public List<ProjectMember> getProjectMembers(UUID projectId) throws AppException {
+        return projectMemberRepository.findByProjectId(projectId);
+    }
+
+    public boolean isUserProjectMember(UUID projectId, UUID userId) {
+        return projectMemberRepository.existsByProjectIdAndUserId(projectId, userId);
+    }
+
+    public boolean isUserProjectManager(UUID projectId, UUID userId) {
+        Project project = getProjectById(projectId);
+        if (project.getCreator().getId().equals(userId)) {
+            return true;
+        }
+
+        Optional<ProjectMember> member = projectMemberRepository.findByProjectIdAndUserId(projectId, userId);
+        return member.isPresent() && "PM".equals(member.get().getRole());
+    }
+
+    public boolean isUserProjectAdmin(UUID projectId, UUID userId) {
+        Project project = getProjectById(projectId);
+        if (project.getCreator().getId().equals(userId)) {
+            return true;
+        }
+        
+        Optional<ProjectMember> member = projectMemberRepository.findByProjectIdAndUserId(projectId, userId);
+        return member.isPresent() && "ADMIN".equals(member.get().getRole());
+    }
+
+    public void updateUserRole(UUID projectId, UUID userId, String newRole) throws AppException {
+        ProjectMember member = projectMemberRepository.findByProjectIdAndUserId(projectId, userId)
+                .orElseThrow(() -> new AppException(ErrorCode.NOT_FOUND));
+        
+        member.setRole(newRole);
+        projectMemberRepository.save(member);
+        log.info("Updated role for user {} in project {} to {}", userId, projectId, newRole);
+    }
+
+    public List<Project> getPublicProjects() {
+        return projectRepository.findByIsPublicTrue();
+    }
+
+    public List<Project> getProjectsByTeam(UUID teamId) {
+        return projectRepository.findByTeamId(teamId);
+    }
+
+    public long getProjectMemberCount(UUID projectId) {
+        return projectMemberRepository.countByProjectId(projectId);
+    }
+}

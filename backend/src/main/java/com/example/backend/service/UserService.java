@@ -3,6 +3,7 @@ package com.example.backend.service;
 import java.util.List;
 import java.util.UUID;
 
+import com.example.backend.utils.JwtUtils;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -50,13 +51,7 @@ public class UserService {
     }
 
     public UserResponse getMyInfo() {
-        var authentication = SecurityContextHolder.getContext().getAuthentication();
-        log.debug("Authentication: {}", authentication);
-        if (authentication == null
-                || !(authentication.getPrincipal() instanceof org.springframework.security.oauth2.jwt.Jwt jwt)) {
-            throw new AppException(ErrorCode.UNAUTHENTICATED);
-        }
-        String email = jwt.getClaim("email"); // get email from custom claim
+        String email = JwtUtils.getEmailFromJwt();
         User user = userRepository.findByEmail(email).orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
         return userMapper.toUserResponse(user);
     }
@@ -87,5 +82,9 @@ public class UserService {
 
     public void deleteUser(UUID userId) {
         userRepository.deleteById(userId);
+    }
+
+    public User getUserEntity(UUID id) {
+        return userRepository.findById(id).orElseThrow(() -> new AppException(ErrorCode.NOT_FOUND));
     }
 }

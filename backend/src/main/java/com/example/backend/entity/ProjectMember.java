@@ -28,7 +28,7 @@ public class ProjectMember {
     UUID userId;
 
     @Column(name = "role")
-    String role; // ADMIN, MEMBER, VIEWER
+    String role; // ADMIN, PM, MEMBER, VIEWER
 
     @Column(name = "joined_at")
     OffsetDateTime joinedAt;
@@ -42,11 +42,3 @@ public class ProjectMember {
     User user;
 }
 
-@Data
-@NoArgsConstructor
-@AllArgsConstructor
-@FieldDefaults(level = AccessLevel.PRIVATE)
-class ProjectMemberId implements Serializable {
-    UUID projectId;
-    UUID userId;
-}

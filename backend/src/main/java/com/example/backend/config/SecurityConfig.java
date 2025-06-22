@@ -27,7 +27,7 @@ import lombok.extern.slf4j.Slf4j;
 public class SecurityConfig {
     private CustomJWTDecoder customJwtDecoder;
 
-    public final String[] PUBLIC_ENDPOINTS = {"/auth/**"};
+    public final String[] PUBLIC_ENDPOINTS = {"/auth/**", "/health", "/api-docs/**", "/swagger-ui/**", "/swagger-ui.html", "/webjars/**", "/actuator/**", "/"};
 
     public SecurityConfig(CustomJWTDecoder customJwtDecoder) {
         this.customJwtDecoder = customJwtDecoder;
@@ -37,7 +37,7 @@ public class SecurityConfig {
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http.cors(Customizer.withDefaults())
                 .sessionManagement(Management -> Management.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-                .authorizeHttpRequests(request -> request.requestMatchers(HttpMethod.POST, PUBLIC_ENDPOINTS)
+                .authorizeHttpRequests(request -> request.requestMatchers(PUBLIC_ENDPOINTS)
                         .permitAll()
                         .anyRequest()
                         .authenticated())

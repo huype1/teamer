@@ -38,7 +38,6 @@ public class Chat {
     @OneToMany(mappedBy = "chat", cascade = CascadeType.ALL, orphanRemoval = true)
     List<Message> messages = new ArrayList<>();
 
-    @JsonIgnore
-    @OneToOne(mappedBy = "chat")
-    Project project;
+    // Note: No project relationship here since we use chat_id in Project table only
+    // This eliminates bidirectional relationship complexity and data inconsistency
 }

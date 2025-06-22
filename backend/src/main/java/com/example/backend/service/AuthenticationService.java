@@ -155,7 +155,7 @@ public class AuthenticationService {
         JWSHeader header = new JWSHeader(JWSAlgorithm.HS512);
 
         JWTClaimsSet jwtClaimsSet = new JWTClaimsSet.Builder()
-                .subject(user.getName())
+                .subject(user.getId().toString())
                 .issuer("http://localhost:5173")
                 .claim("email", user.getEmail())
                 .issueTime(new Date())
@@ -211,18 +211,13 @@ public class AuthenticationService {
 
         Date expirationTime = (isRefresh)
                 ? new Date(signedJWT
-                        .getJWTClaimsSet()
-                        .getIssueTime()
-                        .toInstant()
-                        .plus(REFRESHABLE_DURATION, ChronoUnit.SECONDS)
-                        .toEpochMilli())
+                .getJWTClaimsSet()
+                .getIssueTime()
+                .toInstant()
+                .plus(REFRESHABLE_DURATION, ChronoUnit.SECONDS)
+                .toEpochMilli())
                 : signedJWT.getJWTClaimsSet().getExpirationTime();
         Date currentTime = new Date();
-        log.info("Current time: {}", currentTime);
-        log.info("Expiration time: {}", expirationTime);
-        log.info("Issue time: {}", signedJWT.getJWTClaimsSet().getIssueTime());
-        log.info("Time difference: {} seconds", (expirationTime.getTime() - currentTime.getTime()) / 1000);
-
         var verified = signedJWT.verify(verifier);
         log.info("Verified: {}", verified);
 
