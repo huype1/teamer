@@ -69,9 +69,14 @@ public class AuthenticationService {
         boolean isValid = true;
 
         try {
-
+            log.info("Introspecting token: {}", token != null ? token.substring(0, Math.min(50, token.length())) + "..." : "null");
             verifyToken(token, false);
+            log.info("Token introspection successful");
         } catch (AppException e) {
+            log.error("Token introspection failed: {}", e.getMessage());
+            isValid = false;
+        } catch (Exception e) {
+            log.error("Unexpected error during token introspection: {}", e.getMessage(), e);
             isValid = false;
         }
         return IntrospectResponse.builder().valid(isValid).build();
@@ -183,7 +188,7 @@ public class AuthenticationService {
         var expiryTime = signedJWT.getJWTClaimsSet().getExpirationTime();
 
         InvalidatedToken invalidatedToken =
-                InvalidatedToken.builder().id(jit).expiryTime(expiryTime).build();
+                InvalidatedToken.builder().id(jit).expiryTime(expiryTime).token(request.getToken()).build();
 
         invalidatedTokenRepository.save(invalidatedToken);
 
@@ -205,6 +210,13 @@ public class AuthenticationService {
         if (token == null || token.trim().isEmpty()) {
             throw new AppException(ErrorCode.UNAUTHENTICATED); // Handle null or empty token
         }
+        
+        // Clean the token and validate format
+        token = token.trim();
+        if (!isValidJWTFormat(token)) {
+            throw new AppException(ErrorCode.UNAUTHENTICATED);
+        }
+        
         JWSVerifier verifier = new MACVerifier(SIGNER_KEY.getBytes(StandardCharsets.UTF_8));
 
         SignedJWT signedJWT = SignedJWT.parse(token);
@@ -219,14 +231,42 @@ public class AuthenticationService {
                 : signedJWT.getJWTClaimsSet().getExpirationTime();
         Date currentTime = new Date();
         var verified = signedJWT.verify(verifier);
-        log.info("Verified: {}", verified);
+        log.info("Token verification result: {}", verified);
+        log.info("Token expiration time: {}", expirationTime);
+        log.info("Current time: {}", currentTime);
+        log.info("Token expired: {}", currentTime.after(expirationTime));
 
         if (!(verified && expirationTime.after(new Date()))) {
+            log.error("Token validation failed - verified: {}, expired: {}", verified, currentTime.after(expirationTime));
             throw new AppException(ErrorCode.UNAUTHENTICATED);
         }
         if (invalidatedTokenRepository.existsById(signedJWT.getJWTClaimsSet().getJWTID())) {
+            log.error("Token has been invalidated with JIT: {}", signedJWT.getJWTClaimsSet().getJWTID());
             throw new AppException(ErrorCode.UNAUTHENTICATED);
         }
         return signedJWT;
+    }
+    
+    private boolean isValidJWTFormat(String token) {
+        if (token == null || token.isEmpty()) {
+            return false;
+        }
+        
+        // Check if token has exactly 3 parts separated by dots
+        String[] parts = token.split("\\.");
+        if (parts.length != 3) {
+            log.error("Invalid JWT format: expected 3 parts, got {}", parts.length);
+            return false;
+        }
+        
+        // Basic validation that parts are not empty
+        for (String part : parts) {
+            if (part == null || part.isEmpty()) {
+                log.error("Invalid JWT format: empty part found");
+                return false;
+            }
+        }
+        
+        return true;
     }
 }

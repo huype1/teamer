@@ -27,6 +27,7 @@ public enum ErrorCode {
     TEAM_NOT_FOUND(HttpStatus.NOT_FOUND, 11, "Cannot find team information"),
     CREATION_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, 12, "Data creation failed"),
     EXPIRED(HttpStatus.INTERNAL_SERVER_ERROR, 12, "Request expired"),
+    ALREADY_EXISTS(HttpStatus.BAD_REQUEST, 13, "Resource already exists"),
     PROJECT_KEY_EXISTS(HttpStatus.BAD_REQUEST, 13, "Project key already exists");
 
     HttpStatusCode httpStatusCode;

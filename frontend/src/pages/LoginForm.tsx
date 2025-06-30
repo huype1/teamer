@@ -3,7 +3,6 @@ import { Button } from "@/components/ui/button.tsx";
 import {
   Card,
   CardContent,
-  CardDescription,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card.tsx";
@@ -11,21 +10,28 @@ import { Input } from "@/components/ui/input.tsx";
 import { Label } from "@/components/ui/label.tsx";
 import { useEffect } from "react";
 import { GoogleLogin } from '@react-oauth/google';
+import type { CredentialResponse } from '@react-oauth/google';
 import { jwtDecode } from 'jwt-decode';
 import { useDispatch, useSelector } from "react-redux";
+import type { TypedUseSelectorHook } from "react-redux";
+import type { RootState, AppDispatch } from "@/store";
 import {googleLogin, login} from "@/store/authReducer.ts";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { loginSchema, type LoginFormValues, type GoogleUser } from "@/types/auth";
+
+const useAppSelector: TypedUseSelectorHook<RootState> = useSelector;
+const useAppDispatch: () => AppDispatch = useDispatch;
 
 export function LoginForm({
   className,
   ...props
 }: React.ComponentProps<"div">) {
-  const dispatch = useDispatch();
+  const dispatch = useAppDispatch();
   const navigate = useNavigate();
-  const { loading, error, isAuthenticated } = useSelector((state: any) => state.auth);
+  const [searchParams] = useSearchParams();
+  const { loading, error, isAuthenticated } = useAppSelector((state) => state.auth);
 
   const {
     register,
@@ -37,11 +43,22 @@ export function LoginForm({
 
   useEffect(() => {
     if (isAuthenticated) {
-      navigate('/');
+      // Redirect to return URL if provided, otherwise to dashboard
+      const returnUrl = searchParams.get('returnUrl');
+      if (returnUrl) {
+        navigate(decodeURIComponent(returnUrl));
+      } else {
+        navigate('/dashboard');
+      }
     }
-  }, [isAuthenticated, navigate]);
+  }, [isAuthenticated, navigate, searchParams]);
 
-  const handleGoogleSuccess = async (credentialResponse: any) => {
+  const handleGoogleSuccess = async (credentialResponse: CredentialResponse) => {
+    if (!credentialResponse.credential) {
+      console.error('No credential received from Google');
+      return;
+    }
+    
     try {
       const decoded: GoogleUser = jwtDecode(credentialResponse.credential);
       await dispatch(googleLogin({

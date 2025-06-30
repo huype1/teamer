@@ -36,11 +36,10 @@ export const login = createAsyncThunk(
       // Fetch user info immediately after successful login
       await dispatch(fetchUserInfo());
       return response.result;
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Login error:", error);
-      return rejectWithValue(
-        error.response?.data?.message || "Login failed"
-      );
+      const errorMessage = error instanceof Error ? error.message : "Login failed";
+      return rejectWithValue(errorMessage);
     }
   }
 );
@@ -53,25 +52,25 @@ export const googleLogin = createAsyncThunk(
       // Fetch user info immediately after successful Google login
       await dispatch(fetchUserInfo());
       return response.result;
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Google login error:", error);
-      return rejectWithValue(
-        error.response?.data?.message || "Google login failed"
-      );
+      const errorMessage = error instanceof Error ? error.message : "Google login failed";
+      return rejectWithValue(errorMessage);
     }
   }
 );
 
 export const logout = createAsyncThunk(
   "auth/logout",
-  async (_, { rejectWithValue }) => {
+  async () => {
     try {
       await AuthService.logout();
       return true;
-    } catch (error: any) {
-      return rejectWithValue(
-        error.response?.data?.message || "Logout failed"
-      );
+    } catch (error: unknown) {
+      // Even if backend logout fails, we should still clean up frontend state
+      const errorMessage = error instanceof Error ? error.message : "Unknown error";
+      console.warn("Backend logout failed, but proceeding with frontend cleanup:", errorMessage);
+      return true; // Don't reject - we want to clean up regardless
     }
   }
 );
@@ -82,10 +81,9 @@ export const fetchUserInfo = createAsyncThunk(
     try {
       const response = await UserService.getMyInfo();
       return response.result;
-    } catch (error: any) {
-      return rejectWithValue(
-        error.response?.data?.message || "Failed to fetch user info"
-      );
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : "Failed to fetch user info";
+      return rejectWithValue(errorMessage);
     }
   }
 );

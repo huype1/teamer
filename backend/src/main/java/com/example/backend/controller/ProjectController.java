@@ -6,11 +6,9 @@ import com.example.backend.dto.request.ProjectUpdateRequest;
 import com.example.backend.dto.response.ApiResponse;
 import com.example.backend.dto.response.ProjectMemberResponse;
 import com.example.backend.dto.response.ProjectResponse;
-import com.example.backend.entity.Chat;
-import com.example.backend.entity.Invitation;
-import com.example.backend.entity.Project;
-import com.example.backend.entity.User;
+import com.example.backend.entity.*;
 import com.example.backend.exception.AppException;
+import com.example.backend.exception.ErrorCode;
 import com.example.backend.mapper.ProjectMapper;
 import com.example.backend.service.InvitationService;
 import com.example.backend.service.ProjectService;
@@ -49,13 +47,7 @@ public class ProjectController {
         UUID userId = JwtUtils.getSubjectFromJwt();
         log.info("Fetching projects for user: {} with keyword: {}, includePublic: {}", userId, keyword, includePublic);
 
-        List<ProjectResponse> projects;
-        if (keyword != null && !keyword.trim().isEmpty()) {
-            projects = projectService.searchProjects(keyword, userId);
-        } else {
-            List<Project> projectEntities = projectService.getProjectAsMember(userId);
-            projects = projectMapper.toResponseList(projectEntities);
-        }
+        List<ProjectResponse> projects = projectService.searchProjects(keyword, userId);
 
         if (includePublic) {
             List<Project> publicProjects = projectService.getPublicProjects();
@@ -157,7 +149,11 @@ public class ProjectController {
         if (!projectService.isUserProjectAdmin(invitationRequest.getProjectId(), userId)
                 || !projectService.isUserProjectManager(invitationRequest.getProjectId(), userId)) {
             log.error("User: {} is not authorized to send invitations for project: {}", userId, invitationRequest.getProjectId());
-            throw new AppException(com.example.backend.exception.ErrorCode.UNAUTHORIZED);
+            throw new AppException(ErrorCode.UNAUTHORIZED);
+        }
+        if (projectService.isUserProjectMember(invitationRequest.getProjectId(), userId)) {
+            log.error("User: {} is already a member of project: {}", userId, invitationRequest.getProjectId());
+            throw new AppException(ErrorCode.ALREADY_EXISTS);
         }
         invitationService.sendInvitation(invitationRequest.getEmail(), invitationRequest.getProjectId(), invitationRequest.getRole());
         return ApiResponse.<String>builder()

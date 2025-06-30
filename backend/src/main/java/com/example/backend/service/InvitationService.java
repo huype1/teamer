@@ -44,7 +44,7 @@ public class InvitationService {
         Invitation result = invitationRepository.save(invitation);
 
         String invitationLink = "http://localhost:5173/invitation/accept_invitation?token=" + result.getId();
-        emailService.sendEmailWithToken(email, invitationLink);
+        emailService.sendEmailWithToken(email, invitationLink, project, role);
 
     }
 

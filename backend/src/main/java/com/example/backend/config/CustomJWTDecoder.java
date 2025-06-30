@@ -30,6 +30,14 @@ public class CustomJWTDecoder implements JwtDecoder {
     @Override
     public Jwt decode(String token) throws JwtException {
         try {
+            // Clean the token - remove Bearer prefix if present
+            if (token != null && token.startsWith("Bearer ")) {
+                token = token.substring(7);
+            }
+            
+            // Trim any whitespace
+            token = token.trim();
+            
             var response = authenticationService.introspect(
                     IntrospectRequest.builder().token(token).build());
 

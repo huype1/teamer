@@ -18,16 +18,17 @@ spring:
   mail:
     host: smtp.gmail.com
     port: 587
-    username: huype2004@gmail.com
-    password: tebc sfwr ylou yjoh
+    username: ${MAIL_USERNAME}
+    password: ${MAIL_PASSWORD}
     properties:
-        mail.smtp.auth: true
-        mail.smtp.starttls.enable: true
-        mail.smtp.ssl.trust: smtp.gmail.com
+      mail.smtp.auth: true
+      mail.smtp.starttls.enable: true
+      mail.smtp.ssl.trust: smtp.gmail.com
+
 
 
 jwt:
-  signerKey: "OH3pA9cVoUqXWvZd+avsLIXejoKUGIzMdaQ76ctO4uWO2XDjw3/25r8a0/qbg5++\n"
+  signerKey: ${JWT_SIGNER_KEY}
   valid-duration: 86400 #seconds
   refreshable-duration: 360000
 

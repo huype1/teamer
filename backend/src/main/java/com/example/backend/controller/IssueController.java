@@ -121,10 +121,10 @@ public class IssueController {
                 .build();
     }
 
-    @PutMapping("/{issueId}/assignee")
+    @PutMapping("/{issueId}/assignee/{assigneeId}")
     public ApiResponse<IssueResponse> setAssignee(
             @PathVariable UUID issueId,
-            @RequestParam UUID assigneeId
+            @PathVariable UUID assigneeId
     ) {
         UUID userId = JwtUtils.getSubjectFromJwt();
         log.info("Setting assignee for issue: {} to user: {} by user: {}", issueId, assigneeId, userId);
@@ -150,55 +150,5 @@ public class IssueController {
                 .build();
     }
 
-    @GetMapping("/project/{projectId}/status/{status}")
-    public ApiResponse<List<IssueResponse>> getIssuesByProjectAndStatus(
-            @PathVariable UUID projectId,
-            @PathVariable String status
-    ) {
-        UUID userId = JwtUtils.getSubjectFromJwt();
-        log.info("Fetching issues for project: {} with status: {} by user: {}", projectId, status, userId);
-
-        // Check if user has access to this project
-        if (!projectService.isUserProjectMember(projectId, userId)) {
-            throw new AppException(com.example.backend.exception.ErrorCode.UNAUTHORIZED);
-        }
-
-        List<Issue> issues = issueService.getIssuesByProjectId(projectId);
-        List<Issue> filteredIssues = issues.stream()
-                .filter(issue -> status.equalsIgnoreCase(issue.getStatus()))
-                .toList();
-        
-        List<IssueResponse> responses = issueMapper.toResponseList(filteredIssues);
-
-        return ApiResponse.<List<IssueResponse>>builder()
-                .message("Issues fetched successfully")
-                .result(responses)
-                .build();
-    }
-
-    @GetMapping("/project/{projectId}/assignee/{assigneeId}")
-    public ApiResponse<List<IssueResponse>> getIssuesByProjectAndAssignee(
-            @PathVariable UUID projectId,
-            @PathVariable UUID assigneeId
-    ) {
-        UUID userId = JwtUtils.getSubjectFromJwt();
-        log.info("Fetching issues for project: {} assigned to user: {} by user: {}", projectId, assigneeId, userId);
-
-        // Check if user has access to this project
-        if (!projectService.isUserProjectMember(projectId, userId)) {
-            throw new AppException(com.example.backend.exception.ErrorCode.UNAUTHORIZED);
-        }
-
-        List<Issue> issues = issueService.getIssuesByProjectId(projectId);
-        List<Issue> filteredIssues = issues.stream()
-                .filter(issue -> issue.getAssignee() != null && assigneeId.equals(issue.getAssignee().getId()))
-                .toList();
-        
-        List<IssueResponse> responses = issueMapper.toResponseList(filteredIssues);
-
-        return ApiResponse.<List<IssueResponse>>builder()
-                .message("Issues fetched successfully")
-                .result(responses)
-                .build();
-    }
+    
 }

@@ -42,12 +42,3 @@ public class TeamMember {
     @JoinColumn(name = "user_id", insertable = false, updatable = false)
     User user;
 }
-
-@Data
-@NoArgsConstructor
-@AllArgsConstructor
-@FieldDefaults(level = AccessLevel.PRIVATE)
-class TeamMemberId implements Serializable {
-    UUID teamId;
-    UUID userId;
-} 

@@ -1,11 +1,13 @@
 package com.example.backend.service;
 
 import com.example.backend.dto.request.IssueRequest;
+import com.example.backend.entity.Comment;
 import com.example.backend.entity.Issue;
 import com.example.backend.entity.Project;
 import com.example.backend.entity.User;
 import com.example.backend.exception.AppException;
 import com.example.backend.exception.ErrorCode;
+import com.example.backend.repository.CommentRepository;
 import com.example.backend.repository.IssueRepository;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
@@ -26,6 +28,7 @@ public class IssueService {
     IssueRepository issueRepository;
     UserService userService;
     ProjectService projectService;
+    CommentRepository commentRepository;
 
     public Issue getIssueById(UUID id) {
         return issueRepository.findById(id)
@@ -66,7 +69,9 @@ public class IssueService {
             issue.setStoryPoints(issueRequest.getStoryPoints());
             issue.setReporter(reporter);
             issue.setProject(project);
-            
+//            Comment comment = commentRepository.save(new Comment());
+//            issue.setComments(comment);
+
             // Generate issue key (PROJECT-KEY-ISSUE-NUMBER)
             String issueKey = generateIssueKey(project);
             issue.setKey(issueKey);

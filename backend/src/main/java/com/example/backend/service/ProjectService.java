@@ -26,7 +26,8 @@ public class ProjectService {
     ProjectRepository projectRepository;
     ChatService chatService;
     ProjectMemberRepository projectMemberRepository;
-    private final ProjectMapper projectMapper;
+    TeamService teamService;
+    ProjectMapper projectMapper;
 
     public Project createProject(Project project, User creator, UUID teamId) throws AppException {
         // Validate project key uniqueness
@@ -41,37 +42,26 @@ public class ProjectService {
         createdProject.setKey(project.getKey());
         createdProject.setDescription(project.getDescription());
         createdProject.setAvatarUrl(project.getAvatarUrl());
-
-//        if (teamId != null) {
-//            Team team = teamService.findById(teamId)
-//                    .orElseThrow(() -> {
-//                        log.error("Team not found for id: {}", teamId);
-//                        return new AppException(ErrorCode.TEAM_NOT_FOUND);
-//                    });
-//            createdProject.setTeam(team);
-//        }
+        // Create chat for the project
+        Chat chat = new Chat();
+        chat.setName("Project Chat - " + project.getName());
+        Chat chatProject = chatService.createChat(chat);
+        if (teamId != null) {
+            Team team = teamService.findById(teamId);
+            createdProject.setTeam(team);
+        }
+        createdProject.setChat(chatProject);
 
         Project savedProject = projectRepository.save(createdProject);
 
-        // Create chat for the project
-        Chat chat = new Chat();
-        chat.setName("Project Chat - " + savedProject.getName());
-        Chat chatProject = chatService.createChat(chat);
-        
-        // Set the chat relationship (one-way from Project to Chat)
-        savedProject.setChat(chatProject);
-
-        // Save the project to persist the chat relationship
-        Project finalProject = projectRepository.save(savedProject);
-
         // Add the creator as admin member
-        addUserToProject(finalProject.getId(), creator.getId(), "ADMIN");
+        addUserToProject(savedProject.getId(), creator.getId(), "ADMIN");
 
-        return finalProject;
+        return savedProject;
     }
 
     public List<Project> getProjectAsMember(UUID userId) throws AppException {
-        List<Project> projects = projectRepository.findByTeamContainingOrCreator(userId);
+        List<Project> projects = projectRepository.findAllProjectsByUserId(userId);
         return projects;
     }
 
@@ -92,10 +82,16 @@ public class ProjectService {
     public Project updateProject(Project updatedProject, UUID id) throws AppException {
         Project project = getProjectById(id);
 
-        project.setName(updatedProject.getName());
-        project.setDescription(updatedProject.getDescription());
+        if (updatedProject.getName() != null && !updatedProject.getName().isEmpty()) {
+            project.setName(updatedProject.getName());
+        }
+        if (updatedProject.getDescription() != null && !updatedProject.getDescription().isEmpty()) {
+            project.setDescription(updatedProject.getDescription());
+        }
+        if (updatedProject.getKey() != null && !updatedProject.getKey().isEmpty()) {
+            project.setKey(updatedProject.getKey());
+        }
         project.setAvatarUrl(updatedProject.getAvatarUrl());
-        project.setKey(updatedProject.getKey());
         project.setIsPublic(updatedProject.getIsPublic());
 
         return projectRepository.save(project);
@@ -144,7 +140,11 @@ public class ProjectService {
     }
 
     public List<ProjectResponse> searchProjects(String keywords, UUID userId) {
-        List<Project> projects = projectRepository.findByNameContainingIgnoreCaseOrKeyContainingIgnoreCase(keywords, userId);
+        if (keywords == null || keywords.trim().isEmpty()) {
+            List<Project> projects = projectRepository.findAllProjectsByUserId(userId);
+            return projectMapper.toResponseList(projects);
+        }
+        List<Project> projects = projectRepository.findByNameOrKeyContainingIgnoreCase(keywords.trim(), userId);
         return projectMapper.toResponseList(projects);
     }
 
@@ -154,8 +154,10 @@ public class ProjectService {
     }
 
     public boolean isUserProjectMember(UUID projectId, UUID userId) {
-        return projectMemberRepository.existsByProjectIdAndUserId(projectId, userId);
+        Optional<ProjectMember> member = projectMemberRepository.findByProjectIdAndUserId(projectId, userId);
+        return member.isPresent() && !"VIEWER".equals(member.get().getRole());
     }
+
 
     public boolean isUserProjectManager(UUID projectId, UUID userId) {
         Project project = getProjectById(projectId);
@@ -167,7 +169,7 @@ public class ProjectService {
         return member.isPresent() && "PM".equals(member.get().getRole());
     }
 
-    public boolean isUserProjectAdmin(UUID projectId, UUID userId) {
+    public boolean isUserProjectAdmin (UUID projectId, UUID userId) {
         Project project = getProjectById(projectId);
         if (project.getCreator().getId().equals(userId)) {
             return true;
@@ -196,5 +198,9 @@ public class ProjectService {
 
     public long getProjectMemberCount(UUID projectId) {
         return projectMemberRepository.countByProjectId(projectId);
+    }
+
+    public List<Project> getAllProjects() {
+        return projectRepository.findAll();
     }
 }

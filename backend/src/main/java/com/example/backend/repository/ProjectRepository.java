@@ -12,11 +12,11 @@ public interface ProjectRepository extends JpaRepository<Project, UUID> {
     @Query("SELECT DISTINCT p FROM Project p LEFT JOIN p.projectMembers pm " +
             "WHERE (pm.userId = :userId OR p.creator.id = :userId) " +
             "AND (p.name LIKE %:keywords% OR p.key LIKE %:keywords%)")
-    List<Project> findByNameContainingIgnoreCaseOrKeyContainingIgnoreCase(@Param("keywords") String keywords, @Param("userId") UUID userId);
+    List<Project> findByNameOrKeyContainingIgnoreCase(@Param("keywords") String keywords, @Param("userId") UUID userId);
 
-    @Query("SELECT p FROM Project p LEFT JOIN p.projectMembers pm " +
-            "WHERE pm.userId = :userId OR p.creator.id = :userId")
-    List<Project> findByTeamContainingOrCreator(@Param("userId") UUID userId);
+    @Query("SELECT DISTINCT p FROM Project p LEFT JOIN p.projectMembers pm " +
+            "WHERE (pm.userId = :userId OR p.creator.id = :userId)")
+    List<Project> findAllProjectsByUserId(@Param("userId") UUID userId);
 
     boolean existsByKey(String key);
 

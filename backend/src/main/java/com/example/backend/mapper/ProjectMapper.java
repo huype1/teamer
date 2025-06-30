@@ -13,13 +13,13 @@ import java.util.stream.Collectors;
 
 @Component
 public class ProjectMapper {
-    
+
     private final UserMapper userMapper;
-    
+
     public ProjectMapper(UserMapper userMapper) {
         this.userMapper = userMapper;
     }
-    
+
     public Project toEntity(ProjectCreationRequest request) {
         return Project.builder()
                 .name(request.getName())
@@ -27,6 +27,7 @@ public class ProjectMapper {
                 .description(request.getDescription())
                 .avatarUrl(request.getAvatarUrl())
                 .isPublic(request.getIsPublic())
+
                 .build();
     }
     
