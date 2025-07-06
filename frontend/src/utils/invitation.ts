@@ -3,6 +3,8 @@
  * after user authentication (login/signup)
  */
 
+import { acceptProjectInvitation } from "@/service/projectService";
+
 /**
  * Processes any pending invitation token stored in localStorage
  * This should be called after successful user authentication
@@ -15,26 +17,9 @@ export const processPendingInvitation = async (): Promise<boolean> => {
   }
 
   try {
-    // Call your backend API to accept the invitation
-    const response = await fetch('/api/invitations/accept', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${localStorage.getItem('token')}`, // User's auth token
-      },
-      body: JSON.stringify({ token }),
-    });
-
-    if (response.ok) {
-      // Successfully processed invitation
-      localStorage.removeItem('pendingInvitationToken');
-      return true;
-    } else {
-      // Handle error - token might be invalid or expired
-      console.error('Failed to process invitation:', response.statusText);
-      localStorage.removeItem('pendingInvitationToken');
-      return false;
-    }
+    await acceptProjectInvitation(token);
+    localStorage.removeItem('pendingInvitationToken');
+    return true;
   } catch (error) {
     console.error('Error processing invitation:', error);
     localStorage.removeItem('pendingInvitationToken');

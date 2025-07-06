@@ -16,6 +16,9 @@ public interface IssueRepository extends JpaRepository<Issue, UUID>{
 
     Optional<List<Issue>> findByProjectId(UUID projectId);
 
+    @Query("SELECT i FROM Issue i LEFT JOIN FETCH i.assignee LEFT JOIN FETCH i.reporter WHERE i.project.id = :projectId")
+    List<Issue> findByProjectIdWithAssigneeAndReporter(@Param("projectId") UUID projectId);
+
     List<Issue> findByAssigneeId(UUID userId);
 
     List<Issue> findByAssigneeIdAndDueDateIsNotNullOrderByDueDateAsc(UUID userId);
@@ -23,4 +26,7 @@ public interface IssueRepository extends JpaRepository<Issue, UUID>{
     List<Issue> findTop10ByOrderByCreatedAtDesc();
     
     List<Issue> findAllByOrderByCreatedAtDesc(Pageable pageable);
+    
+    @Query("SELECT MAX(CAST(SUBSTRING(i.key FROM POSITION('-' IN i.key) + 1) AS integer)) FROM Issue i WHERE i.project.id = :projectId AND i.key LIKE :projectKey || '-%'")
+    Optional<Integer> findMaxIssueNumberByProject(@Param("projectId") UUID projectId, @Param("projectKey") String projectKey);
 }

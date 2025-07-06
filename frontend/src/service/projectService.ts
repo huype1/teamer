@@ -6,6 +6,7 @@ const baseUrl = "http://localhost:8080/api/projects";
 
 export const getProjects = async () => {
   const res = await axios.get(baseUrl, addReqToken(localStorage.getItem("token")));
+  console.log(res)
   return res.data;
 };
 
@@ -60,6 +61,11 @@ export const acceptProjectInvitation = async (token: string) => {
   return res.data;
 };
 
+export const getProjectsByTeam = async (teamId: string) => {
+  const res = await axios.get(`${baseUrl}/team/${teamId}`, addReqToken(localStorage.getItem("token")));
+  return res.data;
+};
+
 export default { 
   getProjects, 
   getProjectById, 
@@ -70,5 +76,6 @@ export default {
   getProjectMembers,
   removeProjectMember,
   updateMemberRole,
-  acceptProjectInvitation
+  acceptProjectInvitation,
+  getProjectsByTeam
 }; 

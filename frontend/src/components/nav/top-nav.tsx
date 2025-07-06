@@ -101,7 +101,7 @@ export function TopNav({
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 px-3">
       <div className="container flex h-14 max-w-screen-2xl items-center">
         <a href="/" className="flex items-center space-x-2 mr-8">
-          <GanttChartSquare className="h-6 w-6 text-primary" />
+          <GanttChartSquare className="h-6 w-6" />
           <span className="font-bold text-lg">Teamer</span>
         </a>
         
@@ -121,14 +121,10 @@ export function TopNav({
             </div>
 
             <div className="flex items-center space-x-2 ml-auto">
-              <Button variant="ghost" size="sm" onClick={onCreate} className="hidden sm:flex">
-                <Plus className="h-4 w-4 mr-2" />
-                Create
-              </Button>
-              <Button variant="ghost" size="icon" onClick={onNotifications} className="relative h-8 w-8">
+              {/* <Button variant="ghost" size="icon" onClick={onNotifications} className="relative h-8 w-8">
                 <Bell className="h-4 w-4" />
                 <span className="absolute -top-1 -right-1 h-3 w-3 rounded-full bg-red-500 text-xs text-white flex items-center justify-center">3</span>
-              </Button>
+              </Button> */}
               <Button variant="ghost" size="icon" onClick={onSettings} className="h-8 w-8">
                 <Settings className="h-4 w-4" />
               </Button>

@@ -37,13 +37,13 @@ const ProjectActions: React.FC<ProjectActionsProps> = ({
         {onEdit && project && (
           <DropdownMenuItem onClick={() => onEdit(project)}>
             <Edit className="mr-2 h-4 w-4" />
-            Edit Project
+            Chỉnh sửa dự án
           </DropdownMenuItem>
         )}
         {onManageMembers && project && (
           <DropdownMenuItem onClick={() => onManageMembers(project)}>
             <UserPlus className="mr-2 h-4 w-4" />
-            Manage Members
+            Quản lý thành viên
           </DropdownMenuItem>
         )}
         {onDelete && project && (
@@ -52,7 +52,7 @@ const ProjectActions: React.FC<ProjectActionsProps> = ({
             className="text-red-600"
           >
             <Trash2 className="mr-2 h-4 w-4" />
-            Delete Project
+            Xóa dự án
           </DropdownMenuItem>
         )}
       </DropdownMenuContent>

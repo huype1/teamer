@@ -42,6 +42,8 @@ public class ProjectService {
         createdProject.setKey(project.getKey());
         createdProject.setDescription(project.getDescription());
         createdProject.setAvatarUrl(project.getAvatarUrl());
+        createdProject.setIsPublic(project.getIsPublic());
+
         // Create chat for the project
         Chat chat = new Chat();
         chat.setName("Project Chat - " + project.getName());
@@ -56,6 +58,8 @@ public class ProjectService {
 
         // Add the creator as admin member
         addUserToProject(savedProject.getId(), creator.getId(), "ADMIN");
+
+        // No automatic team member addition - access is computed
 
         return savedProject;
     }
@@ -94,25 +98,29 @@ public class ProjectService {
         project.setAvatarUrl(updatedProject.getAvatarUrl());
         project.setIsPublic(updatedProject.getIsPublic());
 
-        return projectRepository.save(project);
+        Project savedProject = projectRepository.save(project);
+
+        // No automatic team member addition when making public - access is computed
+
+        return savedProject;
     }
 
     public void addUserToProject(UUID projectId, UUID userId, String role) throws AppException {
         Project project = getProjectById(projectId);
-        
         // Check if user is already a member
         if (projectMemberRepository.existsByProjectIdAndUserId(projectId, userId)) {
             log.error("User with id: {} is already a member of project with id: {}", userId, projectId);
             throw new AppException(ErrorCode.USER_EXISTED);
         }
-        
         ProjectMember projectMember = new ProjectMember();
         projectMember.setProjectId(projectId);
         projectMember.setUserId(userId);
         projectMember.setRole(role);
         projectMember.setJoinedAt(OffsetDateTime.now());
-
         projectMemberRepository.save(projectMember);
+
+        // No automatic team project access - computed at runtime
+
         log.info("User with id: {} added to project with id: {}", userId, projectId);
     }
 
@@ -159,24 +167,14 @@ public class ProjectService {
     }
 
 
-    public boolean isUserProjectManager(UUID projectId, UUID userId) {
-        Project project = getProjectById(projectId);
-        if (project.getCreator().getId().equals(userId)) {
-            return true;
-        }
-
-        Optional<ProjectMember> member = projectMemberRepository.findByProjectIdAndUserId(projectId, userId);
-        return member.isPresent() && "PM".equals(member.get().getRole());
-    }
-
-    public boolean isUserProjectAdmin (UUID projectId, UUID userId) {
+    public boolean isUserProjectManager (UUID projectId, UUID userId) {
         Project project = getProjectById(projectId);
         if (project.getCreator().getId().equals(userId)) {
             return true;
         }
         
         Optional<ProjectMember> member = projectMemberRepository.findByProjectIdAndUserId(projectId, userId);
-        return member.isPresent() && "ADMIN".equals(member.get().getRole());
+        return member.isPresent() && "ADMIN".equals(member.get().getRole()) || "PM".equals(member.get().getRole());
     }
 
     public void updateUserRole(UUID projectId, UUID userId, String newRole) throws AppException {
@@ -202,5 +200,53 @@ public class ProjectService {
 
     public List<Project> getAllProjects() {
         return projectRepository.findAll();
+    }
+
+    public boolean hasAccessToProject(UUID projectId, UUID userId) throws AppException {
+        Project project = getProjectById(projectId);
+
+        // Check if user is creator
+        if (project.getCreator().getId().equals(userId)) {
+            return true;
+        }
+
+        // Check explicit membership
+        if (projectMemberRepository.existsByProjectIdAndUserId(projectId, userId)) {
+            return true;
+        }
+
+        // Check team-based access for public projects
+        if (project.getIsPublic() && project.getTeam() != null) {
+            return isUserTeamMember(userId, project.getTeam().getId());
+        }
+
+        return false;
+    }
+
+    public String getUserProjectRole(UUID projectId, UUID userId) throws AppException {
+        Project project = getProjectById(projectId);
+
+        // Check if user is creator
+        if (project.getCreator().getId().equals(userId)) {
+            return "ADMIN";
+        }
+
+        // Check explicit membership
+        Optional<ProjectMember> member = projectMemberRepository.findByProjectIdAndUserId(projectId, userId);
+        if (member.isPresent()) {
+            return member.get().getRole();
+        }
+
+        // Check team-based access for public projects
+        if (project.getIsPublic() && project.getTeam() != null && isUserTeamMember(userId, project.getTeam().getId())) {
+            return "VIEWER";
+        }
+
+        return null; // No access
+    }
+
+    private boolean isUserTeamMember(UUID userId, UUID teamId) {
+        List<UUID> teamMemberIds = projectMemberRepository.findDistinctUserIdsByTeamId(teamId);
+        return teamMemberIds.contains(userId);
     }
 }

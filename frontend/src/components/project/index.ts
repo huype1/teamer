@@ -5,4 +5,7 @@ export { default as ManageMembersDialog } from './ManageMembersDialog';
 export { default as ProjectSearch } from './ProjectSearch';
 export { default as ProjectHeader } from './ProjectHeader';
 export { default as ProjectActions } from './ProjectActions';
-export { default as MemberManagement } from './MemberManagement'; 
+export { default as MemberManagement } from './MemberManagement';
+export { default as ProjectNavigation } from './ProjectNavigation';
+export { type ProjectTab, ProjectTabs } from './ProjectTabs';
+export { IssuesTable } from './IssuesTable'; 

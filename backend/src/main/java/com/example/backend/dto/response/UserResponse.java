@@ -1,8 +1,11 @@
 package com.example.backend.dto.response;
 
 import java.time.OffsetDateTime;
+import java.util.List;
 import java.util.UUID;
 
+import com.example.backend.entity.ProjectMember;
+import com.example.backend.entity.TeamMember;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 
@@ -18,6 +21,10 @@ public class UserResponse {
     String name;
     String avatarUrl;
     String provider;
+
+    List<ProjectMember> projectMembers;
+
+    List<TeamMember> teamMembers;
     OffsetDateTime createdAt;
     OffsetDateTime updatedAt;
 }

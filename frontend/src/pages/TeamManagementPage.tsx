@@ -2,28 +2,36 @@ import React, { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { 
-  Sheet, 
-  SheetTrigger, 
-  SheetContent, 
-  SheetHeader, 
-  SheetTitle, 
-  SheetFooter, 
-  SheetClose, 
-  SheetDescription
-} from "@/components/ui/sheet";
 import { Plus, Users } from "lucide-react";
 import teamService from "@/service/teamService";
-import type { Team, TeamCreationRequest } from "@/types/team";
+import type { Team } from "@/types/team";
 import { TeamCard } from "@/components/team";
+import { toastSuccess, toastError } from "@/utils/toast";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import CreateTeamDialog from "@/components/team/CreateTeamDialog";
+
+const teamSchema = z.object({
+  name: z.string().min(1, "Tên nhóm không được để trống"),
+  description: z.string().min(1, "Mô tả không được để trống"),
+});
+
+type TeamFormData = z.infer<typeof teamSchema>;
 
 const TeamManagementPage: React.FC = () => {
   const [teams, setTeams] = useState<Team[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [open, setOpen] = useState(false);
-  const [form, setForm] = useState<TeamCreationRequest>({ name: "", description: "" });
+  const [search, setSearch] = useState("");
+
+  const { reset } = useForm<TeamFormData>({
+    resolver: zodResolver(teamSchema),
+    defaultValues: {
+      name: "",
+      description: "",
+    },
+  });
 
   const fetchTeams = async () => {
     setLoading(true);
@@ -34,6 +42,7 @@ const TeamManagementPage: React.FC = () => {
       setTeams(res.result || []);
     } catch (e: unknown) {
       const error = e as { response?: { data?: { message?: string } } };
+      toastError(error.response?.data?.message || "Tải danh sách nhóm thất bại!");
       setError(error.response?.data?.message || "Failed to fetch teams");
     } finally {
       setLoading(false);
@@ -45,33 +54,26 @@ const TeamManagementPage: React.FC = () => {
   }, []);
 
   const handleOpenCreate = () => {
-    setForm({ name: "", description: "" });
-    setOpen(true);
+    reset();
   };
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setForm({ ...form, [e.target.name]: e.target.value });
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
+  const onSubmit = async (data: TeamFormData) => {
     try {
-      await teamService.createTeam(form);
-      setOpen(false);
+      await teamService.createTeam(data);
+      toastSuccess("Tạo nhóm thành công!");
+      reset();
       fetchTeams();
     } catch (e: unknown) {
       const error = e as { message?: string };
+      toastError(error.message || "Tạo nhóm thất bại!");
       setError(error.message || "Failed to save team");
-    } finally {
-      setLoading(false);
     }
   };
 
   if (loading && teams.length === 0) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#8B5CF6]"></div>
       </div>
     );
   }
@@ -80,60 +82,24 @@ const TeamManagementPage: React.FC = () => {
     <div className="space-y-6">
       {/* Header */}
       <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Teams</h1>
-          <p className="text-muted-foreground">
-            Manage your teams and team members
-          </p>
-        </div>
-        <Sheet open={open} onOpenChange={setOpen}>
-          <SheetTrigger asChild>
-            <Button onClick={handleOpenCreate} className="gap-2">
-              <Plus className="w-4 h-4" />
-              Create Team
-            </Button>
-          </SheetTrigger>
-          <SheetContent>
-            <SheetHeader>
-              <SheetTitle>Create Team</SheetTitle>
-              <SheetDescription>
-                Create a new team for collaboration
-              </SheetDescription>
-            </SheetHeader>
-            <form onSubmit={handleSubmit} className="space-y-4 mt-6">
-              <div className="space-y-2">
-                <Label htmlFor="name">Team Name</Label>
-                <Input 
-                  id="name"
-                  name="name" 
-                  placeholder="Enter team name" 
-                  value={form.name} 
-                  onChange={handleChange} 
-                  required 
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="description">Description</Label>
-                <Input 
-                  id="description"
-                  name="description" 
-                  placeholder="Enter team description" 
-                  value={form.description} 
-                  onChange={handleChange} 
-                  required 
-                />
-              </div>
-              <SheetFooter>
-                <SheetClose asChild>
-                  <Button type="button" variant="outline">Cancel</Button>
-                </SheetClose>
-                <Button type="submit" disabled={loading}>
-                  Create Team
-                </Button>
-              </SheetFooter>
-            </form>
-          </SheetContent>
-        </Sheet>
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight">Nhóm</h1>
+            <p className="text-muted-foreground">
+              Quản lý các nhóm và thành viên nhóm
+            </p>
+          </div>
+        <CreateTeamDialog onSubmit={onSubmit} />
+      </div>
+
+      {/* Search Input */}
+      <div className="mb-4">
+        <Input
+          type="text"
+          placeholder="Tìm kiếm team..."
+          value={search}
+          onChange={e => setSearch(e.target.value)}
+          className="max-w-xs"
+        />
       </div>
 
       {/* Error Message */}
@@ -160,7 +126,7 @@ const TeamManagementPage: React.FC = () => {
         </Card>
       ) : (
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-          {teams.map((team) => (
+          {teams.filter(team => team.name.toLowerCase().includes(search.toLowerCase())).map((team) => (
             <TeamCard key={team.id} team={team} />
           ))}
         </div>

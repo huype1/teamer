@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -15,6 +15,8 @@ import {
 } from "@/components/ui/dialog";
 import type { ProjectCreationRequest } from "@/types/project";
 import { Switch } from "@/components/ui/switch";
+import { getTeamsWhereUserIsAdmin } from "@/service/teamService";
+import type { Team } from "@/types/team";
 
 interface CreateProjectDialogProps {
   onSubmit: (data: ProjectCreationRequest) => void;
@@ -32,6 +34,18 @@ const CreateProjectDialog: React.FC<CreateProjectDialogProps> = ({
     isPublic: false,
     avatarUrl: ""
   });
+  const [adminTeams, setAdminTeams] = useState<Team[]>([]);
+  const [loadingTeams, setLoadingTeams] = useState(true);
+
+  useEffect(() => {
+    if (isOpen) {
+      setLoadingTeams(true);
+      getTeamsWhereUserIsAdmin().then((res) => {
+        setAdminTeams(res.result || []);
+        setLoadingTeams(false);
+      }).catch(() => setLoadingTeams(false));
+    }
+  }, [isOpen]);
 
   const handleSubmit = () => {
     onSubmit(formData);
@@ -116,6 +130,24 @@ const CreateProjectDialog: React.FC<CreateProjectDialogProps> = ({
               onChange={(e) => setFormData({ ...formData, description: e.target.value })}
               placeholder="Nhập mô tả dự án"
             />
+          </div>
+          <div className="grid gap-2">
+            <Label htmlFor="teamId">Nhóm (chỉ hiện nhóm bạn là admin)</Label>
+            {loadingTeams ? (
+              <div>Đang tải danh sách nhóm...</div>
+            ) : (
+              <select
+                id="teamId"
+                value={formData.teamId}
+                onChange={e => setFormData({ ...formData, teamId: e.target.value })}
+                className="border rounded px-2 py-1"
+              >
+                <option value="">Không thuộc nhóm nào</option>
+                {adminTeams.map(team => (
+                  <option key={team.id} value={team.id}>{team.name}</option>
+                ))}
+              </select>
+            )}
           </div>
         </div>
         <DialogFooter>

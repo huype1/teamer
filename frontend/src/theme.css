@@ -1,0 +1,76 @@
+/* Sour Purple Hover Effects - Black/White Theme */
+
+/* Subtle hover effects for secondary buttons and cards */
+.hover\:sour-purple:hover {
+  background-color: var(--primary) !important;
+  color: white !important;
+  border-color: var(--primary) !important;
+}
+
+.hover\:sour-purple-light:hover {
+  background-color: var(--primary) !important;
+  color: white !important;
+  border-color: var(--primary) !important;
+}
+
+/* Focus states with Sour purple */
+.focus\:sour-purple:focus {
+  border-color: var(--primary) !important;
+  box-shadow: 0 0 0 2px var(--ring) !important;
+}
+
+/* Active states */
+.active\:sour-purple:active {
+  background-color: var(--primary) !important;
+  color: white !important;
+}
+
+/* Issue type badges with Sour purple */
+.issue-type-epic {
+  background: var(--primary);
+  color: white;
+}
+
+.issue-type-story {
+  background: var(--secondary);
+  color: var(--secondary-foreground);
+}
+
+.issue-type-task {
+  background: var(--accent);
+  color: var(--accent-foreground);
+}
+
+.issue-type-bug {
+  background: var(--destructive);
+  color: white;
+}
+
+.issue-type-subtask {
+  background: var(--muted);
+  color: var(--muted-foreground);
+}
+
+/* Navigation active state with Sour purple */
+.nav-active-sour {
+  background-color: var(--primary) !important;
+  color: white !important;
+}
+
+/* Card hover effects */
+.card-hover-sour:hover {
+  border-color: var(--primary) !important;
+  box-shadow: 0 4px 12px rgba(139, 92, 246, 0.15) !important;
+}
+
+/* Input focus with Sour purple */
+.input-focus-sour:focus {
+  border-color: var(--primary) !important;
+  box-shadow: 0 0 0 2px var(--ring) !important;
+}
+
+/* Subtle hover for primary buttons (already purple) */
+.hover\:sour-dark:hover {
+  background-color: var(--primary) !important;
+  border-color: var(--primary) !important;
+} 

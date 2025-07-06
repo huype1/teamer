@@ -10,7 +10,12 @@ import type { RootState, AppDispatch } from "@/store";
 import { fetchUserInfo, logout } from "@/store/authReducer";
 import TeamManagementPage from "@/pages/TeamManagementPage";
 import ProjectManagementPage from "@/pages/ProjectManagementPage";
-import ProjectDetail from "@/pages/ProjectDetail";
+
+import ProjectOverviewPage from "@/pages/ProjectOverviewPage";
+import ProjectIssuesTablePage from "@/pages/ProjectIssuesTablePage";
+import ProjectKanbanPage from "@/pages/ProjectKanbanPage";
+import ProjectReportsPage from "@/pages/ProjectReportsPage";
+import ProjectMembersPage from "@/pages/ProjectMembersPage";
 import UserManagementPage from "@/pages/UserManagementPage";
 import DashboardPage from "@/pages/DashboardPage";
 import LandingPage from "@/pages/LandingPage.tsx";
@@ -18,6 +23,9 @@ import { isTokenExpired } from "@/utils/jwt";
 import { ThemeProvider } from "@/components/ui/theme-provider";
 import { Layout } from "@/components/layout";
 import NotFoundPage from "./pages/NotFoundPage";
+import TeamDetailPage from "@/pages/TeamDetailPage";
+import { Toaster } from "sonner"
+import IssueDetailPage from "@/pages/IssueDetailPage";
 
 const useAppDispatch: () => AppDispatch = useDispatch;
 const useAppSelector: TypedUseSelectorHook<RootState> = useSelector;
@@ -27,13 +35,11 @@ function App() {
   const { isAuthenticated, token } = useAppSelector((state) => state.auth);
 
   useEffect(() => {
-    // Check for token expiration immediately
     if (isAuthenticated && token && isTokenExpired(token)) {
       dispatch(logout());
       return;
     }
 
-    // If authenticated and token is valid, fetch user info
     if (isAuthenticated && token && !isTokenExpired(token)) {
       dispatch(fetchUserInfo());
     }
@@ -79,6 +85,16 @@ function App() {
           }
         />
         <Route
+          path='/teams/:teamId'
+          element={
+            <ProtectedRoute>
+              <Layout>
+                <TeamDetailPage />
+              </Layout>
+            </ProtectedRoute>
+          }
+        />
+        <Route
           path='/projects'
           element={
             <ProtectedRoute>
@@ -93,7 +109,47 @@ function App() {
           element={
             <ProtectedRoute>
               <Layout>
-                <ProjectDetail />
+                <ProjectOverviewPage />
+              </Layout>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path='/projects/:projectId/issues'
+          element={
+            <ProtectedRoute>
+              <Layout>
+                <ProjectIssuesTablePage />
+              </Layout>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path='/projects/:projectId/kanban'
+          element={
+            <ProtectedRoute>
+              <Layout>
+                <ProjectKanbanPage />
+              </Layout>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path='/projects/:projectId/reports'
+          element={
+            <ProtectedRoute>
+              <Layout>
+                <ProjectReportsPage />
+              </Layout>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path='/projects/:projectId/members'
+          element={
+            <ProtectedRoute>
+              <Layout>
+                <ProjectMembersPage />
               </Layout>
             </ProtectedRoute>
           }
@@ -108,8 +164,10 @@ function App() {
             </ProtectedRoute>
           }
         />
+        <Route path="/issues/:issueId" element={<IssueDetailPage />} />
         <Route path='*' element={<NotFoundPage />} />
       </Routes>
+      <Toaster position="top-right" richColors closeButton />
     </ThemeProvider>
   );
 }

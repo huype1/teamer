@@ -7,7 +7,6 @@ import com.example.backend.entity.*;
 import com.example.backend.exception.AppException;
 import com.example.backend.mapper.IssueMapper;
 import com.example.backend.service.IssueService;
-import com.example.backend.service.ProjectService;
 import com.example.backend.utils.JwtUtils;
 import jakarta.validation.Valid;
 import lombok.AccessLevel;
@@ -27,7 +26,6 @@ import java.util.UUID;
 public class IssueController {
 
     IssueService issueService;
-    ProjectService projectService;
     IssueMapper issueMapper;
 
     @GetMapping("/{issueId}")
@@ -37,11 +35,7 @@ public class IssueController {
 
         Issue issue = issueService.getIssueById(issueId);
         
-        // Check if user has access to this issue's project
-        if (!projectService.isUserProjectMember(issue.getProject().getId(), userId)) {
-            throw new AppException(com.example.backend.exception.ErrorCode.UNAUTHORIZED);
-        }
-
+        // Authorization is handled in IssueService
         IssueResponse response = issueMapper.toResponse(issue);
         return ApiResponse.<IssueResponse>builder()
                 .message("Issue fetched successfully")
@@ -54,11 +48,7 @@ public class IssueController {
         UUID userId = JwtUtils.getSubjectFromJwt();
         log.info("Fetching issues for project: {} by user: {}", projectId, userId);
 
-        // Check if user has access to this project
-        if (!projectService.isUserProjectMember(projectId, userId)) {
-            throw new AppException(com.example.backend.exception.ErrorCode.UNAUTHORIZED);
-        }
-
+        // Authorization is handled in IssueService
         List<Issue> issues = issueService.getIssuesByProjectId(projectId);
         List<IssueResponse> responses = issueMapper.toResponseList(issues);
 
@@ -73,11 +63,7 @@ public class IssueController {
         UUID userId = JwtUtils.getSubjectFromJwt();
         log.info("Creating issue for project: {} by user: {}", issueRequest.getProjectId(), userId);
 
-        // Check if user has access to this project
-        if (!projectService.isUserProjectMember(issueRequest.getProjectId(), userId)) {
-            throw new AppException(com.example.backend.exception.ErrorCode.UNAUTHORIZED);
-        }
-
+        // Authorization is handled in IssueService
         Issue createdIssue = issueService.createIssue(issueRequest, issueRequest.getProjectId(), userId);
         IssueResponse response = issueMapper.toResponse(createdIssue);
 

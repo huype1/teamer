@@ -70,7 +70,7 @@ interface Issue {
   id: string;
   title: string;
   status: "todo" | "in-progress" | "done";
-  priority: "high" | "medium" | "low";
+  priority: "P0" | "P1" | "P2" | "P3" | "P4" | "P5";
   assignee: string;
   dueDate: string;
 }
@@ -81,24 +81,24 @@ export default function DashboardPage() {
   const quickActions: QuickAction[] = [
     {
       id: "1",
-      title: "Create Issue",
-      description: "Report a bug or request a feature",
+      title: "Tạo Issue",
+      description: "Báo lỗi hoặc yêu cầu tính năng mới",
       icon: <Plus className="h-5 w-5" />,
       color: "bg-blue-500",
       href: "/projects/new-issue"
     },
     {
       id: "2",
-      title: "New Document",
-      description: "Create a page or blog post",
+      title: "Tạo Tài liệu",
+      description: "Tạo trang hoặc bài viết blog",
       icon: <FileText className="h-5 w-5" />,
       color: "bg-green-500",
       href: "/docs/new"
     },
     {
       id: "3",
-      title: "Start Sprint",
-      description: "Begin a new development sprint",
+      title: "Bắt đầu Sprint",
+      description: "Bắt đầu một sprint phát triển mới",
       icon: <Zap className="h-5 w-5" />,
       color: "bg-purple-500",
       href: "/sprints/new"
@@ -108,25 +108,25 @@ export default function DashboardPage() {
   const recentDocuments: RecentDocument[] = [
     {
       id: "1",
-      title: "API Documentation v2.1",
+      title: "Tài liệu API v2.1",
       type: "page",
-      lastModified: "2 hours ago",
+      lastModified: "2 giờ trước",
       author: { name: "Sarah Chen", avatar: "" },
       views: 156
     },
     {
       id: "2",
-      title: "Q4 Product Roadmap",
+      title: "Lộ trình sản phẩm Q4",
       type: "blog",
-      lastModified: "1 day ago",
+      lastModified: "1 ngày trước",
       author: { name: "Mike Johnson", avatar: "" },
       views: 89
     },
     {
       id: "3",
-      title: "Design System Guidelines",
+      title: "Hướng dẫn hệ thống thiết kế",
       type: "page",
-      lastModified: "3 days ago",
+      lastModified: "3 ngày trước",
       author: { name: "Emma Wilson", avatar: "" },
       views: 234
     }
@@ -180,7 +180,7 @@ export default function DashboardPage() {
       id: "1",
       title: "Fix login validation",
       status: "in-progress",
-      priority: "high",
+      priority: "P0",
       assignee: "Alex Kim",
       dueDate: "2024-01-15"
     },
@@ -188,7 +188,7 @@ export default function DashboardPage() {
       id: "2",
       title: "Update API documentation",
       status: "todo",
-      priority: "medium",
+      priority: "P2",
       assignee: "Sarah Chen",
       dueDate: "2024-01-18"
     },
@@ -196,7 +196,7 @@ export default function DashboardPage() {
       id: "3",
       title: "Implement dark mode",
       status: "todo",
-      priority: "low",
+      priority: "P5",
       assignee: "Emma Wilson",
       dueDate: "2024-01-25"
     }
@@ -215,12 +215,20 @@ export default function DashboardPage() {
 
   const getPriorityColor = (priority: string) => {
     switch (priority) {
-      case "high":
-        return "bg-red-100 text-red-800";
-      case "medium":
-        return "bg-yellow-100 text-yellow-800";
+      case "P0":
+        return "bg-red-700 text-white";
+      case "P1":
+        return "bg-red-500 text-white";
+      case "P2":
+        return "bg-orange-500 text-white";
+      case "P3":
+        return "bg-yellow-400 text-black";
+      case "P4":
+        return "bg-green-400 text-black";
+      case "P5":
+        return "bg-green-200 text-black";
       default:
-        return "bg-green-100 text-green-800";
+        return "bg-gray-200 text-black";
     }
   };
 
@@ -229,19 +237,19 @@ export default function DashboardPage() {
       {/* Header */}
       <div className="flex items-center justify-between w-full">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
+          <h1 className="text-3xl font-bold tracking-tight">Bảng điều khiển</h1>
           <p className="text-muted-foreground">
-            Welcome back! Here's what's happening with your projects today.
+            Chào mừng trở lại! Đây là những gì đang diễn ra với các dự án của bạn hôm nay.
           </p>
         </div>
         <div className="flex items-center space-x-2">
           <Button variant="outline" size="sm">
             <Calendar className="h-4 w-4 mr-2" />
-            Today
+            Hôm nay
           </Button>
           <Button size="sm">
             <Plus className="h-4 w-4 mr-2" />
-            Quick Add
+            Thêm nhanh
           </Button>
         </div>
       </div>
@@ -267,10 +275,9 @@ export default function DashboardPage() {
 
       {/* Summary Cards */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-        
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">My Projects</CardTitle>
+            <CardTitle className="text-sm font-medium">Dự án của tôi</CardTitle>
             <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
@@ -279,7 +286,7 @@ export default function DashboardPage() {
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Issues</CardTitle>
+            <CardTitle className="text-sm font-medium">Tổng số Issue</CardTitle>
             <ListTodo className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
@@ -288,7 +295,7 @@ export default function DashboardPage() {
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">My Assigned Issues</CardTitle>
+            <CardTitle className="text-sm font-medium">Issue được giao cho tôi</CardTitle>
             <User className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
@@ -301,9 +308,9 @@ export default function DashboardPage() {
       {/* Main Dashboard Content */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-3">
         <TabsList className="grid w-full grid-cols-3">
-          <TabsTrigger value="overview">Overview</TabsTrigger>
-          <TabsTrigger value="projects">Projects</TabsTrigger>
-          <TabsTrigger value="docs">Documentation</TabsTrigger>
+          <TabsTrigger value="overview">Tổng quan</TabsTrigger>
+          <TabsTrigger value="projects">Dự án</TabsTrigger>
+          <TabsTrigger value="docs">Tài liệu</TabsTrigger>
         </TabsList>
 
         <TabsContent value="overview" className="space-y-6">
@@ -313,30 +320,37 @@ export default function DashboardPage() {
               <CardHeader>
                 <CardTitle className="flex items-center">
                   <BarChart3 className="h-5 w-5 mr-2" />
-                  Issue Status
+                  Trạng thái Issue
                 </CardTitle>
-                <CardDescription>Current distribution of issues by status</CardDescription>
+                <CardDescription>Phân bố hiện tại của các issue theo trạng thái</CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center space-x-2">
                       <div className="w-3 h-3 bg-gray-400 rounded-full"></div>
-                      <span className="text-sm">To Do</span>
+                      <span className="text-sm">Chưa làm</span>
                     </div>
                     <span className="text-sm font-medium">23</span>
                   </div>
                   <div className="flex items-center justify-between">
                     <div className="flex items-center space-x-2">
                       <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
-                      <span className="text-sm">In Progress</span>
+                      <span className="text-sm">Đang làm</span>
+                    </div>
+                    <span className="text-sm font-medium">34</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-2">
+                      <div className="w-3 h-3 bg-orange-500 rounded-full"></div>
+                      <span className="text-sm">Đang review</span>
                     </div>
                     <span className="text-sm font-medium">34</span>
                   </div>
                   <div className="flex items-center justify-between">
                     <div className="flex items-center space-x-2">
                       <div className="w-3 h-3 bg-green-500 rounded-full"></div>
-                      <span className="text-sm">Done</span>
+                      <span className="text-sm">Hoàn thành</span>
                     </div>
                     <span className="text-sm font-medium">32</span>
                   </div>
@@ -349,32 +363,53 @@ export default function DashboardPage() {
               <CardHeader>
                 <CardTitle className="flex items-center">
                   <TrendingUp className="h-5 w-5 mr-2" />
-                  Issue Priority
+                  Mức độ ưu tiên Issue
                 </CardTitle>
-                <CardDescription>Issues categorized by priority level</CardDescription>
+                <CardDescription>Phân loại issue theo mức độ ưu tiên</CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center space-x-2">
+                      <div className="w-3 h-3 bg-red-700 rounded-full"></div>
+                      <span className="text-sm">P0 (Cao nhất)</span>
+                    </div>
+                    <span className="text-sm font-medium">5</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-2">
                       <div className="w-3 h-3 bg-red-500 rounded-full"></div>
-                      <span className="text-sm">High</span>
+                      <span className="text-sm">P1</span>
+                    </div>
+                    <span className="text-sm font-medium">8</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-2">
+                      <div className="w-3 h-3 bg-orange-500 rounded-full"></div>
+                      <span className="text-sm">P2</span>
                     </div>
                     <span className="text-sm font-medium">12</span>
                   </div>
                   <div className="flex items-center justify-between">
                     <div className="flex items-center space-x-2">
-                      <div className="w-3 h-3 bg-yellow-500 rounded-full"></div>
-                      <span className="text-sm">Medium</span>
+                      <div className="w-3 h-3 bg-yellow-400 rounded-full"></div>
+                      <span className="text-sm">P3</span>
                     </div>
-                    <span className="text-sm font-medium">45</span>
+                    <span className="text-sm font-medium">18</span>
                   </div>
                   <div className="flex items-center justify-between">
                     <div className="flex items-center space-x-2">
-                      <div className="w-3 h-3 bg-green-500 rounded-full"></div>
-                      <span className="text-sm">Low</span>
+                      <div className="w-3 h-3 bg-green-400 rounded-full"></div>
+                      <span className="text-sm">P4</span>
                     </div>
-                    <span className="text-sm font-medium">32</span>
+                    <span className="text-sm font-medium">22</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-2">
+                      <div className="w-3 h-3 bg-green-200 rounded-full"></div>
+                      <span className="text-sm">P5 (Thấp nhất)</span>
+                    </div>
+                    <span className="text-sm font-medium">24</span>
                   </div>
                 </div>
               </CardContent>
@@ -417,15 +452,15 @@ export default function DashboardPage() {
             {/* Project Overview */}
             <Card className="lg:col-span-2">
               <CardHeader>
-                <CardTitle>Recent Projects</CardTitle>
-                <CardDescription>Your most active projects</CardDescription>
+                <CardTitle>Dự án gần đây</CardTitle>
+                <CardDescription>Các dự án bạn hoạt động nhiều nhất</CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
                   {[
-                    { name: "E-commerce Platform", progress: 85, issues: 23, members: 8 },
-                    { name: "Mobile App", progress: 62, issues: 15, members: 5 },
-                    { name: "Website Redesign", progress: 45, issues: 31, members: 12 }
+                    { name: "Nền tảng thương mại điện tử", progress: 85, issues: 23, members: 8 },
+                    { name: "Ứng dụng di động", progress: 62, issues: 15, members: 5 },
+                    { name: "Thiết kế lại website", progress: 45, issues: 31, members: 12 }
                   ].map((project, index) => (
                     <div key={index} className="flex items-center justify-between p-3 border rounded-lg">
                       <div className="flex items-center space-x-3">
@@ -435,7 +470,7 @@ export default function DashboardPage() {
                         <div>
                           <h4 className="font-medium">{project.name}</h4>
                           <p className="text-sm text-muted-foreground">
-                            {project.issues} issues • {project.members} members
+                            {project.issues} issue • {project.members} thành viên
                           </p>
                         </div>
                       </div>
@@ -452,19 +487,19 @@ export default function DashboardPage() {
             {/* Quick Stats */}
             <Card>
               <CardHeader>
-                <CardTitle>Project Stats</CardTitle>
+                <CardTitle>Thống kê dự án</CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
                 <div className="flex items-center justify-between">
-                  <span className="text-sm">Active Issues</span>
+                  <span className="text-sm">Issue đang hoạt động</span>
                   <span className="font-semibold">89</span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="text-sm">Completed Today</span>
+                  <span className="text-sm">Hoàn thành hôm nay</span>
                   <span className="font-semibold">7</span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="text-sm">Team Members</span>
+                  <span className="text-sm">Thành viên nhóm</span>
                   <span className="font-semibold">24</span>
                 </div>
               </CardContent>
@@ -479,9 +514,9 @@ export default function DashboardPage() {
               <CardHeader>
                 <CardTitle className="flex items-center">
                   <BookOpen className="h-5 w-5 mr-2" />
-                  Recent Documents
+                  Tài liệu gần đây
                 </CardTitle>
-                <CardDescription>Recently updated documentation and pages</CardDescription>
+                <CardDescription>Tài liệu và trang vừa được cập nhật</CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
@@ -494,7 +529,7 @@ export default function DashboardPage() {
                         <div>
                           <h4 className="font-medium">{doc.title}</h4>
                           <p className="text-sm text-muted-foreground">
-                            {doc.type} • {doc.lastModified} • {doc.views} views
+                            {doc.type === "page" ? "Trang" : doc.type === "blog" ? "Blog" : "Không gian"} • {doc.lastModified} • {doc.views} lượt xem
                           </p>
                         </div>
                       </div>
@@ -511,23 +546,23 @@ export default function DashboardPage() {
             {/* Documentation Stats */}
             <Card>
               <CardHeader>
-                <CardTitle>Documentation</CardTitle>
+                <CardTitle>Tài liệu</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="flex items-center justify-between">
-                  <span className="text-sm">Total Pages</span>
+                  <span className="text-sm">Tổng số trang</span>
                   <span className="font-semibold">156</span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="text-sm">Blog Posts</span>
+                  <span className="text-sm">Bài viết blog</span>
                   <span className="font-semibold">23</span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="text-sm">Spaces</span>
+                  <span className="text-sm">Không gian</span>
                   <span className="font-semibold">8</span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="text-sm">Total Views</span>
+                  <span className="text-sm">Tổng lượt xem</span>
                   <span className="font-semibold">2.4k</span>
                 </div>
               </CardContent>
@@ -542,9 +577,9 @@ export default function DashboardPage() {
               <CardHeader>
                 <CardTitle className="flex items-center">
                   <Activity className="h-5 w-5 mr-2" />
-                  Recent Activity
+                  Hoạt động gần đây
                 </CardTitle>
-                <CardDescription>Latest updates from your team</CardDescription>
+                <CardDescription>Cập nhật mới nhất từ nhóm của bạn</CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
@@ -557,7 +592,14 @@ export default function DashboardPage() {
                       <div className="flex-1">
                         <p className="text-sm">
                           <span className="font-medium">{activity.user.name}</span>{" "}
-                          {activity.action} <span className="font-medium">{activity.target}</span>
+                          {activity.action === "completed issue"
+                            ? "đã hoàn thành"
+                            : activity.action === "commented on"
+                            ? "đã bình luận về"
+                            : activity.action === "started working on"
+                            ? "bắt đầu làm"
+                            : activity.action}{" "}
+                          <span className="font-medium">{activity.target}</span>
                         </p>
                         <p className="text-xs text-muted-foreground">{activity.timestamp}</p>
                       </div>
@@ -572,9 +614,9 @@ export default function DashboardPage() {
               <CardHeader>
                 <CardTitle className="flex items-center">
                   <Clock className="h-5 w-5 mr-2" />
-                  Upcoming Deadlines
+                  Hạn sắp tới
                 </CardTitle>
-                <CardDescription>Issues and tasks due soon</CardDescription>
+                <CardDescription>Các issue và công việc sắp đến hạn</CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="space-y-3">
@@ -585,7 +627,7 @@ export default function DashboardPage() {
                         <div>
                           <h4 className="font-medium text-sm">{issue.title}</h4>
                           <p className="text-xs text-muted-foreground">
-                            Assigned to {issue.assignee}
+                            Giao cho {issue.assignee}
                           </p>
                         </div>
                       </div>
@@ -608,4 +650,4 @@ export default function DashboardPage() {
       </Tabs>
     </div>
   );
-} 
+}

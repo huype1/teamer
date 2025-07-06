@@ -51,14 +51,10 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project }) => {
             {project.description || "Không có mô tả"}
           </p>
           
-          <div className="flex items-center justify-between text-sm">
-            <div className="flex items-center space-x-2">
-              <span>{project.memberCount} thành viên</span>
-            </div>
+          
             <Badge variant={project.isPublic ? "default" : "secondary"}>
               {project.isPublic ? "Công khai" : "Riêng tư"}
             </Badge>
-          </div>
 
           <Separator />
 

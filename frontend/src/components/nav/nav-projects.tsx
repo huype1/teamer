@@ -1,93 +1,142 @@
 import {
   Folder,
-  Forward,
-  MoreHorizontal,
-  Trash2,
-  type LucideIcon,
+  Plus,
+  ChevronRight,
 } from "lucide-react"
-import { Link, useLocation } from "react-router-dom"
+import { useLocation, useNavigate } from "react-router-dom"
+import { useSelector } from "react-redux"
+import type { RootState } from "@/store"
+import projectService from "@/service/projectService"
+import type { Project } from "@/types/project"
+import { useState, useCallback } from "react"
 
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible"
 import {
   SidebarGroup,
   SidebarGroupLabel,
   SidebarMenu,
-  SidebarMenuAction,
   SidebarMenuButton,
   SidebarMenuItem,
-  useSidebar,
+  SidebarMenuSub,
+  SidebarMenuSubButton,
+  SidebarMenuSubItem,
 } from "@/components/ui/sidebar"
 
-export function NavProjects({
-  projects,
-}: {
-  projects: {
-    name: string
-    url: string
-    icon: LucideIcon
-  }[]
-}) {
-  const { isMobile } = useSidebar()
+export function NavProjects() {
   const location = useLocation()
+  const navigate = useNavigate()
+  const { user } = useSelector((state: RootState) => state.auth)
+  const [projects, setProjects] = useState<Project[]>([])
+  const [loading, setLoading] = useState(false)
+  const [isOpen, setIsOpen] = useState(false)
+
+  const fetchProjects = useCallback(async () => {
+    if (!user?.id) return
+    setLoading(true)
+    try {
+      const res = await projectService.getProjects();
+      const fetchedProjects = res.result || []
+      setProjects(fetchedProjects)
+    } catch (error) {
+      console.error("Failed to fetch projects:", error)
+    } finally {
+      setLoading(false)
+    }
+  }, [user?.id])
+
+  const handleOpenChange = useCallback((open: boolean) => {
+    setIsOpen(open)
+    if (open && projects.length === 0 && !loading) {
+      fetchProjects()
+    }
+  }, [open, projects.length, loading, fetchProjects])
 
   return (
-    <SidebarGroup className="group-data-[collapsible=icon]:hidden">
-      <SidebarGroupLabel>Projects</SidebarGroupLabel>
+    <SidebarGroup>
+      <SidebarGroupLabel>Dự án</SidebarGroupLabel>
       <SidebarMenu>
-        {projects.map((item) => {
-          const isActive = location.pathname === item.url
-          
-          return (
-            <SidebarMenuItem key={item.name}>
-              <SidebarMenuButton asChild isActive={isActive}>
-                <Link to={item.url}>
-                  <item.icon />
-                  <span>{item.name}</span>
-                </Link>
+        <Collapsible
+          asChild
+          open={isOpen}
+          onOpenChange={handleOpenChange}
+          className="group/collapsible"
+        >
+          <SidebarMenuItem>
+            <CollapsibleTrigger asChild>
+              <SidebarMenuButton tooltip="Projects">
+                <Folder className="w-4 h-4" />
+                <span>Dự án của tôi</span>
+                <ChevronRight className="ml-auto transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90" />
               </SidebarMenuButton>
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <SidebarMenuAction showOnHover>
-                    <MoreHorizontal />
-                    <span className="sr-only">More</span>
-                  </SidebarMenuAction>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent
-                  className="w-48 rounded-lg"
-                  side={isMobile ? "bottom" : "right"}
-                  align={isMobile ? "end" : "start"}
-                >
-                  <DropdownMenuItem>
-                    <Folder className="text-muted-foreground" />
-                    <span>View Project</span>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem>
-                    <Forward className="text-muted-foreground" />
-                    <span>Share Project</span>
-                  </DropdownMenuItem>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem>
-                    <Trash2 className="text-muted-foreground" />
-                    <span>Delete Project</span>
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            </SidebarMenuItem>
-          )
-        })}
-        <SidebarMenuItem>
-          <SidebarMenuButton className="text-sidebar-foreground/70">
-            <MoreHorizontal className="text-sidebar-foreground/70" />
-            <span>More</span>
-          </SidebarMenuButton>
-        </SidebarMenuItem>
+            </CollapsibleTrigger>
+            <CollapsibleContent>
+              <SidebarMenuSub>
+                {loading ? (
+                  <SidebarMenuSubItem>
+                    <SidebarMenuSubButton>
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-[#8B5CF6]"></div>
+                      <span>Đang tải dự án...</span>
+                    </SidebarMenuSubButton>
+                  </SidebarMenuSubItem>
+                ) : projects.length === 0 ? (
+                  <SidebarMenuSubItem>
+                    <SidebarMenuSubButton 
+                      onClick={() => navigate("/projects")}
+                      className="text-sidebar-foreground/70 hover:text-sidebar-foreground"
+                    >
+                      <Plus className="w-4 h-4" />
+                      <span>Tạo dự án đầu tiên</span>
+                    </SidebarMenuSubButton>
+                  </SidebarMenuSubItem>
+                ) : (
+                  <>
+                    {projects.map((project) => {
+                      const isActive = location.pathname === `/projects/${project.id}`
+                      
+                      return (
+                        <SidebarMenuSubItem key={project.id}>
+                          <SidebarMenuSubButton 
+                            asChild 
+                            isActive={isActive}
+                            onClick={() => {
+                              navigate(`/projects/${project.id}`)
+                            }}
+                          >
+                            <div className="flex items-center gap-2 w-full">
+                              <div className="w-6 h-6 rounded bg-primary text-primary-foreground flex items-center justify-center text-xs font-semibold">
+                                {project.key}
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <div className="truncate font-medium text-sm">{project.name}</div>
+                              </div>
+                            </div>
+                          </SidebarMenuSubButton>
+                        </SidebarMenuSubItem>
+                      )
+                    })}
+                    <SidebarMenuSubItem>
+                      <SidebarMenuSubButton 
+                        asChild
+                        onClick={() => navigate("/projects")}
+                      >
+                        <div className="flex items-center gap-2 w-full">
+                          <Plus className="w-4 h-4 text-sidebar-foreground/70" />
+                          <span className="text-sidebar-foreground/70">Tạo dự án</span>
+                        </div>
+                      </SidebarMenuSubButton>
+                    </SidebarMenuSubItem>
+                  </>
+                )}
+              </SidebarMenuSub>
+            </CollapsibleContent>
+          </SidebarMenuItem>
+        </Collapsible>
       </SidebarMenu>
     </SidebarGroup>
   )
+
 }

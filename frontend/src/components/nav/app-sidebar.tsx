@@ -1,16 +1,16 @@
-import * as React from "react"
+import * as React from "react";
 import {
   LayoutDashboard,
   Users,
   FolderOpen,
   User,
   Settings2,
-} from "lucide-react"
+} from "lucide-react";
 
-import { NavMain } from "@/components/nav/nav-main"
-import { NavProjects } from "@/components/nav/nav-projects"
+import { NavMain } from "@/components/nav/nav-main";
+import { NavProjects } from "@/components/nav/nav-projects";
 // import { NavUser } from "@/components/nav-user" // No longer used
-import { TeamSwitcher } from "@/components/nav/team-switcher"
+import { TeamSwitcher } from "@/components/nav/team-switcher";
 import {
   Sidebar,
   SidebarContent,
@@ -19,77 +19,62 @@ import {
   SidebarRail,
   // SidebarSeparator, // No longer used
   SidebarTrigger,
-} from "@/components/ui/sidebar"
+} from "@/components/ui/sidebar";
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   // This is sample data for navigation and projects
   const data = {
     navMain: [
       {
-        title: "Dashboard",
+        title: "Bảng điều khiển",
         url: "/dashboard",
         icon: LayoutDashboard,
         isActive: window.location.pathname === "/dashboard",
       },
       {
-        title: "Teams",
+        title: "Nhóm",
         url: "/teams",
         icon: Users,
-        isActive: window.location.pathname === "/teams" || window.location.pathname === "/team",
+        isActive:
+          window.location.pathname === "/teams" ||
+          window.location.pathname === "/team",
       },
       {
-        title: "Projects",
+        title: "Dự án",
         url: "/projects",
         icon: FolderOpen,
         isActive: window.location.pathname === "/projects",
       },
       {
-        title: "Users",
+        title: "Người dùng",
         url: "/users",
         icon: User,
         isActive: window.location.pathname === "/users",
       },
       {
-        title: "Settings",
+        title: "Cài đặt",
         url: "/settings",
         icon: Settings2,
         isActive: window.location.pathname === "/settings",
       },
     ],
     projects: [
-      {
-        name: "E-commerce Platform",
-        url: "/projects/1",
-        icon: FolderOpen,
-      },
-      {
-        name: "Mobile App",
-        url: "/projects/2",
-        icon: FolderOpen,
-      },
-      {
-        name: "Website Redesign",
-        url: "/projects/3",
-        icon: FolderOpen,
-      },
+
     ],
-  }
+  };
 
   return (
-    <Sidebar collapsible="icon" {...props} >
-      <SidebarHeader className="mt-14">
-        <TeamSwitcher />
-      </SidebarHeader>
+    <Sidebar collapsible='icon' {...props}>
+      <SidebarHeader className='mt-14'></SidebarHeader>
       <SidebarContent>
-        <NavMain items={data.navMain} />
+        <TeamSwitcher />
+
         <NavProjects projects={data.projects} />
+        <NavMain items={data.navMain} />
       </SidebarContent>
       <SidebarTrigger />
-      <SidebarFooter>
-        {/* User info and actions moved to TopNav for better visibility and UX. */}
-        {/* <NavUser /> */}
-      </SidebarFooter>
+      <SidebarFooter></SidebarFooter>
       <SidebarRail />
     </Sidebar>
-  )
+  );
 }

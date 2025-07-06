@@ -29,7 +29,6 @@ public class CommentService {
     CommentRepository commentRepository;
     IssueRepository issueRepository;
     UserRepository userRepository;
-    ProjectService projectService;
 
     public Comment createComment(UUID issueId, UUID userId, String content) {
       Optional<Issue> issue = issueRepository.findById(issueId);
@@ -62,7 +61,8 @@ public class CommentService {
         throw new AppException(ErrorCode.NOT_FOUND);
       }
 
-      if (!comment.get().getUser().equals(user.get()) || !projectService.isUserProjectMember(comment.get().getIssue().getProject().getId(), userId)) {
+      // Only allow comment author to delete their own comment
+      if (!comment.get().getUser().getId().equals(userId)) {
         throw new AppException(ErrorCode.UNAUTHORIZED);
       }
 

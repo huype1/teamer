@@ -39,7 +39,7 @@ export interface ProjectUpdateRequest {
 export interface ProjectMember {
   projectId: string;
   userId: string;
-  role: 'ADMIN' | 'MEMBER' | 'PM';
+  role: 'ADMIN' | 'MEMBER' | 'PM' | 'VIEWER';
   joinedAt: string;
   user: {
     id: string;

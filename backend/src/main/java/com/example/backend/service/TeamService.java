@@ -20,8 +20,11 @@ import org.springframework.stereotype.Service;
 
 import java.time.OffsetDateTime;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.stream.Collectors;
+import java.util.ArrayList;
 
 @Slf4j
 @Service
@@ -32,6 +35,8 @@ public class TeamService {
     ChatService chatService;
     TeamMemberRepository teamMemberRepository;
     TeamMapper teamMapper;
+    ProjectRepository projectRepository;
+    ProjectMemberRepository projectMemberRepository;
 
     public Team createTeam(com.example.backend.dto.request.TeamCreationRequest request, User creator) {
         Team team = teamMapper.toEntity(request, creator);
@@ -93,7 +98,30 @@ public class TeamService {
                 .role(role)
                 .build();
         
-        return teamMemberRepository.save(member);
+        TeamMember savedMember = teamMemberRepository.save(member);
+        
+        List<Project> projects = projectRepository.findByTeamId(teamId)
+            .stream().filter(p -> Boolean.FALSE.equals(p.getIsPublic())).toList();
+
+        List<UUID> userProjectIds = projectMemberRepository
+            .findByUserId(userId)
+            .stream().map(ProjectMember::getProjectId)
+            .collect(Collectors.toList());
+
+        List<ProjectMember> toAdd = new ArrayList<>();
+        for (Project project : projects) {
+            if (!userProjectIds.contains(project.getId())) {
+                ProjectMember pm = new ProjectMember();
+                pm.setProjectId(project.getId());
+                pm.setUserId(userId);
+                pm.setRole("VIEWER");
+                pm.setJoinedAt(java.time.OffsetDateTime.now());
+                toAdd.add(pm);
+            }
+        }
+        projectMemberRepository.saveAll(toAdd);
+        
+        return savedMember;
     }
 
     public void removeMemberFromTeam(UUID teamId, UUID userId) {
@@ -102,5 +130,37 @@ public class TeamService {
         }
         
         teamMemberRepository.deleteByTeamIdAndUserId(teamId, userId);
+    }
+    public void updateMemberRole(UUID teamId, UUID userId, String role) {
+        TeamMember member = teamMemberRepository.findByTeamIdAndUserId(teamId, userId)
+                .orElseThrow(() -> new AppException(ErrorCode.NOT_FOUND));
+        if (Objects.equals(member.getRole(), "ADMIN")) {
+            throw new AppException(ErrorCode.UNAUTHORIZED);
+        }
+
+        member.setRole(role);
+        teamMemberRepository.save(member);
+    }
+
+    public List<TeamMember> getTeamMembers(UUID teamId) {
+        return teamMemberRepository.findByTeamId(teamId);
+    }
+
+    public boolean isUserTeamAdmin(UUID teamId, UUID userId) {
+        TeamMember member = teamMemberRepository.findByTeamIdAndUserId(teamId, userId)
+                .orElseThrow(() -> new AppException(ErrorCode.NOT_FOUND));
+        return "ADMIN".equals(member.getRole());
+    }
+
+    public boolean isUserTeamMember(UUID teamId, UUID userId) {
+        return teamMemberRepository.findByTeamIdAndUserId(teamId, userId).isPresent();
+    }
+
+    public List<Team> getTeamsWhereUserIsAdmin(UUID userId) {
+        List<TeamMember> adminMemberships = teamMemberRepository.findByUserIdAndRole(userId, "ADMIN");
+        return adminMemberships.stream()
+                .map(tm -> teamRepository.findById(tm.getTeamId()).orElse(null))
+                .filter(java.util.Objects::nonNull)
+                .toList();
     }
 }

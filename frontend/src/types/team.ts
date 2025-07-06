@@ -34,6 +34,12 @@ export interface TeamMember {
   };
 }
 
+export interface TeamMembersResponse {
+  code: number;
+  message: string;
+  result: TeamMember[];
+}
+
 export interface TeamResponse {
   code: number;
   message: string;

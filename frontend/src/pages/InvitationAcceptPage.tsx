@@ -1,8 +1,11 @@
-import React, { useEffect, useState } from "react";
-import { useSearchParams, Link } from "react-router-dom";
+import React, { useEffect, useState, useRef } from "react";
+import { useSearchParams, Link, useNavigate } from "react-router-dom";
 import { CheckCircle, AlertCircle, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useSelector } from "react-redux";
+import type { RootState } from "@/store";
+import { acceptProjectInvitation } from "@/service/projectService";
 
 /**
  * InvitationAcceptPage handles invitation acceptance flow:
@@ -15,28 +18,43 @@ const InvitationAcceptPage: React.FC = () => {
   const [searchParams] = useSearchParams();
   const [status, setStatus] = useState<'loading' | 'success' | 'error'>('loading');
   const [message, setMessage] = useState('');
+  const isAuthenticated = useSelector((state: RootState) => state.auth.isAuthenticated);
+  const navigate = useNavigate();
+  const hasTriedAccept = useRef(false);
 
   useEffect(() => {
     const token = searchParams.get('token');
-    
     if (!token) {
       setStatus('error');
-      setMessage('Invalid invitation link. No token found.');
+      setMessage('Liên kết lời mời không hợp lệ. Không tìm thấy token.');
       return;
     }
 
-    try {
-      // Save the invitation token to localStorage for later processing
-      localStorage.setItem('pendingInvitationToken', token);
-      
-      setStatus('success');
-      setMessage('Invitation accepted! Please sign in or create an account to join the project.');
-    } catch (error) {
-      console.error('Error saving invitation token:', error);
-      setStatus('error');
-      setMessage('Failed to process invitation. Please try again.');
+    if (isAuthenticated) {
+      if (hasTriedAccept.current) return;
+      hasTriedAccept.current = true;
+      setStatus('loading');
+      acceptProjectInvitation(token)
+        .then(() => {
+          setStatus('success');
+          setMessage('Bạn đã tham gia dự án thành công!');
+        })
+        .catch((err) => {
+          setStatus('error');
+          setMessage(err?.response?.data?.message || 'Không thể tham gia dự án.');
+        });
+    } else {
+      try {
+        localStorage.setItem('pendingInvitationToken', token);
+        setStatus('success');
+        setMessage('Lời mời đã được lưu. Vui lòng đăng nhập hoặc tạo tài khoản để tham gia dự án.');
+      } catch (error) {
+        console.error('Error saving invitation token:', error);
+        setStatus('error');
+        setMessage('Không thể xử lý lời mời. Vui lòng thử lại.');
+      }
     }
-  }, [searchParams]);
+  }, [searchParams, isAuthenticated]);
 
   const getStatusIcon = () => {
     switch (status) {
@@ -52,11 +70,11 @@ const InvitationAcceptPage: React.FC = () => {
   const getStatusTitle = () => {
     switch (status) {
       case 'loading':
-        return 'Processing Invitation...';
+        return 'Đang xử lý lời mời...';
       case 'success':
-        return 'Invitation Accepted!';
+        return isAuthenticated ? 'Đã tham gia dự án!' : 'Lời mời đã được chấp nhận!';
       case 'error':
-        return 'Invitation Error';
+        return 'Lỗi lời mời';
     }
   };
 
@@ -71,26 +89,29 @@ const InvitationAcceptPage: React.FC = () => {
         </CardHeader>
         <CardContent className="text-center space-y-4">
           <p className="text-muted-foreground">{message}</p>
-          
-          {status === 'success' && (
+          {status === 'success' && isAuthenticated && (
+            <div className="space-y-2">
+              <Button onClick={() => navigate('/projects')}>Vào dự án</Button>
+            </div>
+          )}
+          {status === 'success' && !isAuthenticated && (
             <div className="space-y-2">
               <p className="text-sm text-muted-foreground">
-                Your invitation has been saved. You'll be automatically added to the project once you sign in.
+                Lời mời của bạn đã được lưu. Bạn sẽ được tự động thêm vào dự án sau khi đăng nhập.
               </p>
               <div className="flex gap-2 justify-center">
                 <Button asChild>
-                  <Link to="/login">Sign In</Link>
+                  <Link to="/login">Đăng nhập</Link>
                 </Button>
                 <Button asChild variant="outline">
-                  <Link to="/register">Create Account</Link>
+                  <Link to="/register">Tạo tài khoản</Link>
                 </Button>
               </div>
             </div>
           )}
-          
           {status === 'error' && (
             <Button asChild>
-              <Link to="/">Go Home</Link>
+              <Link to="/">Về trang chủ</Link>
             </Button>
           )}
         </CardContent>

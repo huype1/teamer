@@ -30,4 +30,9 @@ public interface ProjectMemberRepository extends JpaRepository<ProjectMember, Pr
     
     @Query("SELECT pm FROM ProjectMember pm WHERE pm.userId = :userId AND pm.role = :role")
     List<ProjectMember> findByUserIdAndRole(@Param("userId") UUID userId, @Param("role") String role);
+
+    @Query("SELECT DISTINCT pm.userId FROM ProjectMember pm " +
+           "JOIN Project p ON pm.projectId = p.id " +
+           "WHERE p.team.id = :teamId")
+    List<UUID> findDistinctUserIdsByTeamId(@Param("teamId") UUID teamId);
 }

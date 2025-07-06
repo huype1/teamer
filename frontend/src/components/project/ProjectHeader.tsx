@@ -28,7 +28,7 @@ const ProjectHeader: React.FC<ProjectHeaderProps> = ({
         <div>
           <h1 className="text-2xl font-bold">{title}</h1>
           <p className="text-muted-foreground">
-            {showBackButton ? "Project details and management" : "Manage your projects and collaborate with your team"}
+            {showBackButton ? "Thông tin và quản lý dự án" : "Quản lý dự án và hợp tác với nhóm"}
           </p>
         </div>
       </div>

@@ -22,9 +22,7 @@ public interface TeamMemberRepository extends JpaRepository<TeamMember, TeamMemb
     boolean existsByTeamIdAndUserId(UUID teamId, UUID userId);
     
     long countByTeamId(UUID teamId);
-    
-    List<TeamMember> findByTeamIdAndRole(UUID teamId, String role);
-    
+
     @Query("SELECT tm FROM TeamMember tm WHERE tm.teamId = :teamId AND tm.role = 'ADMIN'")
     List<TeamMember> findAdminsByTeamId(@Param("teamId") UUID teamId);
     

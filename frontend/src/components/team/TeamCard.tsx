@@ -10,7 +10,6 @@ interface TeamCardProps {
 }
 
 const TeamCard: React.FC<TeamCardProps> = ({ team }) => {
-  console.log(team)
   const getInitials = (name: string) => {
     return name
       .split(' ')
@@ -36,11 +35,11 @@ const TeamCard: React.FC<TeamCardProps> = ({ team }) => {
               </AvatarFallback>
             </Avatar>
             <div className="min-w-0 flex-1 overflow-hidden">
-              <CardTitle className="text-md group-hover:text-primary transition-colors truncate block">
+              <CardTitle className="text-md group-hover:text-primary transition-colors block">
                 {team.name}
               </CardTitle>
               <CardDescription className="text-sm truncate block">
-                Created {formatDate(team.createdAt)}
+                Tạo {formatDate(team.createdAt)}
               </CardDescription>
             </div>
           </div>

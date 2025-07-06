@@ -69,9 +69,9 @@ const MemberManagement: React.FC<MemberManagementProps> = ({
     <Dialog open={isOpen} onOpenChange={handleOpenChange}>
       <DialogContent className="sm:max-w-[600px]">
         <DialogHeader>
-          <DialogTitle>Manage Team Members</DialogTitle>
+          <DialogTitle>Quản lý thành viên dự án</DialogTitle>
           <DialogDescription>
-            Add or remove team members for {project.name}
+            Thêm hoặc xóa thành viên cho dự án {project.name}
           </DialogDescription>
         </DialogHeader>
         
@@ -79,36 +79,36 @@ const MemberManagement: React.FC<MemberManagementProps> = ({
           {/* Add Member Form */}
           <Card>
             <CardHeader>
-              <CardTitle className="text-lg">Add New Member</CardTitle>
+              <CardTitle className="text-lg">Thêm thành viên mới</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="email">Email Address</Label>
+                  <Label htmlFor="email">Địa chỉ email</Label>
                   <Input
                     id="email"
                     type="email"
-                    placeholder="Enter email address"
+                    placeholder="Nhập email thành viên"
                     value={memberFormData.email}
                     onChange={(e) => setMemberFormData({ ...memberFormData, email: e.target.value })}
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="role">Role</Label>
+                  <Label htmlFor="role">Vai trò</Label>
                   <Select value={memberFormData.role} onValueChange={(value) => setMemberFormData({ ...memberFormData, role: value })}>
                     <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="MEMBER">Member</SelectItem>
-                      <SelectItem value="ADMIN">Admin</SelectItem>
+                      <SelectItem value="MEMBER">Thành viên</SelectItem>
+                      <SelectItem value="ADMIN">Quản trị viên</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
               </div>
               <Button onClick={handleAddMember} disabled={!memberFormData.email.trim()}>
                 <UserPlus className="mr-2 h-4 w-4" />
-                Add Member
+                Thêm thành viên
               </Button>
             </CardContent>
           </Card>
@@ -116,7 +116,7 @@ const MemberManagement: React.FC<MemberManagementProps> = ({
           {/* Current Members */}
           <Card>
             <CardHeader>
-              <CardTitle className="text-lg">Current Members</CardTitle>
+              <CardTitle className="text-lg">Danh sách thành viên</CardTitle>
             </CardHeader>
             <CardContent>
               {project.members && project.members.length > 0 ? (
@@ -148,14 +148,14 @@ const MemberManagement: React.FC<MemberManagementProps> = ({
                           <DropdownMenuContent align="end">
                             <DropdownMenuItem>
                               <Mail className="mr-2 h-4 w-4" />
-                              Send Message
+                              Gửi tin nhắn
                             </DropdownMenuItem>
                             <DropdownMenuItem 
                               onClick={() => onRemoveMember(member.user.id)}
                               className="text-red-600"
                             >
                               <Trash2 className="mr-2 h-4 w-4" />
-                              Remove
+                              Xóa
                             </DropdownMenuItem>
                           </DropdownMenuContent>
                         </DropdownMenu>
@@ -165,7 +165,7 @@ const MemberManagement: React.FC<MemberManagementProps> = ({
                 </div>
               ) : (
                 <p className="text-muted-foreground text-center py-4">
-                  No members yet. Add team members to collaborate.
+                  Chưa có thành viên nào. Hãy thêm thành viên để cùng cộng tác.
                 </p>
               )}
             </CardContent>
@@ -174,7 +174,7 @@ const MemberManagement: React.FC<MemberManagementProps> = ({
 
         <DialogFooter>
           <Button variant="outline" onClick={() => handleOpenChange(false)}>
-            Close
+            Đóng
           </Button>
         </DialogFooter>
       </DialogContent>

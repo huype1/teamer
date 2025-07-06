@@ -4,7 +4,8 @@ import { useNavigate } from "react-router-dom"
 import { useSelector } from "react-redux"
 import type { RootState } from "@/store"
 import teamService from "@/service/teamService"
-import type { Team } from "@/components/nav/team"
+import type { Team } from "@/types/team"
+import { useEffect } from "react"
 
 import {
   Collapsible,
@@ -33,116 +34,101 @@ export function TeamSwitcher() {
     if (!user?.id) return
     setLoading(true)
     try {
-      const res = await teamService.getTeamByUserId(user.id)
+      const res = await teamService.getTeams("");
       const fetchedTeams = res.result || []
       setTeams(fetchedTeams)
-      if (fetchedTeams.length > 0) {
-        setIsOpen(true)
-      }
     } catch (error) {
       console.error("Failed to fetch teams:", error)
+      setTeams([])
     } finally {
       setLoading(false)
     }
   }, [user?.id])
 
-  React.useEffect(() => {
-    fetchTeams()
-  }, [fetchTeams])
+  const handleOpenChange = React.useCallback((open: boolean) => {
+    setIsOpen(open)
+    if (open && teams.length === 0 && !loading) {
+      fetchTeams()
+    }
+  }, [teams.length, loading, fetchTeams])
 
-  if (loading) {
-    return (
-      <SidebarGroup>
-        <SidebarGroupLabel>Teams</SidebarGroupLabel>
-        <SidebarMenu>
-          <SidebarMenuItem>
-            <SidebarMenuButton disabled>
-              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current"></div>
-              <span>Loading teams...</span>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
-        </SidebarMenu>
-      </SidebarGroup>
-    )
-  }
-
-  if (teams.length === 0) {
-    return (
-      <SidebarGroup>
-        <SidebarGroupLabel>Teams</SidebarGroupLabel>
-        <SidebarMenu>
-          <SidebarMenuItem>
-            <SidebarMenuButton 
-              onClick={() => navigate("/teams")}
-              className="text-sidebar-foreground/70 hover:text-sidebar-foreground"
-            >
-              <Plus className="w-4 h-4" />
-              <span>Create your first team</span>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
-        </SidebarMenu>
-      </SidebarGroup>
-    )
-  }
+  useEffect(() => {
+    if (user?.id) {
+      fetchTeams()
+    }
+  }, [user?.id, fetchTeams])
 
   return (
     <SidebarGroup>
-      <SidebarGroupLabel>Teams</SidebarGroupLabel>
+      <SidebarGroupLabel>Nhóm</SidebarGroupLabel>
       <SidebarMenu>
         <Collapsible
           asChild
           open={isOpen}
-          onOpenChange={setIsOpen}
+          onOpenChange={handleOpenChange}
           className="group/collapsible"
         >
           <SidebarMenuItem>
             <CollapsibleTrigger asChild>
               <SidebarMenuButton tooltip="Teams">
                 <Users className="w-4 h-4" />
-                <span>My Teams</span>
-                <span className="ml-auto text-xs text-sidebar-foreground/70">
-                  {teams.length}
-                </span>
+                <span>Nhóm của tôi</span>
                 <ChevronRight className="ml-auto transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90" />
               </SidebarMenuButton>
             </CollapsibleTrigger>
             <CollapsibleContent>
               <SidebarMenuSub>
-                {teams.map((team) => (
-                  <SidebarMenuSubItem key={team.id}>
-                    <SidebarMenuSubButton 
-                      asChild 
-                      onClick={() => {
-                        console.log("Selected team:", team.name)
-                      }}
-                    >
-                      <div className="flex items-center gap-2 w-full">
-                        <div className="w-6 h-6 rounded bg-primary text-primary-foreground flex items-center justify-center text-xs font-semibold">
-                          {team.name.charAt(0).toUpperCase()}
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <div className="truncate font-medium text-sm">{team.name}</div>
-                          <div className="truncate text-xs text-sidebar-foreground/70 h-full">
-                            {team.description || "No description"}
-                          </div>
-                        </div>
-                      </div>
+                {loading ? (
+                  <SidebarMenuSubItem>
+                    <SidebarMenuSubButton>
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-[#8B5CF6]"></div>
+                      <span>Đang tải nhóm...</span>
                     </SidebarMenuSubButton>
                   </SidebarMenuSubItem>
-                ))}
-                <SidebarMenuSubItem>
-                </SidebarMenuSubItem>
-                <SidebarMenuSubItem>
-                  <SidebarMenuSubButton 
-                    asChild
-                    onClick={() => navigate("/teams")}
-                  >
-                    <div className="flex items-center gap-2 w-full">
-                      <Settings className="w-4 h-4 text-sidebar-foreground/70" />
-                      <span className="text-sidebar-foreground/70">Manage teams</span>
-                    </div>
-                  </SidebarMenuSubButton>
-                </SidebarMenuSubItem>
+                ) : teams.length === 0 ? (
+                  <SidebarMenuSubItem>
+                    <SidebarMenuSubButton 
+                      onClick={() => navigate("/teams")}
+                      className="text-sidebar-foreground/70 hover:text-sidebar-foreground"
+                    >
+                      <Plus className="w-4 h-4" />
+                      <span>Tạo nhóm đầu tiên</span>
+                    </SidebarMenuSubButton>
+                  </SidebarMenuSubItem>
+                ) : (
+                  <>
+                    {teams.map((team) => (
+                      <SidebarMenuSubItem key={team.id}>
+                        <SidebarMenuSubButton 
+                          asChild 
+                          onClick={() => {
+                            navigate(`/teams/${team.id}`)
+                          }}
+                        >
+                          <div className="flex items-center gap-2 w-full">
+                            <div className="w-6 h-6 rounded bg-primary text-primary-foreground flex items-center justify-center text-xs font-semibold">
+                              {team.name.charAt(0).toUpperCase()}
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <div className="truncate font-medium text-sm">{team.name}</div>
+                            </div>
+                          </div>
+                        </SidebarMenuSubButton>
+                      </SidebarMenuSubItem>
+                    ))}
+                    <SidebarMenuSubItem>
+                      <SidebarMenuSubButton 
+                        asChild
+                        onClick={() => navigate("/teams")}
+                      >
+                        <div className="flex items-center gap-2 w-full">
+                          <Settings className="w-4 h-4 text-sidebar-foreground/70" />
+                          <span className="text-sidebar-foreground/70">Quản lý nhóm</span>
+                        </div>
+                      </SidebarMenuSubButton>
+                    </SidebarMenuSubItem>
+                  </>
+                )}
               </SidebarMenuSub>
             </CollapsibleContent>
           </SidebarMenuItem>
@@ -150,4 +136,5 @@ export function TeamSwitcher() {
       </SidebarMenu>
     </SidebarGroup>
   )
+
 }

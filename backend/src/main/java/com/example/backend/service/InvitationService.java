@@ -3,11 +3,13 @@ package com.example.backend.service;
 
 import com.example.backend.entity.Invitation;
 import com.example.backend.entity.Project;
+import com.example.backend.entity.User;
 import com.example.backend.exception.AppException;
 import com.example.backend.exception.ErrorCode;
 import com.example.backend.repository.InvitationRepository;
 import com.example.backend.repository.ProjectRepository;
 import com.example.backend.repository.UserRepository;
+import com.example.backend.utils.JwtUtils;
 import jakarta.mail.MessagingException;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
@@ -60,8 +62,16 @@ public class InvitationService {
             throw new AppException(ErrorCode.EXPIRED);
         }
 
-        invitation.setStatus("ACCEPTED");
+        // Check if the logged-in user's email matches the invitation email
+        UUID userId = JwtUtils.getSubjectFromJwt();
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new AppException(ErrorCode.NOT_FOUND));
+        if (!user.getEmail().equalsIgnoreCase(invitation.getEmail())) {
+            log.warn("Invitation email does not match logged-in user. Invitation: {}, User: {}", invitation.getEmail(), user.getEmail());
+            throw new AppException(ErrorCode.UNAUTHORIZED);
+        }
 
+        invitation.setStatus("ACCEPTED");
         return invitationRepository.save(invitation);
     }
 

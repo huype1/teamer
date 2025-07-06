@@ -7,6 +7,7 @@ import {
   ProjectSearch,
   CreateProjectDialog,
 } from "@/components/project";
+import { toastSuccess, toastError } from "@/utils/toast";
 
 const ProjectManagementPage: React.FC = () => {
   const [projects, setProjects] = useState<Project[]>([]);
@@ -22,6 +23,7 @@ const ProjectManagementPage: React.FC = () => {
       const response = await ProjectService.getProjects();
       setProjects(response.result || []);
     } catch (error) {
+      toastError("Tải danh sách dự án thất bại!");
       console.error("Error loading projects:", error);
     } finally {
       setLoading(false);
@@ -31,8 +33,10 @@ const ProjectManagementPage: React.FC = () => {
   const handleCreateProject = async (formData: ProjectCreationRequest) => {
     try {
       await ProjectService.createProject(formData);
+      toastSuccess("Tạo dự án thành công!");
       fetchProjects();
     } catch (error) {
+      toastError("Tạo dự án thất bại!");
       console.error("Error creating project:", error);
     }
   };
@@ -45,13 +49,8 @@ const ProjectManagementPage: React.FC = () => {
   if (loading) {
     return (
       <div className="p-6">
-        <div className="animate-pulse space-y-4">
-          <div className="h-8 bg-gray-200 rounded w-1/4"></div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {[1, 2, 3].map((i) => (
-              <div key={i} className="h-48 bg-gray-200 rounded"></div>
-            ))}
-          </div>
+        <div className="flex items-center justify-center h-64">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#8B5CF6]"></div>
         </div>
       </div>
     );

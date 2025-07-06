@@ -69,9 +69,7 @@ public class AuthenticationService {
         boolean isValid = true;
 
         try {
-            log.info("Introspecting token: {}", token != null ? token.substring(0, Math.min(50, token.length())) + "..." : "null");
             verifyToken(token, false);
-            log.info("Token introspection successful");
         } catch (AppException e) {
             log.error("Token introspection failed: {}", e.getMessage());
             isValid = false;
@@ -83,7 +81,6 @@ public class AuthenticationService {
     }
 
     public AuthenticationResponse authenticate(AuthenticationRequest request) {
-        log.info("Authenticating with name: {} {}", request.getEmail(), request.getPassword());
         User user = userRepository
                 .findByEmail(request.getEmail())
                 .or(() -> userRepository.findByName(request.getEmail()))
@@ -105,7 +102,6 @@ public class AuthenticationService {
     }
 
     public void logout(IntrospectRequest request) throws ParseException, JOSEException {
-        log.info("Logout attempt with token: {}", request.getToken());
         try {
             var signedToken = verifyToken(request.getToken(), false);
             log.info("Token verified successfully for logout");
@@ -231,10 +227,6 @@ public class AuthenticationService {
                 : signedJWT.getJWTClaimsSet().getExpirationTime();
         Date currentTime = new Date();
         var verified = signedJWT.verify(verifier);
-        log.info("Token verification result: {}", verified);
-        log.info("Token expiration time: {}", expirationTime);
-        log.info("Current time: {}", currentTime);
-        log.info("Token expired: {}", currentTime.after(expirationTime));
 
         if (!(verified && expirationTime.after(new Date()))) {
             log.error("Token validation failed - verified: {}, expired: {}", verified, currentTime.after(expirationTime));

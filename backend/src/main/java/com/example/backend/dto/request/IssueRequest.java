@@ -23,5 +23,6 @@ public class IssueRequest {
     private LocalDate startDate;
     private LocalDate dueDate;
     private Integer storyPoints;
+    private UUID assigneeId;
 
 }

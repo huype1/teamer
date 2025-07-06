@@ -12,6 +12,7 @@ import com.example.backend.exception.ErrorCode;
 import com.example.backend.mapper.ProjectMapper;
 import com.example.backend.service.InvitationService;
 import com.example.backend.service.ProjectService;
+import com.example.backend.service.TeamService;
 import com.example.backend.service.UserService;
 import com.example.backend.utils.JwtUtils;
 import jakarta.mail.MessagingException;
@@ -36,6 +37,7 @@ public class ProjectController {
     UserService userService;
     ProjectMapper projectMapper;
     InvitationService invitationService;
+    TeamService teamService;
 
     @GetMapping
     public ApiResponse<List<ProjectResponse>> getProjects(
@@ -88,6 +90,13 @@ public class ProjectController {
         UUID userId = JwtUtils.getSubjectFromJwt();
         log.info("Creating project: {} for user: {}", request.getName(), userId);
 
+        // If a teamId is provided, check if the user is an admin of that team
+        if (request.getTeamId() != null) {
+            if (!teamService.isUserTeamAdmin(request.getTeamId(), userId)) {
+                throw new AppException(com.example.backend.exception.ErrorCode.UNAUTHORIZED);
+            }
+        }
+
         User creator = userService.getUserEntity(userId);
         Project projectEntity = projectMapper.toEntity(request);
         Project createdProject = projectService.createProject(projectEntity, creator, request.getTeamId());
@@ -107,7 +116,7 @@ public class ProjectController {
         UUID userId = JwtUtils.getSubjectFromJwt();
         log.info("Updating project: {} by user: {}", projectId, userId);
 
-        if (!projectService.isUserProjectAdmin(projectId, userId)) {
+        if (!projectService.isUserProjectManager(projectId, userId)) {
             throw new AppException(com.example.backend.exception.ErrorCode.UNAUTHORIZED);
         }
 
@@ -129,7 +138,7 @@ public class ProjectController {
         log.info("Deleting project: {} by user: {}", projectId, userId);
 
         // Check if user is admin of this project
-        if (!projectService.isUserProjectAdmin(projectId, userId)) {
+        if (!projectService.isUserProjectManager(projectId, userId)) {
             throw new AppException(com.example.backend.exception.ErrorCode.UNAUTHORIZED);
         }
 
@@ -146,15 +155,12 @@ public class ProjectController {
     ) throws MessagingException {
 
         UUID userId = JwtUtils.getSubjectFromJwt();
-        if (!projectService.isUserProjectAdmin(invitationRequest.getProjectId(), userId)
+        if (!projectService.isUserProjectManager(invitationRequest.getProjectId(), userId)
                 || !projectService.isUserProjectManager(invitationRequest.getProjectId(), userId)) {
             log.error("User: {} is not authorized to send invitations for project: {}", userId, invitationRequest.getProjectId());
             throw new AppException(ErrorCode.UNAUTHORIZED);
         }
-        if (projectService.isUserProjectMember(invitationRequest.getProjectId(), userId)) {
-            log.error("User: {} is already a member of project: {}", userId, invitationRequest.getProjectId());
-            throw new AppException(ErrorCode.ALREADY_EXISTS);
-        }
+
         invitationService.sendInvitation(invitationRequest.getEmail(), invitationRequest.getProjectId(), invitationRequest.getRole());
         return ApiResponse.<String>builder()
                 .message("Send invitation successfully")
@@ -196,6 +202,22 @@ public class ProjectController {
                 .result(chat)
                 .build();
     }
+
+    @GetMapping("/team/{teamId}")
+    public ApiResponse<List<ProjectResponse>> getProjectsByTeam(
+            @PathVariable("teamId") UUID teamId
+    ) {
+        UUID userId = JwtUtils.getSubjectFromJwt();
+        log.info("Fetching projects for team: {} by user: {}", teamId, userId);
+
+        List<Project> projects = projectService.getProjectsByTeam(teamId);
+        List<ProjectResponse> responses = projectMapper.toResponseList(projects);
+
+        return ApiResponse.<List<ProjectResponse>>builder()
+                .message("Team projects fetched successfully")
+                .result(responses)
+                .build();
+    }
     //not using the apis below for now, but keeping them for future use
 
     @GetMapping("/{projectId}/members")
@@ -230,7 +252,7 @@ public class ProjectController {
         log.info("Removing member from project: {} by user: {}", projectId, userId);
 
         // Check if user is admin of this project
-        if (!projectService.isUserProjectAdmin(projectId, userId)) {
+        if (!projectService.isUserProjectManager(projectId, userId)) {
             throw new AppException(com.example.backend.exception.ErrorCode.UNAUTHORIZED);
         }
 
@@ -250,8 +272,7 @@ public class ProjectController {
         UUID userId = JwtUtils.getSubjectFromJwt();
         log.info("Updating member role in project: {} by user: {}", projectId, userId);
 
-        // Check if user is admin of this project
-        if (!projectService.isUserProjectAdmin(projectId, userId)) {
+        if (!projectService.isUserProjectManager(projectId, userId)) {
             throw new AppException(com.example.backend.exception.ErrorCode.UNAUTHORIZED);
         }
 

@@ -4,9 +4,12 @@ import com.example.backend.dto.request.TeamCreationRequest;
 import com.example.backend.dto.request.TeamUpdateRequest;
 import com.example.backend.dto.response.ApiResponse;
 import com.example.backend.dto.response.TeamResponse;
+import com.example.backend.dto.response.TeamMemberResponse;
 import com.example.backend.entity.Team;
+import com.example.backend.entity.TeamMember;
 import com.example.backend.entity.User;
 import com.example.backend.mapper.TeamMapper;
+import com.example.backend.mapper.UserMapper;
 import com.example.backend.service.TeamService;
 import com.example.backend.service.UserService;
 import com.example.backend.utils.JwtUtils;
@@ -30,6 +33,7 @@ import java.util.stream.Collectors;
 public class TeamController {
     final TeamService teamService;
     final TeamMapper teamMapper;
+    final UserMapper userMapper;
     final UserService userService;
 
     @PostMapping
@@ -94,4 +98,42 @@ public class TeamController {
                 .message("Member removed from team successfully")
                 .build();
     }
-} 
+
+    @PutMapping("/{teamId}/members")
+    public ApiResponse<TeamResponse> updateMemberRole(@PathVariable UUID teamId, @RequestParam UUID userId, @RequestParam String role) {
+        teamService.updateMemberRole(teamId, userId, role);
+        return ApiResponse.<TeamResponse>builder()
+                .message("Member role updated successfully")
+                .result(teamMapper.toResponse(teamService.getTeamById(teamId)))
+                .build();
+    }
+
+    @GetMapping("/{teamId}/members")
+    public ApiResponse<List<TeamMemberResponse>> getTeamMembers(@PathVariable UUID teamId) {
+        List<TeamMember> members = teamService.getTeamMembers(teamId);
+        List<TeamMemberResponse> responses = members.stream()
+                .map(member -> new TeamMemberResponse(
+                        member.getTeamId(),
+                        member.getUserId(),
+                        member.getRole(),
+                        member.getJoinedAt(),
+                        userMapper.toUserResponse(member.getUser())
+                ))
+                .collect(Collectors.toList());
+        return ApiResponse.<List<TeamMemberResponse>>builder()
+                .message("Team members fetched successfully")
+                .result(responses)
+                .build();
+    }
+
+    @GetMapping("/admin")
+    public ApiResponse<List<TeamResponse>> getTeamsWhereUserIsAdmin() {
+        UUID userId = JwtUtils.getSubjectFromJwt();
+        List<Team> teams = teamService.getTeamsWhereUserIsAdmin(userId);
+        List<TeamResponse> responses = teams.stream().map(teamMapper::toResponse).collect(Collectors.toList());
+        return ApiResponse.<List<TeamResponse>>builder()
+                .message("Teams where user is admin fetched successfully")
+                .result(responses)
+                .build();
+    }
+}

@@ -4,11 +4,14 @@ import com.example.backend.dto.request.IssueRequest;
 import com.example.backend.entity.Comment;
 import com.example.backend.entity.Issue;
 import com.example.backend.entity.Project;
+import com.example.backend.entity.ProjectMember;
 import com.example.backend.entity.User;
 import com.example.backend.exception.AppException;
 import com.example.backend.exception.ErrorCode;
 import com.example.backend.repository.CommentRepository;
 import com.example.backend.repository.IssueRepository;
+import com.example.backend.repository.ProjectRepository;
+import com.example.backend.repository.ProjectMemberRepository;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
@@ -27,7 +30,8 @@ public class IssueService {
 
     IssueRepository issueRepository;
     UserService userService;
-    ProjectService projectService;
+    ProjectRepository projectRepository;
+    ProjectMemberRepository projectMemberRepository;
     CommentRepository commentRepository;
 
     public Issue getIssueById(UUID id) {
@@ -39,21 +43,18 @@ public class IssueService {
     }
 
     public List<Issue> getIssuesByProjectId(UUID projectId) {
-        return issueRepository.findByProjectId(projectId)
-                .orElseThrow(() -> {
-                    log.error("No issues found for project: {}", projectId);
-                    return new AppException(ErrorCode.NOT_FOUND);
-                });
+        return issueRepository.findByProjectIdWithAssigneeAndReporter(projectId);
     }
 
     public Issue createIssue(IssueRequest issueRequest, UUID projectId, UUID reporterId) {
         try {
             // Validate project exists and user has access
-            Project project = projectService.getProjectById(projectId);
+            Project project = projectRepository.findById(projectId)
+                    .orElseThrow(() -> new AppException(ErrorCode.NOT_FOUND));
             User reporter = userService.getUserEntity(reporterId);
             
             // Check if user is project member
-            if (!projectService.isUserProjectMember(projectId, reporterId)) {
+            if (!isUserProjectMember(projectId, reporterId)) {
                 log.error("User {} is not a member of project {}", reporterId, projectId);
                 throw new AppException(ErrorCode.UNAUTHORIZED);
             }
@@ -69,6 +70,11 @@ public class IssueService {
             issue.setStoryPoints(issueRequest.getStoryPoints());
             issue.setReporter(reporter);
             issue.setProject(project);
+            
+            if (issueRequest.getAssigneeId() != null) {
+                User assignee = userService.getUserEntity(issueRequest.getAssigneeId());
+                issue.setAssignee(assignee);
+            }
 //            Comment comment = commentRepository.save(new Comment());
 //            issue.setComments(comment);
 
@@ -87,7 +93,7 @@ public class IssueService {
         Issue issue = getIssueById(id);
         
         // Check if user is project admin or the issue reporter
-        if (!projectService.isUserProjectAdmin(issue.getProject().getId(), userId) && 
+        if (!isUserProjectManager(issue.getProject().getId(), userId) &&
             !issue.getReporter().getId().equals(userId)) {
             log.error("User {} is not authorized to delete issue {}", userId, id);
             throw new AppException(ErrorCode.UNAUTHORIZED);
@@ -101,7 +107,7 @@ public class IssueService {
         Issue issue = getIssueById(issueId);
         
         // Check if user is project member
-        if (!projectService.isUserProjectMember(issue.getProject().getId(), userId)) {
+        if (!isUserProjectMember(issue.getProject().getId(), userId)) {
             log.error("User {} is not a member of project {}", userId, issue.getProject().getId());
             throw new AppException(ErrorCode.UNAUTHORIZED);
         }
@@ -115,7 +121,7 @@ public class IssueService {
         Issue issue = getIssueById(id);
         
         // Check if user is project member
-        if (!projectService.isUserProjectMember(issue.getProject().getId(), userId)) {
+        if (!isUserProjectMember(issue.getProject().getId(), userId)) {
             log.error("User {} is not a member of project {}", userId, issue.getProject().getId());
             throw new AppException(ErrorCode.UNAUTHORIZED);
         }
@@ -152,7 +158,7 @@ public class IssueService {
         Issue issue = getIssueById(id);
         
         // Check if user is project member
-        if (!projectService.isUserProjectMember(issue.getProject().getId(), userId)) {
+        if (!isUserProjectMember(issue.getProject().getId(), userId)) {
             log.error("User {} is not a member of project {}", userId, issue.getProject().getId());
             throw new AppException(ErrorCode.UNAUTHORIZED);
         }
@@ -162,9 +168,33 @@ public class IssueService {
     }
 
     private String generateIssueKey(Project project) {
-        // Get the next issue number for this project
-        List<Issue> projectIssues = issueRepository.findByProjectId(project.getId()).orElse(List.of());
-        int nextNumber = projectIssues.size() + 1;
+        // Get the next issue number for this project by finding the highest existing number
+        Optional<Integer> maxNumber = issueRepository.findMaxIssueNumberByProject(project.getId(), project.getKey());
+        int nextNumber = maxNumber.orElse(0) + 1;
         return project.getKey() + "-" + nextNumber;
+    }
+
+    // Helper methods to replace ProjectService dependencies
+    private boolean isUserProjectMember(UUID projectId, UUID userId) {
+        // Check if user is project creator
+        Project project = projectRepository.findById(projectId).orElse(null);
+        if (project != null && project.getCreator().getId().equals(userId)) {
+            return true;
+        }
+        
+        // Check if user is project member
+        return projectMemberRepository.existsByProjectIdAndUserId(projectId, userId);
+    }
+
+    private boolean isUserProjectManager(UUID projectId, UUID userId) {
+        // Check if user is project creator
+        Project project = projectRepository.findById(projectId).orElse(null);
+        if (project != null && project.getCreator().getId().equals(userId)) {
+            return true;
+        }
+        
+        // Check if user is project member with ADMIN or PM role
+        Optional<ProjectMember> member = projectMemberRepository.findByProjectIdAndUserId(projectId, userId);
+        return member.isPresent() && ("ADMIN".equals(member.get().getRole()) || "PM".equals(member.get().getRole()));
     }
 }
