@@ -167,7 +167,7 @@ export const SprintIssuesTable: React.FC<SprintIssuesTableProps> = ({
   }
 
   return (
-    <Card>
+    <Card className="w-full max-w-6xl mx-auto">
       <CardHeader>
         <CardTitle className="flex items-center justify-between">
           <span>Issues của Sprint: {sprint.name}</span>
@@ -177,19 +177,19 @@ export const SprintIssuesTable: React.FC<SprintIssuesTableProps> = ({
         </CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="overflow-x-auto">
-          <table className="min-w-full">
-            <thead>
+        <div className="overflow-x-auto overflow-y-auto max-h-96 border rounded-lg">
+          <table className="w-full min-w-full table-fixed">
+            <thead className="sticky top-0 bg-background z-10">
               <tr className="border-b">
-                <th className="px-4 py-2 text-left text-sm font-semibold">Key</th>
-                <th className="px-4 py-2 text-left text-sm font-semibold">Tên issue</th>
-                <th className="px-4 py-2 text-left text-sm font-semibold">Loại</th>
-                <th className="px-4 py-2 text-left text-sm font-semibold">Trạng thái</th>
-                <th className="px-4 py-2 text-left text-sm font-semibold">Độ ưu tiên</th>
-                <th className="px-4 py-2 text-left text-sm font-semibold">Người tạo</th>
-                <th className="px-4 py-2 text-left text-sm font-semibold">Người phụ trách</th>
-                <th className="px-4 py-2 text-left text-sm font-semibold">Ngày hết hạn</th>
-                <th className="px-4 py-2 text-left text-sm font-semibold">Hành động</th>
+                <th className="px-2 py-2 text-left text-xs font-semibold w-16">Key</th>
+                <th className="px-2 py-2 text-left text-xs font-semibold w-48">Tên issue</th>
+                <th className="px-2 py-2 text-left text-xs font-semibold w-20">Loại</th>
+                <th className="px-2 py-2 text-left text-xs font-semibold w-24">Trạng thái</th>
+                <th className="px-2 py-2 text-left text-xs font-semibold w-16">Độ ưu tiên</th>
+                <th className="px-2 py-2 text-left text-xs font-semibold w-24">Người tạo</th>
+                <th className="px-2 py-2 text-left text-xs font-semibold w-32">Người phụ trách</th>
+                <th className="px-2 py-2 text-left text-xs font-semibold w-20">Ngày hết hạn</th>
+                <th className="px-2 py-2 text-left text-xs font-semibold w-16">Hành động</th>
               </tr>
             </thead>
             <tbody>
@@ -205,25 +205,25 @@ export const SprintIssuesTable: React.FC<SprintIssuesTableProps> = ({
                 const TypeIcon = typeConfig.icon;
                 return (
                   <tr key={issue.id} className="border-b hover:bg-muted/50">
-                    <td className="px-4 py-2 text-sm font-medium">{issue.key}</td>
-                    <td className="px-4 py-2">
-                      <div className="max-w-xs">
+                    <td className="px-2 py-2 text-xs font-medium truncate">{issue.key}</td>
+                    <td className="px-2 py-2">
+                      <div className="max-w-full">
                         <Link 
                           to={`/issues/${issue.id}`}
-                          className="font-medium hover:text-primary transition-colors block truncate"
+                          className="font-medium hover:text-primary transition-colors block truncate text-xs"
                           title={issue.title}
                         >
                           {issue.title}
                         </Link>
                       </div>
                     </td>
-                    <td className="px-4 py-2">
+                    <td className="px-2 py-2">
                       {canEditIssue(issue) ? (
                         <Select 
                           value={issue.issueType} 
                           onValueChange={(value) => onIssueTypeChange(issue.id, value)}
                         >
-                          <SelectTrigger className="w-32">
+                          <SelectTrigger className="w-16 h-6 text-xs">
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
@@ -235,19 +235,19 @@ export const SprintIssuesTable: React.FC<SprintIssuesTableProps> = ({
                           </SelectContent>
                         </Select>
                       ) : (
-                        <Badge className={`${typeConfig.color} flex items-center gap-1 w-fit`}>
-                          <TypeIcon className="h-3 w-3" />
+                        <Badge className={`${typeConfig.color} flex items-center gap-1 w-fit text-xs px-1 py-0`}>
+                          <TypeIcon className="h-2 w-2" />
                           {typeConfig.label}
                         </Badge>
                       )}
                     </td>
-                    <td className="px-4 py-2">
+                    <td className="px-2 py-2">
                       {canChangeStatus(issue) ? (
                         <Select 
                           value={issue.status} 
                           onValueChange={(value) => onStatusChange(issue.id, value)}
                         >
-                          <SelectTrigger className="w-32">
+                          <SelectTrigger className="w-20 h-6 text-xs">
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
@@ -258,18 +258,18 @@ export const SprintIssuesTable: React.FC<SprintIssuesTableProps> = ({
                           </SelectContent>
                         </Select>
                       ) : (
-                        <Badge className={getStatusColor(issue.status)}>
+                        <Badge className={`${getStatusColor(issue.status)} text-xs px-1 py-0`}>
                           {getStatusLabel(issue.status)}
                         </Badge>
                       )}
                     </td>
-                    <td className="px-4 py-2">
+                    <td className="px-2 py-2">
                       {canEditIssue(issue) ? (
                         <Select 
                           value={issue.priority} 
                           onValueChange={(value) => onPriorityChange(issue.id, value)}
                         >
-                          <SelectTrigger className="w-24">
+                          <SelectTrigger className="w-12 h-6 text-xs">
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
@@ -282,21 +282,21 @@ export const SprintIssuesTable: React.FC<SprintIssuesTableProps> = ({
                           </SelectContent>
                         </Select>
                       ) : (
-                        <Badge className={getPriorityColor(issue.priority)}>
+                        <Badge className={`${getPriorityColor(issue.priority)} text-xs px-1 py-0`}>
                           {issue.priority}
                         </Badge>
                       )}
                     </td>
-                    <td className="px-4 py-2 text-sm">
+                    <td className="px-2 py-2 text-xs truncate">
                       {issue.reporter?.name || "N/A"}
                     </td>
-                    <td className="px-4 py-2">
+                    <td className="px-2 py-2">
                       <Select 
                         value={issue.assignee?.id || "unassigned"} 
                         onValueChange={(value) => onAssigneeChange(issue.id, value)}
                         disabled={!canEditIssue(issue)}
                       >
-                        <SelectTrigger className="w-40">
+                        <SelectTrigger className="w-28 h-6 text-xs">
                           <SelectValue placeholder="Chưa phân công" />
                         </SelectTrigger>
                         <SelectContent>
@@ -309,18 +309,19 @@ export const SprintIssuesTable: React.FC<SprintIssuesTableProps> = ({
                         </SelectContent>
                       </Select>
                     </td>
-                    <td className="px-4 py-2 text-sm">
+                    <td className="px-2 py-2 text-xs">
                       {issue.dueDate ? new Date(issue.dueDate).toLocaleDateString() : "-"}
                     </td>
-                    <td className="px-4 py-2">
+                    <td className="px-2 py-2">
                       {canEditIssue(issue) && (
                         <Button 
                           variant="outline" 
                           size="icon" 
                           onClick={() => onMoveToBacklog(issue.id)}
                           title="Chuyển về backlog"
+                          className="h-6 w-6"
                         >
-                          <Target className="h-4 w-4" />
+                          <Target className="h-3 w-3" />
                         </Button>
                       )}
                     </td>
