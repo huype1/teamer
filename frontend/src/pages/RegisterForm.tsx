@@ -79,7 +79,7 @@ export function RegisterForm({
     <div className={cn("flex flex-col gap-6", className)} {...props}>
       <Card className="w-full max-w-md mx-auto">
         <CardHeader className="text-center">
-          <CardTitle className="text-xl">Register</CardTitle>
+          <CardTitle className="text-xl">Đăng ký</CardTitle>
           {error && <p className="text-red-500 text-sm mt-2">{error}</p>}
         </CardHeader>
         <CardContent>
@@ -87,11 +87,11 @@ export function RegisterForm({
             <div className="grid gap-6">
               <div className="grid gap-6">
                 <div className="grid gap-3">
-                  <Label htmlFor="name">Name</Label>
+                  <Label htmlFor="name">Tên</Label>
                   <Input
                       id="name"
                       type="text"
-                      placeholder="Your name"
+                      placeholder="Tên của bạn"
                       {...register("name")}
                   />
                   {errors.name && (
@@ -111,7 +111,7 @@ export function RegisterForm({
                   )}
                 </div>
                 <div className="grid gap-3">
-                  <Label htmlFor="password">Password</Label>
+                  <Label htmlFor="password">Mật khẩu</Label>
                   <Input
                       id="password"
                       type="password"
@@ -122,7 +122,7 @@ export function RegisterForm({
                   )}
                 </div>
                 <div className="grid gap-3">
-                  <Label htmlFor="verifyPassword">Verify Password</Label>
+                  <Label htmlFor="verifyPassword">Xác nhận mật khẩu</Label>
                   <Input
                       id="verifyPassword"
                       type="password"
@@ -133,13 +133,13 @@ export function RegisterForm({
                   )}
                 </div>
                 <Button type="submit" className="w-full" disabled={loading}>
-                  {loading ? 'Creating account...' : 'Sign up'}
+                  {loading ? 'Đang tạo tài khoản...' : 'Đăng ký'}
                 </Button>
               </div>
 
               <div className="after:border-border relative text-center text-sm after:absolute after:inset-0 after:top-1/2 after:z-0 after:flex after:items-center after:border-t">
                 <span className="bg-card text-muted-foreground relative z-10 px-2">
-                  Or continue with
+                  Hoặc tiếp tục với
                 </span>
               </div>
               <GoogleLogin
@@ -157,8 +157,8 @@ export function RegisterForm({
         </CardContent>
       </Card>
       <div className="text-muted-foreground *:[a]:hover:text-primary text-center text-xs text-balance *:[a]:underline *:[a]:underline-offset-4">
-        By clicking continue, you agree to our <a href="#">Terms of Service</a>{" "}
-        and <a href="#">Privacy Policy</a>.
+        Bằng cách nhấp tiếp tục, bạn đồng ý với <a href="#">Điều khoản dịch vụ</a>{" "}
+        và <a href="#">Chính sách bảo mật</a> của chúng tôi.
       </div>
     </div>
   );

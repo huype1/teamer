@@ -16,6 +16,9 @@ interface ProjectActionsProps {
   onManageMembers?: (project: Project) => void;
   variant?: "default" | "outline";
   size?: "default" | "sm" | "lg" | "icon";
+  canEdit?: boolean;
+  canDelete?: boolean;
+  canManageMembers?: boolean;
 }
 
 const ProjectActions: React.FC<ProjectActionsProps> = ({
@@ -24,7 +27,10 @@ const ProjectActions: React.FC<ProjectActionsProps> = ({
   onDelete,
   onManageMembers,
   variant = "outline",
-  size = "icon"
+  size = "icon",
+  canEdit = true,
+  canDelete = true,
+  canManageMembers = true
 }) => {
   return (
     <DropdownMenu>
@@ -34,19 +40,19 @@ const ProjectActions: React.FC<ProjectActionsProps> = ({
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
-        {onEdit && project && (
+        {onEdit && project && canEdit && (
           <DropdownMenuItem onClick={() => onEdit(project)}>
             <Edit className="mr-2 h-4 w-4" />
             Chỉnh sửa dự án
           </DropdownMenuItem>
         )}
-        {onManageMembers && project && (
+        {onManageMembers && project && canManageMembers && (
           <DropdownMenuItem onClick={() => onManageMembers(project)}>
             <UserPlus className="mr-2 h-4 w-4" />
             Quản lý thành viên
           </DropdownMenuItem>
         )}
-        {onDelete && project && (
+        {onDelete && project && canDelete && (
           <DropdownMenuItem 
             onClick={() => onDelete(project.id)}
             className="text-red-600"

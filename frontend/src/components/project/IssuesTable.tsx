@@ -1,5 +1,5 @@
 import React from "react";
-import { Edit, Trash2, Bug, FileText, Layers, Target, Zap } from "lucide-react";
+import { Bug, FileText, Layers, Target, Zap } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from "@/components/ui/select";
@@ -7,33 +7,40 @@ import { Badge } from "@/components/ui/badge";
 import { Link } from "react-router-dom";
 import type { ProjectMember } from "@/types/project";
 import type { Issue } from "@/types/issue";
+import type { Sprint } from "@/types/sprint";
 
 interface IssuesTableProps {
   issues: Issue[];
   projectMembers: ProjectMember[];
+  sprints?: Sprint[];
   onStatusChange: (issueId: string, newStatus: string) => void;
   onPriorityChange: (issueId: string, newPriority: string) => void;
   onIssueTypeChange: (issueId: string, newIssueType: string) => void;
   onAssigneeChange: (issueId: string, assigneeId: string) => void;
+  onSprintChange?: (issueId: string, sprintId: string) => void;
   canEditIssue: (issue: Issue) => boolean;
   canChangeStatus: (issue: Issue) => boolean;
-  onDeleteIssue: (issueId: string) => void;
+
   onOpenCreateIssue?: () => void;
   canCreateIssue?: boolean;
+  onCreateSubtask?: (issue: Issue) => void;
 }
 
 export const IssuesTable: React.FC<IssuesTableProps> = ({
   issues,
   projectMembers,
+  sprints,
   onStatusChange,
   onPriorityChange,
   onIssueTypeChange,
   onAssigneeChange,
-  canEditIssue,
+  onSprintChange,
+  canEditIssue = () => false, // Default to a function that always returns false
   canChangeStatus,
-  onDeleteIssue,
+
   onOpenCreateIssue,
   canCreateIssue,
+  onCreateSubtask,
 }) => {
   const getPriorityColor = (priority: string) => {
     switch (priority) {
@@ -142,8 +149,8 @@ export const IssuesTable: React.FC<IssuesTableProps> = ({
                 <th className="px-4 py-2 text-left text-sm font-semibold">Độ ưu tiên</th>
                 <th className="px-4 py-2 text-left text-sm font-semibold">Người tạo</th>
                 <th className="px-4 py-2 text-left text-sm font-semibold">Người phụ trách</th>
+                <th className="px-4 py-2 text-left text-sm font-semibold">Sprint</th>
                 <th className="px-4 py-2 text-left text-sm font-semibold">Ngày hết hạn</th>
-                <th className="px-4 py-2 text-left text-sm font-semibold">Hành động</th>
               </tr>
             </thead>
             <tbody>
@@ -159,20 +166,14 @@ export const IssuesTable: React.FC<IssuesTableProps> = ({
                   <tr key={issue.id} className="border-b hover:bg-muted/50">
                     <td className="px-4 py-2 text-sm font-medium">{issue.key}</td>
                     <td className="px-4 py-2">
-                      <div>
-                        <div className="font-medium">
-                          <Link 
-                            to={`/issues/${issue.id}`}
-                            className="hover:text-primary transition-colors"
-                          >
-                            {issue.title}
-                          </Link>
-                        </div>
-                        {issue.description && (
-                          <div className="text-sm text-muted-foreground truncate max-w-xs">
-                            {issue.description}
-                          </div>
-                        )}
+                      <div className="max-w-xs">
+                        <Link 
+                          to={`/issues/${issue.id}`}
+                          className="font-medium hover:text-primary transition-colors block truncate"
+                          title={issue.title}
+                        >
+                          {issue.title}
+                        </Link>
                       </div>
                     </td>
                     <td className="px-4 py-2">
@@ -260,27 +261,53 @@ export const IssuesTable: React.FC<IssuesTableProps> = ({
                         <SelectContent>
                           <SelectItem value="unassigned">Chưa phân công</SelectItem>
                           {projectMembers.map((member) => (
-                            <SelectItem key={member.user.id} value={member.user.id}>
+                            <SelectItem key={member.userId} value={member.userId}>
                               {member.user.name}
                             </SelectItem>
                           ))}
                         </SelectContent>
                       </Select>
                     </td>
+                    <td className="px-4 py-2">
+                      {canEditIssue(issue) && sprints && onSprintChange ? (
+                        <Select
+                          value={issue.sprintId || "backlog"}
+                          onValueChange={v => onSprintChange(issue.id, v)}
+                        >
+                          <SelectTrigger className="w-32">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="backlog">Backlog</SelectItem>
+                            {sprints.map(sprint => (
+                              <SelectItem key={sprint.id} value={sprint.id}>
+                                {sprint.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      ) : (
+                        <span>
+                          {sprints && issue.sprintId
+                            ? (sprints.find(s => s.id === issue.sprintId)?.name || issue.sprintId)
+                            : "Backlog"}
+                        </span>
+                      )}
+                    </td>
                     <td className="px-4 py-2 text-sm">
                       {issue.dueDate ? new Date(issue.dueDate).toLocaleDateString() : "-"}
                     </td>
                     <td className="px-4 py-2">
-                      <div className="flex gap-2">
-                        <Button variant="outline" size="icon">
-                          <Edit className="h-4 w-4" />
+                      {onCreateSubtask && issue.issueType !== "SUBTASK" && (
+                        <Button 
+                          variant="outline" 
+                          size="icon" 
+                          onClick={() => onCreateSubtask(issue)}
+                          title="Tạo subtask"
+                        >
+                          <Zap className="h-4 w-4" />
                         </Button>
-                        {canEditIssue(issue) && (
-                          <Button variant="destructive" size="icon" onClick={() => onDeleteIssue(issue.id)}>
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        )}
-                      </div>
+                      )}
                     </td>
                   </tr>
                 );
@@ -300,4 +327,4 @@ export const IssuesTable: React.FC<IssuesTableProps> = ({
       </CardContent>
     </Card>
   );
-}; 
+};

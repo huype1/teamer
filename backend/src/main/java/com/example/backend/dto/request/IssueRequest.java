@@ -24,5 +24,7 @@ public class IssueRequest {
     private LocalDate dueDate;
     private Integer storyPoints;
     private UUID assigneeId;
+    private UUID sprintId;
+    private UUID parentId;
 
 }

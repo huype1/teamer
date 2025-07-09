@@ -6,10 +6,12 @@ import com.example.backend.dto.request.ProjectUpdateRequest;
 import com.example.backend.dto.response.ApiResponse;
 import com.example.backend.dto.response.ProjectMemberResponse;
 import com.example.backend.dto.response.ProjectResponse;
+import com.example.backend.dto.response.UserResponse;
 import com.example.backend.entity.*;
 import com.example.backend.exception.AppException;
 import com.example.backend.exception.ErrorCode;
 import com.example.backend.mapper.ProjectMapper;
+import com.example.backend.mapper.UserMapper;
 import com.example.backend.service.InvitationService;
 import com.example.backend.service.ProjectService;
 import com.example.backend.service.TeamService;
@@ -36,6 +38,7 @@ public class ProjectController {
     ProjectService projectService;
     UserService userService;
     ProjectMapper projectMapper;
+    UserMapper userMapper;
     InvitationService invitationService;
     TeamService teamService;
 
@@ -234,7 +237,12 @@ public class ProjectController {
 
         List<com.example.backend.entity.ProjectMember> members = projectService.getProjectMembers(projectId);
         List<ProjectMemberResponse> responses = members.stream()
-                .map(projectMapper::toMemberResponse)
+                .map(member -> ProjectMemberResponse.builder()
+                        .projectId(member.getProjectId())
+                        .userId(member.getUserId())
+                        .role(member.getRole())
+                        .joinedAt(member.getJoinedAt())
+                        .build())
                 .toList();
 
         return ApiResponse.<List<ProjectMemberResponse>>builder()
@@ -281,5 +289,21 @@ public class ProjectController {
         return ApiResponse.<Void>builder()
                 .message("Member role updated successfully")
                 .build();
+    }
+
+    @GetMapping("/{projectId}/users")
+    public ApiResponse<List<UserResponse>> getProjectUsers(@PathVariable("projectId") UUID projectId) {
+        UUID userId = JwtUtils.getSubjectFromJwt();
+        log.info("Fetching users for project: {} by user: {}", projectId, userId);
+
+        List<User> users = projectService.getProjectUsers(projectId);
+        List<UserResponse> responses = users.stream()
+            .map(userMapper::toUserResponse)
+            .toList();
+
+        return ApiResponse.<List<UserResponse>>builder()
+            .message("Project users fetched successfully")
+            .result(responses)
+            .build();
     }
 }

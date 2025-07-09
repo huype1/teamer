@@ -2,8 +2,8 @@ package com.example.backend.mapper;
 
 import com.example.backend.dto.request.ProjectCreationRequest;
 import com.example.backend.dto.request.ProjectUpdateRequest;
-import com.example.backend.dto.response.ProjectMemberResponse;
 import com.example.backend.dto.response.ProjectResponse;
+import com.example.backend.dto.response.ProjectMemberResponse;
 import com.example.backend.entity.Project;
 import com.example.backend.entity.ProjectMember;
 import org.springframework.stereotype.Component;
@@ -71,7 +71,6 @@ public class ProjectMapper {
                 .userId(member.getUserId())
                 .role(member.getRole())
                 .joinedAt(member.getJoinedAt())
-                .user(member.getUser() != null ? userMapper.toUserResponse(member.getUser()) : null)
                 .build();
     }
     

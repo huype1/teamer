@@ -30,4 +30,20 @@ public interface TeamMemberRepository extends JpaRepository<TeamMember, TeamMemb
     List<TeamMember> findByUserIdAndRole(@Param("userId") UUID userId, @Param("role") String role);
     
     void deleteByTeamIdAndUserId(UUID teamId, UUID userId);
+
+    @Query("SELECT tm FROM TeamMember tm " +
+           "LEFT JOIN FETCH tm.team " +
+           "WHERE tm.userId = :userId")
+    List<TeamMember> findByUserIdWithTeam(@Param("userId") UUID userId);
+    
+    // Tối ưu query chỉ select những field cần thiết
+    @Query("SELECT tm.teamId, tm.userId, tm.role, tm.joinedAt FROM TeamMember tm " +
+           "WHERE tm.userId = :userId")
+    List<Object[]> findMinimalByUserId(@Param("userId") UUID userId);
+    
+    // Query để lấy team members với thông tin user đầy đủ
+    @Query("SELECT tm FROM TeamMember tm " +
+           "LEFT JOIN FETCH tm.user " +
+           "WHERE tm.teamId = :teamId")
+    List<TeamMember> findByTeamIdWithUser(@Param("teamId") UUID teamId);
 }

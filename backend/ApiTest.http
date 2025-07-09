@@ -1,578 +1,344 @@
-### GET request to the API root endpoint
-GET http://localhost:8080/api
+### Authentication APIs
 
-###
 POST http://localhost:8080/api/auth/register
 Content-Type: application/json
 
 {
-  "email": "huype2004@gmail.com",
-  "name": "provipadmin",
+  "email": "test@example.com",
+  "name": "Test User",
   "password": "12345678",
   "provider": "EMAIL_PASSWORD",
   "avatarUrl": ""
 }
-###
-###
-#{
-#  "code": 0,
-#  "message": "User registered successfully",
-#  "result": {
-#    "id": "210f3b58-3e9f-46eb-a833-10e9ee7a1bc5",
-#    "email": "huype2004@gmail.com",
-#    "name": "provipadmin",
-#    "avatarUrl": "https://media.istockphoto.com/id/1495088043/vector/user-profile-icon-avatar-or-person-icon-profile-picture-portrait-symbol-default-portrait.jpg?s=612x612&w=0&k=20&c=dhV2p1JwmloBTOaGAtaA3AW1KSnjsdMt7-U_3EZElZ0=",
-#    "provider": "EMAIL_PASSWORD",
-#    "createdAt": "2025-06-23T22:38:41.5584+07:00",
-#    "updatedAt": "2025-06-23T22:38:41.5584+07:00"
-#  }
-#}
 
 ###
-GET http://localhost:8080/api/users
-Authorization: Bearer eyJhbGciOiJIUzUxMiJ9.eyJpc3MiOiJodHRwOi8vbG9jYWxob3N0OjUxNzMiLCJzdWIiOiIyMTBmM2I1OC0zZTlmLTQ2ZWItYTgzMy0xMGU5ZWU3YTFiYzUiLCJleHAiOjE3NTEzMzcxODMsImlhdCI6MTc1MTI1MDc4MywiZW1haWwiOiJodXlwZTIwMDRAZ21haWwuY29tIiwianRpIjoiMDY4MDEzNzctY2NkOC00OGUyLTgyNDgtZWJiYjQyNDBmNzA4In0.VET2_mwTUEqBfkpRmlCoz7BStj8vYCB5Gp6qNcsFSxeE-U6Pj0R5vOzAyrUaZWEGovtN2zjxXq3cm8JVgnXbAQ
-###
-#{
-#  "code": 0,
-#  "message": "List of users fetched successfully",
-#  "result": [
-#    {
-#      "id": "210f3b58-3e9f-46eb-a833-10e9ee7a1bc5",
-#      "email": "huype2004@gmail.com",
-#      "name": "provipadmin",
-#      "avatarUrl": "https://media.istockphoto.com/id/1495088043/vector/user-profile-icon-avatar-or-person-icon-profile-picture-portrait-symbol-default-portrait.jpg?s=612x612&w=0&k=20&c=dhV2p1JwmloBTOaGAtaA3AW1KSnjsdMt7-U_3EZElZ0=",
-#      "provider": "EMAIL_PASSWORD",
-#      "createdAt": "2025-06-23T15:38:41.5584Z",
-#      "updatedAt": "2025-06-23T15:38:41.5584Z"
-#    }
-#  ]
-#}
-###
+
 POST http://localhost:8080/api/auth/login
 Content-Type: application/json
 
 {
-  "email": "huype2004@gmail.com",
+  "email": "test@example.com",
   "password": "12345678"
 }
-###
-#{
-#  "code": 0,
-#  "message": "Login successfully",
-#  "result":
-#{
-#    "token": "eyJhbGciOiJIUzUxMiJ9.eyJpc3MiOiJodHRwOi8vbG9jYWxob3N0OjUxNzMiLCJzdWIiOiIyMTBmM2I1OC0zZTlmLTQ2ZWItYTgzMy0xMGU5ZWU3YTFiYzUiLCJleHAiOjE3NTA3Nzk2MTEsImlhdCI6MTc1MDY5MzIxMSwiZW1haWwiOiJodXlwZTIwMDRAZ21haWwuY29tIiwianRpIjoiNjI4YjQ2NWItODFmOC00OGVlLWIxOTMtYzhmMGM2MjYxNTRhIn0.pM2hG1rru-vUxbB7-X_cMKg3fsGUedjhnxw9NQMHxZe4dFqfERaESxm7lNOSX7WDdN5N3PvcB_b58vvRmeP4GQ",
-#    "authenticated": true,
-#    "user": {
-#      "id": "210f3b58-3e9f-46eb-a833-10e9ee7a1bc5",
-#      "email": "huype2004@gmail.com",
-#      "name": "provipadmin",
-#      "avatarUrl": "https://media.istockphoto.com/id/1495088043/vector/user-profile-icon-avatar-or-person-icon-profile-picture-portrait-symbol-default-portrait.jpg?s=612x612&w=0&k=20&c=dhV2p1JwmloBTOaGAtaA3AW1KSnjsdMt7-U_3EZElZ0=",
-#      "provider": "EMAIL_PASSWORD",
-#      "createdAt": "2025-06-23T15:38:41.5584Z",
-#      "updatedAt": "2025-06-23T15:38:41.5584Z"
-#    }
-#  }
-### ref: https://www.jetbrains.com/help/idea/http-client-in-product-code-editor.html#create-custom-http-methods
-###
-POST http://localhost:8080/api/auth/introspect
-Content-Type: application/json
 
-{
-  "token": "eyJhbGciOiJIUzUxMiJ9.eyJpc3MiOiJodHRwOi8vbG9jYWxob3N0OjUxNzMiLCJzdWIiOiIyMTBmM2I1OC0zZTlmLTQ2ZWItYTgzMy0xMGU5ZWU3YTFiYzUiLCJleHAiOjE3NTEzMzcxODMsImlhdCI6MTc1MTI1MDc4MywiZW1haWwiOiJodXlwZTIwMDRAZ21haWwuY29tIiwianRpIjoiMDY4MDEzNzctY2NkOC00OGUyLTgyNDgtZWJiYjQyNDBmNzA4In0.VET2_mwTUEqBfkpRmlCoz7BStj8vYCB5Gp6qNcsFSxeE-U6Pj0R5vOzAyrUaZWEGovtN2zjxXq3cm8JVgnXbAQ"
-}
 ###
-POST http://localhost:8080/api/auth/refresh
-Content-Type: application/json
 
-{
-  "token": "eyJhbGciOiJIUzUxMiJ9.eyJpc3MiOiJodHRwOi8vbG9jYWxob3N0OjUxNzMiLCJzdWIiOiIyMTBmM2I1OC0zZTlmLTQ2ZWItYTgzMy0xMGU5ZWU3YTFiYzUiLCJleHAiOjE3NTEzMzcxODMsImlhdCI6MTc1MTI1MDc4MywiZW1haWwiOiJodXlwZTIwMDRAZ21haWwuY29tIiwianRpIjoiMDY4MDEzNzctY2NkOC00OGUyLTgyNDgtZWJiYjQyNDBmNzA4In0.VET2_mwTUEqBfkpRmlCoz7BStj8vYCB5Gp6qNcsFSxeE-U6Pj0R5vOzAyrUaZWEGovtN2zjxXq3cm8JVgnXbAQ"
-}
-### logout
 POST http://localhost:8080/api/auth/logout
 Content-Type: application/json
 
 {
   "token": ""
 }
-####
-#
-#
-### Delete user
-DELETE http://localhost:8080/api/users/delete/{userId}
-Authorization: Bearer eyJhbGciOiJIUzUxMiJ9.eyJpc3MiOiJodHRwOi8vbG9jYWxob3N0OjUxNzMiLCJzdWIiOiIyMTBmM2I1OC0zZTlmLTQ2ZWItYTgzMy0xMGU5ZWU3YTFiYzUiLCJleHAiOjE3NTEzMzcxODMsImlhdCI6MTc1MTI1MDc4MywiZW1haWwiOiJodXlwZTIwMDRAZ21haWwuY29tIiwianRpIjoiMDY4MDEzNzctY2NkOC00OGUyLTgyNDgtZWJiYjQyNDBmNzA4In0.VET2_mwTUEqBfkpRmlCoz7BStj8vYCB5Gp6qNcsFSxeE-U6Pj0R5vOzAyrUaZWEGovtN2zjxXq3cm8JVgnXbAQ 
 
-### Get my info
+###
+
+### User APIs
+
 GET http://localhost:8080/api/users/me
-Authorization: Bearer eyJhbGciOiJIUzUxMiJ9.eyJpc3MiOiJodHRwOi8vbG9jYWxob3N0OjUxNzMiLCJzdWIiOiIyMTBmM2I1OC0zZTlmLTQ2ZWItYTgzMy0xMGU5ZWU3YTFiYzUiLCJleHAiOjE3NTEzMzcxODMsImlhdCI6MTc1MTI1MDc4MywiZW1haWwiOiJodXlwZTIwMDRAZ21haWwuY29tIiwianRpIjoiMDY4MDEzNzctY2NkOC00OGUyLTgyNDgtZWJiYjQyNDBmNzA4In0.VET2_mwTUEqBfkpRmlCoz7BStj8vYCB5Gp6qNcsFSxeE-U6Pj0R5vOzAyrUaZWEGovtN2zjxXq3cm8JVgnXbAQ
+Authorization: Bearer {{authToken}}
+
 ###
-#{
-#  "code": 1000,
-#  "result": {
-#    "id": "210f3b58-3e9f-46eb-a833-10e9ee7a1bc5",
-#    "email": "huype2004@gmail.com",
-#    "name": "provipadmin",
-#    "avatarUrl": "https://media.istockphoto.com/id/1495088043/vector/user-profile-icon-avatar-or-person-icon-profile-picture-portrait-symbol-default-portrait.jpg?s=612x612&w=0&k=20&c=dhV2p1JwmloBTOaGAtaA3AW1KSnjsdMt7-U_3EZElZ0=",
-#    "provider": "EMAIL_PASSWORD",
-#    "createdAt": "2025-06-23T15:38:41.5584Z",
-#    "updatedAt": "2025-06-23T15:38:41.5584Z"
-#  }
-#}
-### Create team
+
+GET http://localhost:8080/api/users
+Authorization: Bearer {{authToken}}
+
+###
+
+### Team APIs
+
 POST http://localhost:8080/api/teams
-Authorization: Bearer eyJhbGciOiJIUzUxMiJ9.eyJpc3MiOiJodHRwOi8vbG9jYWxob3N0OjUxNzMiLCJzdWIiOiIyMTBmM2I1OC0zZTlmLTQ2ZWItYTgzMy0xMGU5ZWU3YTFiYzUiLCJleHAiOjE3NTEzMzcxODMsImlhdCI6MTc1MTI1MDc4MywiZW1haWwiOiJodXlwZTIwMDRAZ21haWwuY29tIiwianRpIjoiMDY4MDEzNzctY2NkOC00OGUyLTgyNDgtZWJiYjQyNDBmNzA4In0.VET2_mwTUEqBfkpRmlCoz7BStj8vYCB5Gp6qNcsFSxeE-U6Pj0R5vOzAyrUaZWEGovtN2zjxXq3cm8JVgnXbAQ
+Authorization: Bearer {{authToken}}
 Content-Type: application/json
 
 {
-  "name": "Test Team for Member Query",
-  "description": "A test team to verify the member query works correctly."
+  "name": "Test Team",
+  "description": "A test team"
 }
+
 ###
-#{
-#  "code": 0,
-#  "message": "Team created successfully",
-#  "result": {
-#    "id": "b77a9ba2-accf-4965-81c1-8bb929494fe0",
-#    "name": "Summer enjoyer team",
-#    "description": "A team for summer enthusiasts who wants to enjoy the summer together.",
-#    "avatarUrl": null,
-#    "createdBy": "210f3b58-3e9f-46eb-a833-10e9ee7a1bc5",
-#    "createdAt": "2025-06-23T23:22:03.956721+07:00",
-#    "updatedAt": "2025-06-23T23:22:03.956721+07:00"
-#  }
-#}
-### Update team
-PUT http://localhost:8080/api/teams/ad9b0c32-11d0-4e96-b8ce-6e38f5909e42
-Authorization: Bearer eyJhbGciOiJIUzUxMiJ9.eyJpc3MiOiJodHRwOi8vbG9jYWxob3N0OjUxNzMiLCJzdWIiOiIyMTBmM2I1OC0zZTlmLTQ2ZWItYTgzMy0xMGU5ZWU3YTFiYzUiLCJleHAiOjE3NTEzMzcxODMsImlhdCI6MTc1MTI1MDc4MywiZW1haWwiOiJodXlwZTIwMDRAZ21haWwuY29tIiwianRpIjoiMDY4MDEzNzctY2NkOC00OGUyLTgyNDgtZWJiYjQyNDBmNzA4In0.VET2_mwTUEqBfkpRmlCoz7BStj8vYCB5Gp6qNcsFSxeE-U6Pj0R5vOzAyrUaZWEGovtN2zjxXq3cm8JVgnXbAQ
-Content-Type: application/json
 
-{
-  "name": "Updated Summer enjoyer team",
-  "description": "Trip and party team for summer enthusiasts who wants to enjoy the summer together"
-}
-###
-#{
-#  "code": 0,
-#  "message": "Team updated successfully",
-#  "result": {
-#    "id": "b77a9ba2-accf-4965-81c1-8bb929494fe0",
-#    "name": "Updated Summer enjoyer team",
-#    "description": "Trip and party team for summer enthusiasts who wants to enjoy the summer together",
-#    "avatarUrl": null,
-#    "createdBy": "210f3b58-3e9f-46eb-a833-10e9ee7a1bc5",
-#    "createdAt": "2025-06-23T16:22:03.956721Z",
-#    "updatedAt": "2025-06-23T23:23:33.234657+07:00"
-#  }
-#}
-### Delete team
-DELETE http://localhost:8080/api/teams/b77a9ba2-accf-4965-81c1-8bb929494fe0
-Authorization: Bearer eyJhbGciOiJIUzUxMiJ9.eyJpc3MiOiJodHRwOi8vbG9jYWxob3N0OjUxNzMiLCJzdWIiOiIyMTBmM2I1OC0zZTlmLTQ2ZWItYTgzMy0xMGU5ZWU3YTFiYzUiLCJleHAiOjE3NTEzMzcxODMsImlhdCI6MTc1MTI1MDc4MywiZW1haWwiOiJodXlwZTIwMDRAZ21haWwuY29tIiwianRpIjoiMDY4MDEzNzctY2NkOC00OGUyLTgyNDgtZWJiYjQyNDBmNzA4In0.VET2_mwTUEqBfkpRmlCoz7BStj8vYCB5Gp6qNcsFSxeE-U6Pj0R5vOzAyrUaZWEGovtN2zjxXq3cm8JVgnXbAQ 
-
-### Get team by id
-GET http://localhost:8080/api/teams/ad9b0c32-11d0-4e96-b8ce-6e38f5909e42
-Authorization: Bearer eyJhbGciOiJIUzUxMiJ9.eyJpc3MiOiJodHRwOi8vbG9jYWxob3N0OjUxNzMiLCJzdWIiOiIyMTBmM2I1OC0zZTlmLTQ2ZWItYTgzMy0xMGU5ZWU3YTFiYzUiLCJleHAiOjE3NTEzMzcxODMsImlhdCI6MTc1MTI1MDc4MywiZW1haWwiOiJodXlwZTIwMDRAZ21haWwuY29tIiwianRpIjoiMDY4MDEzNzctY2NkOC00OGUyLTgyNDgtZWJiYjQyNDBmNzA4In0.VET2_mwTUEqBfkpRmlCoz7BStj8vYCB5Gp6qNcsFSxeE-U6Pj0R5vOzAyrUaZWEGovtN2zjxXq3cm8JVgnXbAQ
-
-### Search teams that user belongs in
 GET http://localhost:8080/api/teams
-Authorization: Bearer eyJhbGciOiJIUzUxMiJ9.eyJpc3MiOiJodHRwOi8vbG9jYWxob3N0OjUxNzMiLCJzdWIiOiIyMTBmM2I1OC0zZTlmLTQ2ZWItYTgzMy0xMGU5ZWU3YTFiYzUiLCJleHAiOjE3NTEzMzcxODMsImlhdCI6MTc1MTI1MDc4MywiZW1haWwiOiJodXlwZTIwMDRAZ21haWwuY29tIiwianRpIjoiMDY4MDEzNzctY2NkOC00OGUyLTgyNDgtZWJiYjQyNDBmNzA4In0.VET2_mwTUEqBfkpRmlCoz7BStj8vYCB5Gp6qNcsFSxeE-U6Pj0R5vOzAyrUaZWEGovtN2zjxXq3cm8JVgnXbAQ
+Authorization: Bearer {{authToken}}
 
-### Add user into teams
-POST http://localhost:8080/api/teams/d7c20d6a-8c6e-40cb-9fac-c7a96da034f7/members?userId=d7c20d6a-8c6e-40cb-9fac-c7a96da034f7&role=ADMIN
-Authorization: Bearer eyJhbGciOiJIUzUxMiJ9.eyJpc3MiOiJodHRwOi8vbG9jYWxob3N0OjUxNzMiLCJzdWIiOiIyMTBmM2I1OC0zZTlmLTQ2ZWItYTgzMy0xMGU5ZWU3YTFiYzUiLCJleHAiOjE3NTEzMzcxODMsImlhdCI6MTc1MTI1MDc4MywiZW1haWwiOiJodXlwZTIwMDRAZ21haWwuY29tIiwianRpIjoiMDY4MDEzNzctY2NkOC00OGUyLTgyNDgtZWJiYjQyNDBmNzA4In0.VET2_mwTUEqBfkpRmlCoz7BStj8vYCB5Gp6qNcsFSxeE-U6Pj0R5vOzAyrUaZWEGovtN2zjxXq3cm8JVgnXbAQ
-
-### Update User Role in team
-PUT http://localhost:8080/api/teams/d7c20d6a-8c6e-40cb-9fac-c7a96da034f7/members?userId=d7c20d6a-8c6e-40cb-9fac-c7a96da034f7&role=ADMIN
-Authorization: Bearer eyJhbGciOiJIUzUxMiJ9.eyJpc3MiOiJodHRwOi8vbG9jYWxob3N0OjUxNzMiLCJzdWIiOiIyMTBmM2I1OC0zZTlmLTQ2ZWItYTgzMy0xMGU5ZWU3YTFiYzUiLCJleHAiOjE3NTEzMzcxODMsImlhdCI6MTc1MTI1MDc4MywiZW1haWwiOiJodXlwZTIwMDRAZ21haWwuY29tIiwianRpIjoiMDY4MDEzNzctY2NkOC00OGUyLTgyNDgtZWJiYjQyNDBmNzA4In0.VET2_mwTUEqBfkpRmlCoz7BStj8vYCB5Gp6qNcsFSxeE-U6Pj0R5vOzAyrUaZWEGovtN2zjxXq3cm8JVgnXbAQ
-
-### Get team members
-GET http://localhost:8080/api/teams/ad9b0c32-11d0-4e96-b8ce-6e38f5909e42/members
-Authorization: Bearer eyJhbGciOiJIUzUxMiJ9.eyJpc3MiOiJodHRwOi8vbG9jYWxob3N0OjUxNzMiLCJzdWIiOiIyMTBmM2I1OC0zZTlmLTQ2ZWItYTgzMy0xMGU5ZWU3YTFiYzUiLCJleHAiOjE3NTEzMzcxODMsImlhdCI6MTc1MTI1MDc4MywiZW1haWwiOiJodXlwZTIwMDRAZ21haWwuY29tIiwianRpIjoiMDY4MDEzNzctY2NkOC00OGUyLTgyNDgtZWJiYjQyNDBmNzA4In0.VET2_mwTUEqBfkpRmlCoz7BStj8vYCB5Gp6qNcsFSxeE-U6Pj0R5vOzAyrUaZWEGovtN2zjxXq3cm8JVgnXbAQ
-
-### Get projects by team
-GET http://localhost:8080/api/projects/team/ad9b0c32-11d0-4e96-b8ce-6e38f5909e42
-Authorization: Bearer eyJhbGciOiJIUzUxMiJ9.eyJpc3MiOiJodHRwOi8vbG9jYWxob3N0OjUxNzMiLCJzdWIiOiIyMTBmM2I1OC0zZTlmLTQ2ZWItYTgzMy0xMGU5ZWU3YTFiYzUiLCJleHAiOjE3NTEzMzcxODMsImlhdCI6MTc1MTI1MDc4MywiZW1haWwiOiJodXlwZTIwMDRAZ21haWwuY29tIiwianRpIjoiMDY4MDEzNzctY2NkOC00OGUyLTgyNDgtZWJiYjQyNDBmNzA4In0.VET2_mwTUEqBfkpRmlCoz7BStj8vYCB5Gp6qNcsFSxeE-U6Pj0R5vOzAyrUaZWEGovtN2zjxXq3cm8JVgnXbAQ
-
-### Get projects
-GET http://localhost:8080/api/projects
-Authorization: Bearer eyJhbGciOiJIUzUxMiJ9.eyJpc3MiOiJodHRwOi8vbG9jYWxob3N0OjUxNzMiLCJzdWIiOiIyMTBmM2I1OC0zZTlmLTQ2ZWItYTgzMy0xMGU5ZWU3YTFiYzUiLCJleHAiOjE3NTEzMzcxODMsImlhdCI6MTc1MTI1MDc4MywiZW1haWwiOiJodXlwZTIwMDRAZ21haWwuY29tIiwianRpIjoiMDY4MDEzNzctY2NkOC00OGUyLTgyNDgtZWJiYjQyNDBmNzA4In0.VET2_mwTUEqBfkpRmlCoz7BStj8vYCB5Gp6qNcsFSxeE-U6Pj0R5vOzAyrUaZWEGovtN2zjxXq3cm8JVgnXbAQ 
-
-### Get project by id
-GET http://localhost:8080/api/projects/d7c20d6a-8c6e-40cb-9fac-c7a96da034f7
-Authorization: Bearer eyJhbGciOiJIUzUxMiJ9.eyJpc3MiOiJodHRwOi8vbG9jYWxob3N0OjUxNzMiLCJzdWIiOiIyMTBmM2I1OC0zZTlmLTQ2ZWItYTgzMy0xMGU5ZWU3YTFiYzUiLCJleHAiOjE3NTEzMzcxODMsImlhdCI6MTc1MTI1MDc4MywiZW1haWwiOiJodXlwZTIwMDRAZ21haWwuY29tIiwianRpIjoiMDY4MDEzNzctY2NkOC00OGUyLTgyNDgtZWJiYjQyNDBmNzA4In0.VET2_mwTUEqBfkpRmlCoz7BStj8vYCB5Gp6qNcsFSxeE-U6Pj0R5vOzAyrUaZWEGovtN2zjxXq3cm8JVgnXbAQ 
 ###
-#{
-#  "code": 0,
-#  "message": "Project fetched successfully",
-#  "result": {
-#    "id": "d7c20d6a-8c6e-40cb-9fac-c7a96da034f7",
-#    "name": "test planning project",
-#    "description": "test planning project description",
-#    "avatarUrl": null,
-#    "key": "SMRP",
-#    "isPublic": false,
-#    "createdAt": "2025-06-24T02:34:58.206436Z",
-#    "updatedAt": "2025-06-24T02:34:58.206436Z",
-#    "teamId": "ad9b0c32-11d0-4e96-b8ce-6e38f5909e42",
-#    "chatId": "7eb82c1f-7800-4139-8ba8-3159e27d308c",
-#    "creator": {
-#      "id": "210f3b58-3e9f-46eb-a833-10e9ee7a1bc5",
-#      "email": "huype2004@gmail.com",
-#      "name": "provipadmin",
-#      "avatarUrl": "https://media.istockphoto.com/id/1495088043/vector/user-profile-icon-avatar-or-person-icon-profile-picture-portrait-symbol-default-portrait.jpg?s=612x612&w=0&k=20&c=dhV2p1JwmloBTOaGAtaA3AW1KSnjsdMt7-U_3EZElZ0=",
-#      "provider": "EMAIL_PASSWORD",
-#      "createdAt": "2025-06-23T15:38:41.5584Z",
-#      "updatedAt": "2025-06-23T15:38:41.5584Z"
-#    },
-#    "members": [
-#      {
-#        "projectId": "d7c20d6a-8c6e-40cb-9fac-c7a96da034f7",
-#        "userId": "210f3b58-3e9f-46eb-a833-10e9ee7a1bc5",
-#        "role": "ADMIN",
-#        "joinedAt": "2025-06-24T02:34:58.968717Z",
-#        "user": {
-#          "id": "210f3b58-3e9f-46eb-a833-10e9ee7a1bc5",
-#          "email": "huype2004@gmail.com",
-#          "name": "provipadmin",
-#          "avatarUrl": "https://media.istockphoto.com/id/1495088043/vector/user-profile-icon-avatar-or-person-icon-profile-picture-portrait-symbol-default-portrait.jpg?s=612x612&w=0&k=20&c=dhV2p1JwmloBTOaGAtaA3AW1KSnjsdMt7-U_3EZElZ0=",
-#          "provider": "EMAIL_PASSWORD",
-#          "createdAt": "2025-06-23T15:38:41.5584Z",
-#          "updatedAt": "2025-06-23T15:38:41.5584Z"
-#        }
-#      }
-#    ],
-#    "memberCount": 0
-#  }
-#}
+
+GET http://localhost:8080/api/teams/{{teamId}}
+Authorization: Bearer {{authToken}}
+
 ###
-### Create project
+
+PUT http://localhost:8080/api/teams/{{teamId}}
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+  "name": "Updated Team",
+  "description": "Updated description"
+}
+
+###
+
+DELETE http://localhost:8080/api/teams/{{teamId}}
+Authorization: Bearer {{authToken}}
+
+###
+
+### Project APIs
+
 POST http://localhost:8080/api/projects
-Authorization: Bearer eyJhbGciOiJIUzUxMiJ9.eyJpc3MiOiJodHRwOi8vbG9jYWxob3N0OjUxNzMiLCJzdWIiOiIyMTBmM2I1OC0zZTlmLTQ2ZWItYTgzMy0xMGU5ZWU3YTFiYzUiLCJleHAiOjE3NTEzMzcxODMsImlhdCI6MTc1MTI1MDc4MywiZW1haWwiOiJodXlwZTIwMDRAZ21haWwuY29tIiwianRpIjoiMDY4MDEzNzctY2NkOC00OGUyLTgyNDgtZWJiYjQyNDBmNzA4In0.VET2_mwTUEqBfkpRmlCoz7BStj8vYCB5Gp6qNcsFSxeE-U6Pj0R5vOzAyrUaZWEGovtN2zjxXq3cm8JVgnXbAQ
+Authorization: Bearer {{authToken}}
 Content-Type: application/json
 
 {
-  "name": "test planning project",
-  "description": "test planning project description",
-  "key": "SMRP",
-  "teamId": "ad9b0c32-11d0-4e96-b8ce-6e38f5909e42"
+  "name": "Test Project",
+  "description": "A test project",
+  "key": "TEST",
+  "teamId": "{{teamId}}"
 }
+
 ###
-#{
-#  "code": 0,
-#  "message": "Project created successfully",
-#  "result": {
-#    "id": "d7c20d6a-8c6e-40cb-9fac-c7a96da034f7",
-#    "name": "test planning project",
-#    "description": "test planning project description",
-#    "avatarUrl": null,
-#    "key": "SMRP",
-#    "isPublic": false,
-#    "createdAt": "2025-06-24T09:34:58.206436+07:00",
-#    "updatedAt": "2025-06-24T09:34:58.206436+07:00",
-#    "teamId": "ad9b0c32-11d0-4e96-b8ce-6e38f5909e42",
-#    "chatId": "7eb82c1f-7800-4139-8ba8-3159e27d308c",
-#    "creator": {
-#      "id": "210f3b58-3e9f-46eb-a833-10e9ee7a1bc5",
-#      "email": "huype2004@gmail.com",
-#      "name": "provipadmin",
-#      "avatarUrl": "https://media.istockphoto.com/id/1495088043/vector/user-profile-icon-avatar-or-person-icon-profile-picture-portrait-symbol-default-portrait.jpg?s=612x612&w=0&k=20&c=dhV2p1JwmloBTOaGAtaA3AW1KSnjsdMt7-U_3EZElZ0=",
-#      "provider": "EMAIL_PASSWORD",
-#      "createdAt": "2025-06-23T15:38:41.5584Z",
-#      "updatedAt": "2025-06-23T15:38:41.5584Z"
-#    },
-#    "members": [],
-#    "memberCount": 0
-#  }
-#}
-### Update project
-PUT http://localhost:8080/api/projects/d7c20d6a-8c6e-40cb-9fac-c7a96da034f7
-Authorization: Bearer eyJhbGciOiJIUzUxMiJ9.eyJpc3MiOiJodHRwOi8vbG9jYWxob3N0OjUxNzMiLCJzdWIiOiIyMTBmM2I1OC0zZTlmLTQ2ZWItYTgzMy0xMGU5ZWU3YTFiYzUiLCJleHAiOjE3NTEzMzcxODMsImlhdCI6MTc1MTI1MDc4MywiZW1haWwiOiJodXlwZTIwMDRAZ21haWwuY29tIiwianRpIjoiMDY4MDEzNzctY2NkOC00OGUyLTgyNDgtZWJiYjQyNDBmNzA4In0.VET2_mwTUEqBfkpRmlCoz7BStj8vYCB5Gp6qNcsFSxeE-U6Pj0R5vOzAyrUaZWEGovtN2zjxXq3cm8JVgnXbAQ 
+
+GET http://localhost:8080/api/projects
+Authorization: Bearer {{authToken}}
+
+###
+
+GET http://localhost:8080/api/projects/{{projectId}}
+Authorization: Bearer {{authToken}}
+
+###
+
+PUT http://localhost:8080/api/projects/{{projectId}}
+Authorization: Bearer {{authToken}}
 Content-Type: application/json
 
-
 {
-  "name": "Trip Planning Project",
-  "description": "Be ready for summer 2025"
+  "name": "Updated Project",
+  "description": "Updated description"
 }
-###
-#{
-#  "code": 0,
-#  "message": "Project updated successfully",
-#  "result": {
-#    "id": "d7c20d6a-8c6e-40cb-9fac-c7a96da034f7",
-#    "name": "Trip Planning Project",
-#    "description": "Be ready for summer 2025",
-#    "avatarUrl": null,
-#    "key": "SMRP",
-#    "isPublic": null,
-#    "createdAt": "2025-06-24T02:34:58.206436Z",
-#    "updatedAt": "2025-06-24T09:56:55.161598+07:00",
-#    "teamId": "ad9b0c32-11d0-4e96-b8ce-6e38f5909e42",
-#    "chatId": "7eb82c1f-7800-4139-8ba8-3159e27d308c",
-#    "creator": {
-#      "id": "210f3b58-3e9f-46eb-a833-10e9ee7a1bc5",
-#      "email": "huype2004@gmail.com",
-#      "name": "provipadmin",
-#      "avatarUrl": "https://media.istockphoto.com/id/1495088043/vector/user-profile-icon-avatar-or-person-icon-profile-picture-portrait-symbol-default-portrait.jpg?s=612x612&w=0&k=20&c=dhV2p1JwmloBTOaGAtaA3AW1KSnjsdMt7-U_3EZElZ0=",
-#      "provider": "EMAIL_PASSWORD",
-#      "createdAt": "2025-06-23T15:38:41.5584Z",
-#      "updatedAt": "2025-06-23T15:38:41.5584Z"
-#    },
-#    "members": [
-#      {
-#        "projectId": "d7c20d6a-8c6e-40cb-9fac-c7a96da034f7",
-#        "userId": "210f3b58-3e9f-46eb-a833-10e9ee7a1bc5",
-#        "role": "ADMIN",
-#        "joinedAt": "2025-06-24T02:34:58.968717Z",
-#        "user": {
-#          "id": "210f3b58-3e9f-46eb-a833-10e9ee7a1bc5",
-#          "email": "huype2004@gmail.com",
-#          "name": "provipadmin",
-#          "avatarUrl": "https://media.istockphoto.com/id/1495088043/vector/user-profile-icon-avatar-or-person-icon-profile-picture-portrait-symbol-default-portrait.jpg?s=612x612&w=0&k=20&c=dhV2p1JwmloBTOaGAtaA3AW1KSnjsdMt7-U_3EZElZ0=",
-#          "provider": "EMAIL_PASSWORD",
-#          "createdAt": "2025-06-23T15:38:41.5584Z",
-#          "updatedAt": "2025-06-23T15:38:41.5584Z"
-#        }
-#      }
-#    ],
-#    "memberCount": 0
-#  }
-#}
+
 ###
 
+DELETE http://localhost:8080/api/projects/{{projectId}}
+Authorization: Bearer {{authToken}}
 
-### Delete project
-DELETE http://localhost:8080/api/projects/{projectId}
-Authorization: Bearer eyJhbGciOiJIUzUxMiJ9.eyJpc3MiOiJodHRwOi8vbG9jYWxob3N0OjUxNzMiLCJzdWIiOiIyMTBmM2I1OC0zZTlmLTQ2ZWItYTgzMy0xMGU5ZWU3YTFiYzUiLCJleHAiOjE3NTEzMzcxODMsImlhdCI6MTc1MTI1MDc4MywiZW1haWwiOiJodXlwZTIwMDRAZ21haWwuY29tIiwianRpIjoiMDY4MDEzNzctY2NkOC00OGUyLTgyNDgtZWJiYjQyNDBmNzA4In0.VET2_mwTUEqBfkpRmlCoz7BStj8vYCB5Gp6qNcsFSxeE-U6Pj0R5vOzAyrUaZWEGovtN2zjxXq3cm8JVgnXbAQ 
+###
 
-### Invite to project
+### Project Member APIs
+
+GET http://localhost:8080/api/projects/{{projectId}}/members
+Authorization: Bearer {{authToken}}
+
+###
+
 POST http://localhost:8080/api/projects/invite
-Authorization: Bearer eyJhbGciOiJIUzUxMiJ9.eyJpc3MiOiJodHRwOi8vbG9jYWxob3N0OjUxNzMiLCJzdWIiOiIyMTBmM2I1OC0zZTlmLTQ2ZWItYTgzMy0xMGU5ZWU3YTFiYzUiLCJleHAiOjE3NTEzMzcxODMsImlhdCI6MTc1MTI1MDc4MywiZW1haWwiOiJodXlwZTIwMDRAZ21haWwuY29tIiwianRpIjoiMDY4MDEzNzctY2NkOC00OGUyLTgyNDgtZWJiYjQyNDBmNzA4In0.VET2_mwTUEqBfkpRmlCoz7BStj8vYCB5Gp6qNcsFSxeE-U6Pj0R5vOzAyrUaZWEGovtN2zjxXq3cm8JVgnXbAQ 
+Authorization: Bearer {{authToken}}
 Content-Type: application/json
 
 {
-  "email": "ngocminhtran5350@gmail.com",
-  "projectId": "d7c20d6a-8c6e-40cb-9fac-c7a96da034f7",
-  "role": "PM"
-}
-
-### Accept project invitation
-GET http://localhost:8080/api/projects/accept_invitation?token=74f12759-ada1-4c74-b23e-0ce3a87542e0
-Authorization: Bearer eyJhbGciOiJIUzUxMiJ9.eyJpc3MiOiJodHRwOi8vbG9jYWxob3N0OjUxNzMiLCJzdWIiOiJlNDM3MTA4My02NDJlLTQxNzAtOTg0MS1kYTRhZDMwNmE5ODciLCJleHAiOjE3NTA4MjEwNzEsImlhdCI6MTc1MDczNDY3MSwiZW1haWwiOiJuZ29jbWluaHRyYW41MzUwQGdtYWlsLmNvbSIsImp0aSI6ImNmZmY1MDZhLTc3NDUtNDI3MS05NTgxLWE5NzRjMWIyZjMzMiJ9.diS1QmlgxyngcYenFoUIujploao_K80iupUgrxKvJCtqeN7_te0k4b_rCIvL1bB4FLOOY7_WS7O1DhSRvBoOmA
-
-### Get chat by project id
-GET http://localhost:8080/api/projects/{projectId}/chat
-Authorization: Bearer eyJhbGciOiJIUzUxMiJ9.eyJpc3MiOiJodHRwOi8vbG9jYWxob3N0OjUxNzMiLCJzdWIiOiIyMTBmM2I1OC0zZTlmLTQ2ZWItYTgzMy0xMGU5ZWU3YTFiYzUiLCJleHAiOjE3NTEzMzcxODMsImlhdCI6MTc1MTI1MDc4MywiZW1haWwiOiJodXlwZTIwMDRAZ21haWwuY29tIiwianRpIjoiMDY4MDEzNzctY2NkOC00OGUyLTgyNDgtZWJiYjQyNDBmNzA4In0.VET2_mwTUEqBfkpRmlCoz7BStj8vYCB5Gp6qNcsFSxeE-U6Pj0R5vOzAyrUaZWEGovtN2zjxXq3cm8JVgnXbAQ 
-
-### Get project members
-GET http://localhost:8080/api/projects/d7c20d6a-8c6e-40cb-9fac-c7a96da034f7/members
-Authorization: Bearer eyJhbGciOiJIUzUxMiJ9.eyJpc3MiOiJodHRwOi8vbG9jYWxob3N0OjUxNzMiLCJzdWIiOiIyMTBmM2I1OC0zZTlmLTQ2ZWItYTgzMy0xMGU5ZWU3YTFiYzUiLCJleHAiOjE3NTEzMzcxODMsImlhdCI6MTc1MTI1MDc4MywiZW1haWwiOiJodXlwZTIwMDRAZ21haWwuY29tIiwianRpIjoiMDY4MDEzNzctY2NkOC00OGUyLTgyNDgtZWJiYjQyNDBmNzA4In0.VET2_mwTUEqBfkpRmlCoz7BStj8vYCB5Gp6qNcsFSxeE-U6Pj0R5vOzAyrUaZWEGovtN2zjxXq3cm8JVgnXbAQ 
-
-### Remove project member
-DELETE http://localhost:8080/api/projects/d7c20d6a-8c6e-40cb-9fac-c7a96da034f7/members/e4371083-642e-4170-9841-da4ad306a987
-Authorization: Bearer eyJhbGciOiJIUzUxMiJ9.eyJpc3MiOiJodHRwOi8vbG9jYWxob3N0OjUxNzMiLCJzdWIiOiIyMTBmM2I1OC0zZTlmLTQ2ZWItYTgzMy0xMGU5ZWU3YTFiYzUiLCJleHAiOjE3NTEzMzcxODMsImlhdCI6MTc1MTI1MDc4MywiZW1haWwiOiJodXlwZTIwMDRAZ21haWwuY29tIiwianRpIjoiMDY4MDEzNzctY2NkOC00OGUyLTgyNDgtZWJiYjQyNDBmNzA4In0.VET2_mwTUEqBfkpRmlCoz7BStj8vYCB5Gp6qNcsFSxeE-U6Pj0R5vOzAyrUaZWEGovtN2zjxXq3cm8JVgnXbAQ 
-
-### Update member role
-PUT http://localhost:8080/api/projects/d7c20d6a-8c6e-40cb-9fac-c7a96da034f7/members/e4371083-642e-4170-9841-da4ad306a987/role?newRole=MEMBER
-Authorization: Bearer eyJhbGciOiJIUzUxMiJ9.eyJpc3MiOiJodHRwOi8vbG9jYWxob3N0OjUxNzMiLCJzdWIiOiIyMTBmM2I1OC0zZTlmLTQ2ZWItYTgzMy0xMGU5ZWU3YTFiYzUiLCJleHAiOjE3NTEzMzcxODMsImlhdCI6MTc1MTI1MDc4MywiZW1haWwiOiJodXlwZTIwMDRAZ21haWwuY29tIiwianRpIjoiMDY4MDEzNzctY2NkOC00OGUyLTgyNDgtZWJiYjQyNDBmNzA4In0.VET2_mwTUEqBfkpRmlCoz7BStj8vYCB5Gp6qNcsFSxeE-U6Pj0R5vOzAyrUaZWEGovtN2zjxXq3cm8JVgnXbAQ
-
-### Get issue by id
-GET http://localhost:8080/api/issues/{issueId}
-Authorization: Bearer eyJhbGciOiJIUzUxMiJ9.eyJpc3MiOiJodHRwOi8vbG9jYWxob3N0OjUxNzMiLCJzdWIiOiIyMTBmM2I1OC0zZTlmLTQ2ZWItYTgzMy0xMGU5ZWU3YTFiYzUiLCJleHAiOjE3NTEzMzcxODMsImlhdCI6MTc1MTI1MDc4MywiZW1haWwiOiJodXlwZTIwMDRAZ21haWwuY29tIiwianRpIjoiMDY4MDEzNzctY2NkOC00OGUyLTgyNDgtZWJiYjQyNDBmNzA4In0.VET2_mwTUEqBfkpRmlCoz7BStj8vYCB5Gp6qNcsFSxeE-U6Pj0R5vOzAyrUaZWEGovtN2zjxXq3cm8JVgnXbAQ 
-
-### Get issues by project id
-GET http://localhost:8080/api/issues/project/{projectId}
-Authorization: Bearer eyJhbGciOiJIUzUxMiJ9.eyJpc3MiOiJodHRwOi8vbG9jYWxob3N0OjUxNzMiLCJzdWIiOiIyMTBmM2I1OC0zZTlmLTQ2ZWItYTgzMy0xMGU5ZWU3YTFiYzUiLCJleHAiOjE3NTEzMzcxODMsImlhdCI6MTc1MTI1MDc4MywiZW1haWwiOiJodXlwZTIwMDRAZ21haWwuY29tIiwianRpIjoiMDY4MDEzNzctY2NkOC00OGUyLTgyNDgtZWJiYjQyNDBmNzA4In0.VET2_mwTUEqBfkpRmlCoz7BStj8vYCB5Gp6qNcsFSxeE-U6Pj0R5vOzAyrUaZWEGovtN2zjxXq3cm8JVgnXbAQ 
-
-### Create issue
-POST http://localhost:8080/api/issues
-Authorization: Bearer eyJhbGciOiJIUzUxMiJ9.eyJpc3MiOiJodHRwOi8vbG9jYWxob3N0OjUxNzMiLCJzdWIiOiIyMTBmM2I1OC0zZTlmLTQ2ZWItYTgzMy0xMGU5ZWU3YTFiYzUiLCJleHAiOjE3NTEzMzcxODMsImlhdCI6MTc1MTI1MDc4MywiZW1haWwiOiJodXlwZTIwMDRAZ21haWwuY29tIiwianRpIjoiMDY4MDEzNzctY2NkOC00OGUyLTgyNDgtZWJiYjQyNDBmNzA4In0.VET2_mwTUEqBfkpRmlCoz7BStj8vYCB5Gp6qNcsFSxeE-U6Pj0R5vOzAyrUaZWEGovtN2zjxXq3cm8JVgnXbAQ 
-Content-Type: application/json
-
-{
-  "title": "Location",
-  "description": "BV or HB",
-  "projectId": "d7c20d6a-8c6e-40cb-9fac-c7a96da034f7"
-}
-###
-#{
-#  "code": 0,
-#  "message": "Issue created successfully",
-#  "result": {
-#    "id": "59015495-9683-41b3-923a-1900096d431c",
-#    "key": "SMRP-1",
-#    "title": "Location",
-#    "description": "BV or HB",
-#    "priority": "P5",
-#    "status": "TO_DO",
-#    "issueType": "TASK",
-#    "startDate": null,
-#    "dueDate": null,
-#    "storyPoints": null,
-#    "createdAt": "2025-06-24T10:33:12.19796+07:00",
-#    "updatedAt": "2025-06-24T10:33:12.19796+07:00",
-#    "projectId": "d7c20d6a-8c6e-40cb-9fac-c7a96da034f7",
-#    "projectName": "Trip Planning Project",
-#    "projectKey": "SMRP",
-#    "reporterId": "210f3b58-3e9f-46eb-a833-10e9ee7a1bc5",
-#    "reporterName": "provipadmin",
-#    "reporterEmail": "huype2004@gmail.com",
-#    "assigneeId": null,
-#    "assigneeName": null,
-#    "assigneeEmail": null
-#  }
-#}
-
-### Update issue
-PUT http://localhost:8080/api/issues/59015495-9683-41b3-923a-1900096d431c
-Authorization: Bearer eyJhbGciOiJIUzUxMiJ9.eyJpc3MiOiJodHRwOi8vbG9jYWxob3N0OjUxNzMiLCJzdWIiOiIyMTBmM2I1OC0zZTlmLTQ2ZWItYTgzMy0xMGU5ZWU3YTFiYzUiLCJleHAiOjE3NTEzMzcxODMsImlhdCI6MTc1MTI1MDc4MywiZW1haWwiOiJodXlwZTIwMDRAZ21haWwuY29tIiwianRpIjoiMDY4MDEzNzctY2NkOC00OGUyLTgyNDgtZWJiYjQyNDBmNzA4In0.VET2_mwTUEqBfkpRmlCoz7BStj8vYCB5Gp6qNcsFSxeE-U6Pj0R5vOzAyrUaZWEGovtN2zjxXq3cm8JVgnXbAQ 
-Content-Type: application/json
-
-{
-  "title": "Location confirmation",
-  "description": "ready in 1 weeks",
-  "status": "IN_PROGRESS",
-  "priority": "P0"
-}
-
-### Update issue status
-PUT http://localhost:8080/api/issues/{issueId}/status?status=
-
-### Test issue key generation - Create multiple issues
-POST http://localhost:8080/api/issues
-Authorization: Bearer eyJhbGciOiJIUzUxMiJ9.eyJpc3MiOiJodHRwOi8vbG9jYWxob3N0OjUxNzMiLCJzdWIiOiIyMTBmM2I1OC0zZTlmLTQ2ZWItYTgzMy0xMGU5ZWU3YTFiYzUiLCJleHAiOjE3NTEzMzcxODMsImlhdCI6MTc1MTI1MDc4MywiZW1haWwiOiJodXlwZTIwMDRAZ21haWwuY29tIiwianRpIjoiMDY4MDEzNzctY2NkOC00OGUyLTgyNDgtZWJiYjQyNDBmNzA4In0.VET2_mwTUEqBfkpRmlCoz7BStj8vYCB5Gp6qNcsFSxeE-U6Pj0R5vOzAyrUaZWEGovtN2zjxXq3cm8JVgnXbAQ
-Content-Type: application/json
-
-{
-  "title": "Test Issue 1",
-  "description": "Testing issue key generation",
-  "projectId": "176fb204-16d5-4179-8a94-cc2bcffcd8ff"
+  "email": "member@example.com",
+  "projectId": "{{projectId}}",
+  "role": "MEMBER"
 }
 
 ###
 
-POST http://localhost:8080/api/issues
-Authorization: Bearer eyJhbGciOiJIUzUxMiJ9.eyJpc3MiOiJodHRwOi8vbG9jYWxob3N0OjUxNzMiLCJzdWIiOiIyMTBmM2I1OC0zZTlmLTQ2ZWItYTgzMy0xMGU5ZWU3YTFiYzUiLCJleHAiOjE3NTEzMzcxODMsImlhdCI6MTc1MTI1MDc4MywiZW1haWwiOiJodXlwZTIwMDRAZ21haWwuY29tIiwianRpIjoiMDY4MDEzNzctY2NkOC00OGUyLTgyNDgtZWJiYjQyNDBmNzA4In0.VET2_mwTUEqBfkpRmlCoz7BStj8vYCB5Gp6qNcsFSxeE-U6Pj0R5vOzAyrUaZWEGovtN2zjxXq3cm8JVgnXbAQ
+PUT http://localhost:8080/api/projects/{{projectId}}/members/{{memberId}}/role?newRole=ADMIN
+Authorization: Bearer {{authToken}}
+
+###
+
+DELETE http://localhost:8080/api/projects/{{projectId}}/members/{{memberId}}
+Authorization: Bearer {{authToken}}
+
+###
+
+### Team Member APIs
+
+GET http://localhost:8080/api/teams/{{teamId}}/users
+Authorization: Bearer {{authToken}}
+
+###
+
+POST http://localhost:8080/api/teams/{{teamId}}/members?userId={{userId}}&role=MEMBER
+Authorization: Bearer {{authToken}}
+
+###
+
+PUT http://localhost:8080/api/teams/{{teamId}}/members?userId={{userId}}&role=ADMIN
+Authorization: Bearer {{authToken}}
+
+###
+
+DELETE http://localhost:8080/api/teams/{{teamId}}/members/{{userId}}
+Authorization: Bearer {{authToken}}
+
+###
+
+POST http://localhost:8080/api/teams/{{teamId}}/invite
+Authorization: Bearer {{authToken}}
 Content-Type: application/json
 
 {
-  "title": "Test Issue 2", 
-  "description": "Testing issue key generation",
-  "projectId": "176fb204-16d5-4179-8a94-cc2bcffcd8ff"
+  "email": "newmember@example.com",
+  "role": "MEMBER"
 }
-Authorization: Bearer eyJhbGciOiJIUzUxMiJ9.eyJpc3MiOiJodHRwOi8vbG9jYWxob3N0OjUxNzMiLCJzdWIiOiIyMTBmM2I1OC0zZTlmLTQ2ZWItYTgzMy0xMGU5ZWU3YTFiYzUiLCJleHAiOjE3NTEzMzcxODMsImlhdCI6MTc1MTI1MDc4MywiZW1haWwiOiJodXlwZTIwMDRAZ21haWwuY29tIiwianRpIjoiMDY4MDEzNzctY2NkOC00OGUyLTgyNDgtZWJiYjQyNDBmNzA4In0.VET2_mwTUEqBfkpRmlCoz7BStj8vYCB5Gp6qNcsFSxeE-U6Pj0R5vOzAyrUaZWEGovtN2zjxXq3cm8JVgnXbAQ 
 
-### Set assignee
-PUT http://localhost:8080/api/issues/59015495-9683-41b3-923a-1900096d431c/assignee/e4371083-642e-4170-9841-da4ad306a987
-Authorization: Bearer eyJhbGciOiJIUzUxMiJ9.eyJpc3MiOiJodHRwOi8vbG9jYWxob3N0OjUxNzMiLCJzdWIiOiIyMTBmM2I1OC0zZTlmLTQ2ZWItYTgzMy0xMGU5ZWU3YTFiYzUiLCJleHAiOjE3NTEzMzcxODMsImlhdCI6MTc1MTI1MDc4MywiZW1haWwiOiJodXlwZTIwMDRAZ21haWwuY29tIiwianRpIjoiMDY4MDEzNzctY2NkOC00OGUyLTgyNDgtZWJiYjQyNDBmNzA4In0.VET2_mwTUEqBfkpRmlCoz7BStj8vYCB5Gp6qNcsFSxeE-U6Pj0R5vOzAyrUaZWEGovtN2zjxXq3cm8JVgnXbAQ 
+###
 
-### Delete issue
-DELETE http://localhost:8080/api/issues/{issueId}
-Authorization: Bearer eyJhbGciOiJIUzUxMiJ9.eyJpc3MiOiJodHRwOi8vbG9jYWxob3N0OjUxNzMiLCJzdWIiOiIyMTBmM2I1OC0zZTlmLTQ2ZWItYTgzMy0xMGU5ZWU3YTFiYzUiLCJleHAiOjE3NTEzMzcxODMsImlhdCI6MTc1MTI1MDc4MywiZW1haWwiOiJodXlwZTIwMDRAZ21haWwuY29tIiwianRpIjoiMDY4MDEzNzctY2NkOC00OGUyLTgyNDgtZWJiYjQyNDBmNzA4In0.VET2_mwTUEqBfkpRmlCoz7BStj8vYCB5Gp6qNcsFSxeE-U6Pj0R5vOzAyrUaZWEGovtN2zjxXq3cm8JVgnXbAQ 
+### Issue APIs
 
-### Create comment
+POST http://localhost:8080/api/issues
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+  "title": "Test Issue",
+  "description": "A test issue",
+  "projectId": "{{projectId}}",
+  "priority": "P2",
+  "issueType": "TASK"
+}
+
+###
+
+GET http://localhost:8080/api/issues/project/{{projectId}}
+Authorization: Bearer {{authToken}}
+
+###
+
+GET http://localhost:8080/api/issues/{{issueId}}
+Authorization: Bearer {{authToken}}
+
+###
+
+PUT http://localhost:8080/api/issues/{{issueId}}
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+  "title": "Updated Issue",
+  "description": "Updated description",
+  "priority": "P1",
+  "issueType": "STORY"
+}
+
+###
+
+PUT http://localhost:8080/api/issues/{{issueId}}/status?status=IN_PROGRESS
+Authorization: Bearer {{authToken}}
+
+###
+
+PUT http://localhost:8080/api/issues/{{issueId}}/assignee/{{userId}}
+Authorization: Bearer {{authToken}}
+
+###
+
+PUT http://localhost:8080/api/issues/{{issueId}}
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+  "title": "Updated Issue",
+  "description": "Updated description",
+  "priority": "P1",
+  "issueType": "STORY",
+  "sprintId": "{{sprintId}}"
+}
+
+###
+
+DELETE http://localhost:8080/api/issues/{{issueId}}
+Authorization: Bearer {{authToken}}
+
+###
+
+### Sprint APIs
+
+POST http://localhost:8080/api/sprints
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+  "name": "Sprint 1",
+  "goal": "Complete core features",
+  "startDate": "2024-01-15T00:00:00Z",
+  "endDate": "2024-01-29T23:59:59Z",
+  "projectId": "{{projectId}}"
+}
+
+###
+
+GET http://localhost:8080/api/sprints/project/{{projectId}}
+Authorization: Bearer {{authToken}}
+
+###
+
+PUT http://localhost:8080/api/sprints/{{sprintId}}
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+  "name": "Updated Sprint",
+  "goal": "Updated goal",
+  "startDate": "2024-01-20T00:00:00Z",
+  "endDate": "2024-02-03T23:59:59Z"
+}
+
+###
+
+POST http://localhost:8080/api/sprints/{{sprintId}}/start
+Authorization: Bearer {{authToken}}
+
+###
+
+POST http://localhost:8080/api/sprints/{{sprintId}}/end
+Authorization: Bearer {{authToken}}
+
+###
+
+DELETE http://localhost:8080/api/sprints/{{sprintId}}
+Authorization: Bearer {{authToken}}
+
+###
+
+### Sprint Issue APIs
+
+GET http://localhost:8080/api/sprints/{{sprintId}}/issues
+Authorization: Bearer {{authToken}}
+
+###
+
+GET http://localhost:8080/api/sprints/project/{{projectId}}/issues/backlog
+Authorization: Bearer {{authToken}}
+
+###
+
+GET http://localhost:8080/api/sprints/project/{{projectId}}/issues/active
+Authorization: Bearer {{authToken}}
+
+###
+
+GET http://localhost:8080/api/sprints/project/{{projectId}}/issues/upcoming
+Authorization: Bearer {{authToken}}
+
+###
+
+### Comment APIs
+
 POST http://localhost:8080/api/comments
-Authorization: Bearer eyJhbGciOiJIUzUxMiJ9.eyJpc3MiOiJodHRwOi8vbG9jYWxob3N0OjUxNzMiLCJzdWIiOiIyMTBmM2I1OC0zZTlmLTQ2ZWItYTgzMy0xMGU5ZWU3YTFiYzUiLCJleHAiOjE3NTEzMzcxODMsImlhdCI6MTc1MTI1MDc4MywiZW1haWwiOiJodXlwZTIwMDRAZ21haWwuY29tIiwianRpIjoiMDY4MDEzNzctY2NkOC00OGUyLTgyNDgtZWJiYjQyNDBmNzA4In0.VET2_mwTUEqBfkpRmlCoz7BStj8vYCB5Gp6qNcsFSxeE-U6Pj0R5vOzAyrUaZWEGovtN2zjxXq3cm8JVgnXbAQ 
+Authorization: Bearer {{authToken}}
 Content-Type: application/json
 
 {
-  "issueId": "59015495-9683-41b3-923a-1900096d431c",
-  "userId": "e4371083-642e-4170-9841-da4ad306a987",
-  "content": "We are very late compare to initial plan"
-}
-###
-#{
-#  "code": 0,
-#  "message": "Comment created successfully",
-#  "result": {
-#    "id": "43a84cc5-e600-4f7d-997e-979e38cb34a2",
-#    "content": "We are very late compare to initial plan",
-#    "createdAt": "2025-06-24T10:41:40.167943+07:00",
-#    "updatedAt": "2025-06-24T10:41:40.167943+07:00",
-#    "user": {
-#      "id": "e4371083-642e-4170-9841-da4ad306a987",
-#      "email": "ngocminhtran5350@gmail.com",
-#      "password": "$2a$10$AyHOb7xUeWQ.5GWzjBOV4.IZuGBuj8WJIb8x9IBTdBaBQuyBYW4QS",
-#      "name": "secondUser",
-#      "avatarUrl": "https://media.istockphoto.com/id/1495088043/vector/user-profile-icon-avatar-or-person-icon-profile-picture-portrait-symbol-default-portrait.jpg?s=612x612&w=0&k=20&c=dhV2p1JwmloBTOaGAtaA3AW1KSnjsdMt7-U_3EZElZ0=",
-#      "provider": "EMAIL_PASSWORD",
-#      "createdAt": "2025-06-24T03:10:50.868717Z",
-#      "updatedAt": "2025-06-24T03:10:50.868717Z"
-#    }
-#  }
-#}
-### Delete comment
-DELETE http://localhost:8080/api/comments/{commentId}
-Authorization: Bearer eyJhbGciOiJIUzUxMiJ9.eyJpc3MiOiJodHRwOi8vbG9jYWxob3N0OjUxNzMiLCJzdWIiOiIyMTBmM2I1OC0zZTlmLTQ2ZWItYTgzMy0xMGU5ZWU3YTFiYzUiLCJleHAiOjE3NTEzMzcxODMsImlhdCI6MTc1MTI1MDc4MywiZW1haWwiOiJodXlwZTIwMDRAZ21haWwuY29tIiwianRpIjoiMDY4MDEzNzctY2NkOC00OGUyLTgyNDgtZWJiYjQyNDBmNzA4In0.VET2_mwTUEqBfkpRmlCoz7BStj8vYCB5Gp6qNcsFSxeE-U6Pj0R5vOzAyrUaZWEGovtN2zjxXq3cm8JVgnXbAQ 
-
-### Get comments by issue id
-GET http://localhost:8080/api/comments/59015495-9683-41b3-923a-1900096d431c
-Authorization: Bearer eyJhbGciOiJIUzUxMiJ9.eyJpc3MiOiJodHRwOi8vbG9jYWxob3N0OjUxNzMiLCJzdWIiOiIyMTBmM2I1OC0zZTlmLTQ2ZWItYTgzMy0xMGU5ZWU3YTFiYzUiLCJleHAiOjE3NTEzMzcxODMsImlhdCI6MTc1MTI1MDc4MywiZW1haWwiOiJodXlwZTIwMDRAZ21haWwuY29tIiwianRpIjoiMDY4MDEzNzctY2NkOC00OGUyLTgyNDgtZWJiYjQyNDBmNzA4In0.VET2_mwTUEqBfkpRmlCoz7BStj8vYCB5Gp6qNcsFSxeE-U6Pj0R5vOzAyrUaZWEGovtN2zjxXq3cm8JVgnXbAQ 
-
-### Send message
-POST http://localhost:8080/api/messages/send
-Authorization: Bearer eyJhbGciOiJIUzUxMiJ9.eyJpc3MiOiJodHRwOi8vbG9jYWxob3N0OjUxNzMiLCJzdWIiOiIyMTBmM2I1OC0zZTlmLTQ2ZWItYTgzMy0xMGU5ZWU3YTFiYzUiLCJleHAiOjE3NTEzMzcxODMsImlhdCI6MTc1MTI1MDc4MywiZW1haWwiOiJodXlwZTIwMDRAZ21haWwuY29tIiwianRpIjoiMDY4MDEzNzctY2NkOC00OGUyLTgyNDgtZWJiYjQyNDBmNzA4In0.VET2_mwTUEqBfkpRmlCoz7BStj8vYCB5Gp6qNcsFSxeE-U6Pj0R5vOzAyrUaZWEGovtN2zjxXq3cm8JVgnXbAQ 
-Content-Type: application/json
-
-{
-  "chatId": "7e22b98e-b5e7-45b5-a703-a8a95480f085",
-  "content": "hello"
+  "content": "Test comment",
+  "issueId": "{{issueId}}"
 }
 
-### Get messages by chat id
-GET http://localhost:8080/api/messages/7e22b98e-b5e7-45b5-a703-a8a95480f085
-Authorization: Bearer eyJhbGciOiJIUzUxMiJ9.eyJpc3MiOiJodHRwOi8vbG9jYWxob3N0OjUxNzMiLCJzdWIiOiIyMTBmM2I1OC0zZTlmLTQ2ZWItYTgzMy0xMGU5ZWU3YTFiYzUiLCJleHAiOjE3NTEzMzcxODMsImlhdCI6MTc1MTI1MDc4MywiZW1haWwiOiJodXlwZTIwMDRAZ21haWwuY29tIiwianRpIjoiMDY4MDEzNzctY2NkOC00OGUyLTgyNDgtZWJiYjQyNDBmNzA4In0.VET2_mwTUEqBfkpRmlCoz7BStj8vYCB5Gp6qNcsFSxeE-U6Pj0R5vOzAyrUaZWEGovtN2zjxXq3cm8JVgnXbAQ
 ###
 
-#{
-#  "code": 0,
-#  "message": "Messages fetched successfully",
-#  "result": [
-#    {
-#      "id": "31398caf-4440-431a-9965-3ed06bea329f",
-#      "content": "hi",
-#      "createdAt": "2025-06-24T03:56:45.378529Z",
-#      "updatedAt": "2025-06-24T03:56:45.378529Z",
-#      "sender": {
-#        "id": "210f3b58-3e9f-46eb-a833-10e9ee7a1bc5",
-#        "email": "huype2004@gmail.com",
-#        "password": "$2a$10$LScQD7tWsRkcEOogfEjTLeVimolPU7jEWbfyfKPJLzqtcXUXOVn0S",
-#        "name": "provipadmin",
-#        "avatarUrl": "https://media.istockphoto.com/id/1495088043/vector/user-profile-icon-avatar-or-person-icon-profile-picture-portrait-symbol-default-portrait.jpg?s=612x612&w=0&k=20&c=dhV2p1JwmloBTOaGAtaA3AW1KSnjsdMt7-U_3EZElZ0=",
-#        "provider": "EMAIL_PASSWORD",
-#        "createdAt": "2025-06-23T15:38:41.5584Z",
-#        "updatedAt": "2025-06-23T15:38:41.5584Z"
-#      }
-#    },
-#    {
-#      "id": "97729c1e-6bf2-4a5c-bc00-b295744aceff",
-#      "content": "hello",
-#      "createdAt": "2025-06-24T03:57:20.331054Z",
-#      "updatedAt": "2025-06-24T03:57:20.331054Z",
-#      "sender": {
-#        "id": "210f3b58-3e9f-46eb-a833-10e9ee7a1bc5",
-#        "email": "huype2004@gmail.com",
-#        "password": "$2a$10$LScQD7tWsRkcEOogfEjTLeVimolPU7jEWbfyfKPJLzqtcXUXOVn0S",
-#        "name": "provipadmin",
-#        "avatarUrl": "https://media.istockphoto.com/id/1495088043/vector/user-profile-icon-avatar-or-person-icon-profile-picture-portrait-symbol-default-portrait.jpg?s=612x612&w=0&k=20&c=dhV2p1JwmloBTOaGAtaA3AW1KSnjsdMt7-U_3EZElZ0=",
-#        "provider": "EMAIL_PASSWORD",
-#        "createdAt": "2025-06-23T15:38:41.5584Z",
-#        "updatedAt": "2025-06-23T15:38:41.5584Z"
-#      }
-#    }
-#  ]
-#}
+GET http://localhost:8080/api/comments/issue/{{issueId}}
+Authorization: Bearer {{authToken}}
+
 ###
-
-### Team Member Management Tests ###
-
-### Add member to team
-POST http://localhost:8080/api/teams/{teamId}/members?userId={userId}&role=MEMBER
-Authorization: Bearer eyJhbGciOiJIUzUxMiJ9.eyJpc3MiOiJodHRwOi8vbG9jYWxob3N0OjUxNzMiLCJzdWIiOiIyMTBmM2I1OC0zZTlmLTQ2ZWItYTgzMy0xMGU5ZWU3YTFiYzUiLCJleHAiOjE3NTEzMzcxODMsImlhdCI6MTc1MTI1MDc4MywiZW1haWwiOiJodXlwZTIwMDRAZ21haWwuY29tIiwianRpIjoiMDY4MDEzNzctY2NkOC00OGUyLTgyNDgtZWJiYjQyNDBmNzA4In0.VET2_mwTUEqBfkpRmlCoz7BStj8vYCB5Gp6qNcsFSxeE-U6Pj0R5vOzAyrUaZWEGovtN2zjxXq3cm8JVgnXbAQ
-
-### Remove member from team
-DELETE http://localhost:8080/api/teams/{teamId}/members/{userId}
-Authorization: Bearer eyJhbGciOiJIUzUxMiJ9.eyJpc3MiOiJodHRwOi8vbG9jYWxob3N0OjUxNzMiLCJzdWIiOiIyMTBmM2I1OC0zZTlmLTQ2ZWItYTgzMy0xMGU5ZWU3YTFiYzUiLCJleHAiOjE3NTEzMzcxODMsImlhdCI6MTc1MTI1MDc4MywiZW1haWwiOiJodXlwZTIwMDRAZ21haWwuY29tIiwianRpIjoiMDY4MDEzNzctY2NkOC00OGUyLTgyNDgtZWJiYjQyNDBmNzA4In0.VET2_mwTUEqBfkpRmlCoz7BStj8vYCB5Gp6qNcsFSxeE-U6Pj0R5vOzAyrUaZWEGovtN2zjxXq3cm8JVgnXbAQ
-
-### Xóa thành viên khỏi dự án
-DELETE http://localhost:8080/api/projects/{projectId}/members/{userId}
-Authorization: Bearer <token>

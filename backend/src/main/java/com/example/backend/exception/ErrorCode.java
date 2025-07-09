@@ -17,6 +17,7 @@ public enum ErrorCode {
     UNAUTHORIZED(HttpStatus.FORBIDDEN, 1, "You are not allowed to access this api"),
     UNCAGETORIZED_EXCEPTION(HttpStatus.INTERNAL_SERVER_ERROR, 2, "Unknown error"),
     INVALID_KEY(HttpStatus.BAD_REQUEST, 3, "Invalid token"),
+    BAD_REQUEST(HttpStatus.BAD_REQUEST, 3, "Data request is invalid"),
     USERNAME_INVALID(HttpStatus.BAD_REQUEST, 4, "Username must be at least {min} character"),
     PASSWORD_INVALID(HttpStatus.BAD_REQUEST, 5, "Password must be at least {min} characters"),
     USER_EXISTED(HttpStatus.BAD_REQUEST, 6, "User existed"),

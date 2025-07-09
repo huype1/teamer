@@ -5,6 +5,7 @@ import com.example.backend.entity.Comment;
 import com.example.backend.entity.Issue;
 import com.example.backend.entity.Project;
 import com.example.backend.entity.ProjectMember;
+import com.example.backend.entity.Sprint;
 import com.example.backend.entity.User;
 import com.example.backend.exception.AppException;
 import com.example.backend.exception.ErrorCode;
@@ -12,6 +13,7 @@ import com.example.backend.repository.CommentRepository;
 import com.example.backend.repository.IssueRepository;
 import com.example.backend.repository.ProjectRepository;
 import com.example.backend.repository.ProjectMemberRepository;
+import com.example.backend.repository.SprintRepository;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
@@ -32,6 +34,7 @@ public class IssueService {
     UserService userService;
     ProjectRepository projectRepository;
     ProjectMemberRepository projectMemberRepository;
+    SprintRepository sprintRepository;
     CommentRepository commentRepository;
 
     public Issue getIssueById(UUID id) {
@@ -149,6 +152,13 @@ public class IssueService {
         }
         if (issueRequest.getStoryPoints() != null) {
             issue.setStoryPoints(issueRequest.getStoryPoints());
+        }
+        if (issueRequest.getSprintId() != null) {
+            Sprint sprint = sprintRepository.findById(issueRequest.getSprintId())
+                    .orElseThrow(() -> new AppException(ErrorCode.NOT_FOUND));
+            issue.setSprint(sprint);
+        } else {
+            issue.setSprint(null);
         }
         
         return issueRepository.save(issue);

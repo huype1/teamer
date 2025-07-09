@@ -34,8 +34,42 @@ export const getTeamMembers = async (teamId: string) => {
   return res.data;
 };
 
+export const getTeamUsers = async (teamId: string) => {
+  const res = await axios.get(`${baseUrl}/${teamId}/users`, addReqToken(localStorage.getItem("token")));
+  return res.data;
+};
+
 export const getTeamsWhereUserIsAdmin = async () => {
   const res = await axios.get(`${baseUrl}/admin`, addReqToken(localStorage.getItem("token")));
+  return res.data;
+};
+
+export const inviteMember = async (teamId: string, email: string, role: string) => {
+  const res = await axios.post(`${baseUrl}/${teamId}/invite`, {
+    email,
+    role
+  }, addReqToken(localStorage.getItem("token")));
+  return res.data;
+};
+
+export const updateMemberRole = async (teamId: string, userId: string, role: string) => {
+  const res = await axios.put(`${baseUrl}/${teamId}/members/${userId}/role`, null, {
+    ...addReqToken(localStorage.getItem("token")),
+    params: { role }
+  });
+  return res.data;
+};
+
+export const removeMember = async (teamId: string, userId: string) => {
+  const res = await axios.delete(`${baseUrl}/${teamId}/members/${userId}`, addReqToken(localStorage.getItem("token")));
+  return res.data;
+};
+
+export const addMemberToTeam = async (teamId: string, userId: string, role: string) => {
+  const res = await axios.post(`${baseUrl}/${teamId}/members`, null, {
+    ...addReqToken(localStorage.getItem("token")),
+    params: { userId, role }
+  });
   return res.data;
 };
 
@@ -46,5 +80,10 @@ export default {
   updateTeam, 
   deleteTeam, 
   getTeamMembers,
-  getTeamsWhereUserIsAdmin
+  getTeamUsers,
+  getTeamsWhereUserIsAdmin,
+  inviteMember,
+  updateMemberRole,
+  removeMember,
+  addMemberToTeam
 };

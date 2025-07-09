@@ -41,8 +41,10 @@ public class UserController {
 
     @GetMapping("/me")
     public ApiResponse<UserResponse> getMyInfo() {
-        ApiResponse<UserResponse> apiResponse = new ApiResponse<>();
-        apiResponse.setResult(userService.getMyInfo());
-        return apiResponse;
+        log.info("Fetching current user info with memberships");
+        return ApiResponse.<UserResponse>builder()
+                .message("User info fetched successfully")
+                .result(userService.getMyInfo())
+                .build();
     }
 }

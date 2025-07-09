@@ -7,6 +7,7 @@ import { Button } from "../ui/button";
 import { DndContext, useDraggable, useDroppable, PointerSensor, useSensor, useSensors, closestCorners } from '@dnd-kit/core';
 import type { DragEndEvent } from '@dnd-kit/core';
 import { Bug, FileText, Layers, Target, Zap } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 interface KanbanBoardProps {
   issues: Issue[];
@@ -14,6 +15,7 @@ interface KanbanBoardProps {
   onOpenCreateIssue?: () => void;
   canCreateIssue?: boolean;
   onStatusChange?: (issueId: string, newStatus: string) => void;
+  onCreateSubtask?: (issue: Issue) => void;
 }
 
 const STATUS_COLUMNS = [
@@ -101,7 +103,8 @@ function DroppableColumn({ status, children }: { status: string; children: React
   );
 }
 
-const KanbanBoard: React.FC<KanbanBoardProps> = ({ issues, onOpenCreateIssue, canCreateIssue, onStatusChange }) => {
+const KanbanBoard: React.FC<KanbanBoardProps> = ({ issues, onOpenCreateIssue, canCreateIssue, onStatusChange, onCreateSubtask }) => {
+  const navigate = useNavigate();
   const sensors = useSensors(
     useSensor(PointerSensor, {
       activationConstraint: {
@@ -146,8 +149,22 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({ issues, onOpenCreateIssue, ca
                           {typeConfig.label}
                         </Badge>
                         <Badge variant="outline" className="text-xs">{issue.priority}</Badge>
+                        {onCreateSubtask && issue.issueType !== "SUBTASK" && (
+                          <Button 
+                            size="sm" 
+                            variant="ghost" 
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              onCreateSubtask(issue);
+                            }}
+                            title="Tạo subtask"
+                            className="h-6 w-6 p-0"
+                          >
+                            <Zap className="h-3 w-3" />
+                          </Button>
+                        )}
                       </div>
-                      <div className="font-medium text-base mb-1">{issue.title}</div>
+                      <div className="font-medium text-base mb-1 hover:underline cursor-pointer" onClick={() => navigate(`/issues/${issue.id}`)}>{issue.title}</div>
                       <div className="text-xs text-muted-foreground mb-1 line-clamp-2">{issue.description}</div>
                       <div className="flex items-center gap-2 mt-2">
                         {issue.assignee && (

@@ -163,4 +163,18 @@ public class TeamService {
                 .filter(java.util.Objects::nonNull)
                 .toList();
     }
+    
+    public List<com.example.backend.dto.response.TeamUserResponse> getTeamUsers(UUID teamId) {
+        List<TeamMember> members = teamMemberRepository.findByTeamIdWithUser(teamId);
+        return members.stream()
+                .map(member -> com.example.backend.dto.response.TeamUserResponse.builder()
+                        .userId(member.getUserId())
+                        .name(member.getUser().getName())
+                        .email(member.getUser().getEmail())
+                        .avatarUrl(member.getUser().getAvatarUrl())
+                        .role(member.getRole())
+                        .joinedAt(member.getJoinedAt())
+                        .build())
+                .toList();
+    }
 }

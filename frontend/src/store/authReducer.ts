@@ -2,22 +2,14 @@ import AuthService from "@/service/authService";
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 import type {GoogleCredentials, LoginRequest} from "@/types/auth.ts";
 import UserService from "@/service/userService";
+import type { User } from "@/types/user";
 
 interface AuthState {
   token: string | null;
-  user: UserResponse | null;
+  user: User | null;
   loading: boolean;
   error: string | null;
   isAuthenticated: boolean;
-}
-
-interface UserResponse {
-  id: string;
-  email: string;
-  name: string;
-  avatarUrl: string;
-  createdAt: string;
-  updatedAt: string;
 }
 
 const initialState: AuthState = {
@@ -80,8 +72,10 @@ export const fetchUserInfo = createAsyncThunk(
   async (_, { rejectWithValue }) => {
     try {
       const response = await UserService.getMyInfo();
+      console.log("fetchUserInfo - Response from backend:", response);
       return response.result;
     } catch (error: unknown) {
+      console.error("fetchUserInfo - Error:", error);
       const errorMessage = error instanceof Error ? error.message : "Failed to fetch user info";
       return rejectWithValue(errorMessage);
     }

@@ -35,4 +35,15 @@ public interface ProjectMemberRepository extends JpaRepository<ProjectMember, Pr
            "JOIN Project p ON pm.projectId = p.id " +
            "WHERE p.team.id = :teamId")
     List<UUID> findDistinctUserIdsByTeamId(@Param("teamId") UUID teamId);
+
+    @Query("SELECT pm FROM ProjectMember pm " +
+           "LEFT JOIN FETCH pm.project p " +
+           "LEFT JOIN FETCH p.chat " +
+           "WHERE pm.userId = :userId")
+    List<ProjectMember> findByUserIdWithProject(@Param("userId") UUID userId);
+    
+    // Tối ưu query chỉ select những field cần thiết
+    @Query("SELECT pm.projectId, pm.userId, pm.role, pm.joinedAt FROM ProjectMember pm " +
+           "WHERE pm.userId = :userId")
+    List<Object[]> findMinimalByUserId(@Param("userId") UUID userId);
 }

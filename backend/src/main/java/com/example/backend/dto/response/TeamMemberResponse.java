@@ -1,18 +1,20 @@
 package com.example.backend.dto.response;
 
-import lombok.Data;
-import lombok.NoArgsConstructor;
-import lombok.AllArgsConstructor;
+import lombok.*;
+import lombok.experimental.FieldDefaults;
+
 import java.time.OffsetDateTime;
 import java.util.UUID;
 
-@Data
+@Getter
+@Setter
+@Builder
 @NoArgsConstructor
 @AllArgsConstructor
+@FieldDefaults(level = AccessLevel.PRIVATE)
 public class TeamMemberResponse {
-    private UUID teamId;
-    private UUID userId;
-    private String role;
-    private OffsetDateTime joinedAt;
-    private UserResponse user;
+    UUID teamId;
+    UUID userId;
+    String role;
+    OffsetDateTime joinedAt;
 } 

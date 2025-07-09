@@ -84,7 +84,7 @@ export function LoginForm({
     <div className={cn("flex flex-col gap-6", className)} {...props}>
       <Card className="w-full max-w-md mx-auto">
         <CardHeader className="text-center">
-          <CardTitle className="text-xl">Welcome back</CardTitle>
+          <CardTitle className="text-xl">Chào mừng trở lại</CardTitle>
           {error && <p className="text-red-500 text-sm mt-2">{error}</p>}
         </CardHeader>
         <CardContent>
@@ -105,7 +105,7 @@ export function LoginForm({
                 </div>
                 <div className="grid gap-3">
                   <div className="flex items-center">
-                    <Label htmlFor="password">Password</Label>
+                    <Label htmlFor="password">Mật khẩu</Label>
                   </div>
                   <Input
                       id="password"
@@ -117,12 +117,12 @@ export function LoginForm({
                   )}
                 </div>
                 <Button type="submit" className="w-full" disabled={loading}>
-                  {loading ? 'Signing in...' : 'Login'}
+                  {loading ? 'Đang đăng nhập...' : 'Đăng nhập'}
                 </Button>
               </div>
               <div className="after:border-border relative text-center text-sm after:absolute after:inset-0 after:top-1/2 after:z-0 after:flex after:items-center after:border-t">
                 <span className="bg-card text-muted-foreground relative z-10 px-2">
-                  Or continue with
+                  Hoặc tiếp tục với
                 </span>
               </div>
               <GoogleLogin
@@ -137,9 +137,9 @@ export function LoginForm({
               />
 
               <div className="text-center text-sm">
-                Don&apos;t have an account?{" "}
+                Chưa có tài khoản?{" "}
                 <a href="/register" className="underline underline-offset-4">
-                  Sign up
+                  Đăng ký
                 </a>
               </div>
             </div>
@@ -147,8 +147,8 @@ export function LoginForm({
         </CardContent>
       </Card>
       <div className="text-muted-foreground *:[a]:hover:text-primary text-center text-xs text-balance *:[a]:underline *:[a]:underline-offset-4">
-        By clicking continue, you agree to our <a href="#">Terms of Service</a>{" "}
-        and <a href="#">Privacy Policy</a>.
+        Bằng cách nhấp tiếp tục, bạn đồng ý với <a href="#">Điều khoản dịch vụ</a>{" "}
+        và <a href="#">Chính sách bảo mật</a> của chúng tôi.
       </div>
     </div>
   );

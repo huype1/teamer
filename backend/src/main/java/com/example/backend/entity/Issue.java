@@ -61,6 +61,10 @@ public class Issue {
     @JoinColumn(name = "assignee_id")
     User assignee;
 
+    @ManyToOne
+    @JoinColumn(name = "sprint_id")
+    Sprint sprint;
+
     @JsonIgnore
     @ManyToOne
     @JoinColumn(name = "project_id")

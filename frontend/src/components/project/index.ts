@@ -8,4 +8,6 @@ export { default as ProjectActions } from './ProjectActions';
 export { default as MemberManagement } from './MemberManagement';
 export { default as ProjectNavigation } from './ProjectNavigation';
 export { type ProjectTab, ProjectTabs } from './ProjectTabs';
-export { IssuesTable } from './IssuesTable'; 
+export { IssuesTable } from './IssuesTable';
+export { SprintIssuesTable } from './SprintIssuesTable';
+export { SprintIssuesCombinedTable } from './SprintIssuesCombinedTable'; 

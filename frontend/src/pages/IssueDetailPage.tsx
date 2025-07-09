@@ -20,26 +20,52 @@ import {
   Trash2, 
   MessageSquare, 
   Calendar,
-  Clock
+  Clock,
+  Zap,
+  Target
 } from "lucide-react";
 import { useSelector } from "react-redux";
 import type { RootState } from "@/store";
 import issueService from "@/service/issueService";
 import ProjectService from "@/service/projectService";
 import commentService, { type Comment } from "@/service/commentService";
-import type { Issue } from "@/types/issue";
+import type { Issue, UpdateIssueRequest } from "@/types/issue";
 import type { ProjectMember } from "@/types/project";
+import type { Sprint } from "@/types/sprint";
 import { toastSuccess, toastError } from "@/utils/toast";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Layout } from "@/components/layout";
+import EditIssueDialog from "@/components/project/EditIssueDialog";
+import sprintService from "@/service/sprintService";
+import type { User } from "@/types/user";
+import { getCurrentUserRole, isCurrentUserManager } from "@/utils/projectHelpers";
 
 const commentSchema = z.object({
   content: z.string().min(1, "Nội dung comment không được để trống"),
 });
 
 type CommentFormData = z.infer<typeof commentSchema>;
+
+// Map API response to FE Issue type
+const mapIssue = (issue: Record<string, unknown>): Issue => ({
+  ...(issue as Issue),
+  reporter: issue.reporterId
+    ? {
+        id: issue.reporterId as string,
+        name: issue.reporterName as string,
+        email: issue.reporterEmail as string,
+      }
+    : undefined,
+  assignee: issue.assigneeId
+    ? {
+        id: issue.assigneeId as string,
+        name: issue.assigneeName as string,
+        email: issue.assigneeEmail as string,
+      }
+    : undefined,
+});
 
 const IssueDetailPage: React.FC = () => {
   const { issueId } = useParams<{ issueId: string }>();
@@ -48,11 +74,17 @@ const IssueDetailPage: React.FC = () => {
   
   const [issue, setIssue] = useState<Issue | null>(null);
   const [project, setProject] = useState<{ id: string; name: string; members: ProjectMember[] } | null>(null);
-  const [projectMembers, setProjectMembers] = useState<ProjectMember[]>([]);
+
+  const [projectUsers, setProjectUsers] = useState<User[]>([]);
+  const [sprints, setSprints] = useState<Sprint[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [comments, setComments] = useState<Comment[]>([]);
+  const [subtasks, setSubtasks] = useState<Issue[]>([]);
+  const [updating, setUpdating] = useState(false);
+  const [projectMembers, setProjectMembers] = useState<ProjectMember[]>([]);
 
   const {
     register,
@@ -70,33 +102,64 @@ const IssueDetailPage: React.FC = () => {
     if (issueId) {
       fetchIssueData();
     }
-    console.log(issue)
   }, [issueId]);
 
   const fetchIssueData = async () => {
     try {
       setLoading(true);
       const issueRes = await issueService.getIssueById(issueId!);
-      console.log(issueRes)
+      console.log("Issue response:", issueRes);
       setIssue(mapIssue(issueRes.result));
       
       if (issueRes.result.projectId) {
-        const [projectRes, membersRes] = await Promise.all([
-          ProjectService.getProjectById(issueRes.result.projectId),
-          ProjectService.getProjectMembers(issueRes.result.projectId)
-        ]);
-        setProject(projectRes.result);
-        setProjectMembers(membersRes.result || []);
+        try {
+          const [projectRes, usersRes, sprintsRes] = await Promise.all([
+            ProjectService.getProjectById(issueRes.result.projectId),
+            ProjectService.getProjectUsers(issueRes.result.projectId),
+            sprintService.getSprintsByProject(issueRes.result.projectId)
+          ]);
+          setProject(projectRes.result);
+          setProjectUsers(usersRes.result || []);
+          setSprints(sprintsRes.result || []);
+          const membersRes = await ProjectService.getProjectMembers(issueRes.result.projectId);
+          setProjectMembers(membersRes.result || []);
+        } catch (sprintError) {
+          console.error("Lỗi khi lấy dữ liệu sprint:", sprintError);
+          // Không set error chính, chỉ log và tiếp tục
+          setSprints([]);
+        }
       }
       
       // Fetch comments
       const commentsRes = await commentService.getCommentsByIssueId(issueId!);
       setComments(commentsRes.result || []);
+      
+      // Fetch subtasks if this issue has subtasks
+      if (issueRes.result.subtasks && issueRes.result.subtasks.length > 0) {
+        setSubtasks(issueRes.result.subtasks.map(mapIssue));
+      }
     } catch (error) {
       console.error("Lỗi khi lấy dữ liệu issue:", error);
       setError("Lỗi khi lấy dữ liệu issue");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleUpdateIssue = async (data: UpdateIssueRequest) => {
+    if (!issue) return;
+    
+    setUpdating(true);
+    try {
+      await issueService.updateIssue(issue.id, data);
+      toastSuccess("Cập nhật issue thành công!");
+      setEditDialogOpen(false);
+      fetchIssueData(); // Refresh data
+    } catch (error) {
+      toastError("Cập nhật issue thất bại!");
+      console.error("Lỗi khi cập nhật issue:", error);
+    } finally {
+      setUpdating(false);
     }
   };
 
@@ -130,9 +193,16 @@ const IssueDetailPage: React.FC = () => {
     if (!issue || !user) return;
     
     try {
-      await issueService.setAssignee(issue.id, assigneeId);
-      const assignee = projectMembers.find(member => member.user.id === assigneeId)?.user;
-      setIssue(prev => prev ? { ...prev, assignee } : null);
+      await issueService.setAssignee(issue.id, assigneeId === "unassigned" ? undefined : assigneeId);
+      const assignee = assigneeId === "unassigned" ? undefined : projectUsers.find(u => u.id === assigneeId);
+      setIssue(prev => prev ? { 
+        ...prev, 
+        assignee: assignee ? {
+          id: assignee.id,
+          name: assignee.name,
+          email: assignee.email
+        } : undefined
+      } : null);
       toastSuccess("Cập nhật người được giao thành công!");
     } catch (error) {
       toastError("Cập nhật người được giao thất bại!");
@@ -209,30 +279,37 @@ const IssueDetailPage: React.FC = () => {
   const getStatusLabel = (status: string) => {
     switch (status) {
       case "TO_DO":
-        return "To Do";
+        return "Cần làm";
       case "IN_PROGRESS":
-        return "In Progress";
+        return "Đang làm";
       case "IN_REVIEW":
-        return "In Review";
+        return "Đang review";
       case "DONE":
-        return "Done";
+        return "Đã hoàn thành";
       default:
         return status;
     }
   };
 
   const canEditIssue = () => {
-    if (!user || !issue) return false;
-    return (
-      issue.reporter?.id === user.id ||
-      project?.members.some((m: ProjectMember) => m.user.id === user.id && m.role === "PM") ||
-      project?.members.some((m: ProjectMember) => m.user.id === user.id && m.role === "ADMIN")
-    );
+    if (!user || !issue || !project) return false;
+    const member = projectMembers.find(m => m.userId === user.id);
+    return issue.reporter?.id === user.id || member?.role === "ADMIN" || member?.role === "PM";
   };
 
   const canChangeStatus = () => {
-    if (!user || !issue) return false;
-    return issue.assignee?.id === user.id;
+    if (!user || !issue || !project) return false;
+    return (
+      issue.assignee?.id === user.id ||
+      issue.reporter?.id === user.id ||
+      isCurrentUserManager(user, project.id, project.teamId)
+    );
+  };
+
+  const canComment = () => {
+    if (!user || !issue || !project) return false;
+    const role = getCurrentUserRole(user, issue.projectId!, project.teamId);
+    return role && role !== "VIEWER";
   };
 
   const handleDeleteComment = async (commentId: string) => {
@@ -245,25 +322,6 @@ const IssueDetailPage: React.FC = () => {
       console.error("Error deleting comment:", error);
     }
   };
-
-  // Map API response to FE Issue type
-  const mapIssue = (issue: any): Issue => ({
-    ...issue,
-    reporter: issue.reporterId
-      ? {
-          id: issue.reporterId,
-          name: issue.reporterName,
-          email: issue.reporterEmail,
-        }
-      : undefined,
-    assignee: issue.assigneeId
-      ? {
-          id: issue.assigneeId,
-          name: issue.assigneeName,
-          email: issue.assigneeEmail,
-        }
-      : undefined,
-  });
 
   if (loading) {
     return (
@@ -311,7 +369,12 @@ const IssueDetailPage: React.FC = () => {
           
           <div className="flex gap-2">
             {canEditIssue() && (
-              <Button variant="outline" size="sm" className="gap-2">
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="gap-2"
+                onClick={() => setEditDialogOpen(true)}
+              >
                 <Edit className="w-4 h-4" />
                 Chỉnh sửa
               </Button>
@@ -334,9 +397,13 @@ const IssueDetailPage: React.FC = () => {
                 <CardTitle>Mô tả</CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="text-muted-foreground">
-                  {issue.description || "Không có mô tả"}
-                </p>
+                {issue.description ? (
+                  <div className="whitespace-pre-wrap text-muted-foreground">
+                    {issue.description}
+                  </div>
+                ) : (
+                  <p className="text-muted-foreground">Không có mô tả</p>
+                )}
               </CardContent>
             </Card>
 
@@ -378,7 +445,7 @@ const IssueDetailPage: React.FC = () => {
                               </Button>
                             )}
                           </div>
-                          <p className="text-sm">{comment.content}</p>
+                          <div className="whitespace-pre-wrap text-sm">{comment.content}</div>
                         </div>
                       </div>
                     ))}
@@ -386,6 +453,7 @@ const IssueDetailPage: React.FC = () => {
                 )}
                 
                 {/* Add Comment Form */}
+                {canComment() ? (
                 <form onSubmit={handleSubmit(onSubmitComment)} className="mt-4 space-y-2">
                   <Textarea
                     placeholder="Thêm comment..."
@@ -399,8 +467,53 @@ const IssueDetailPage: React.FC = () => {
                     {isSubmitting ? "Đang gửi..." : "Gửi comment"}
                   </Button>
                 </form>
+                ) : (
+                  <div className="mt-4 p-3 bg-muted rounded-lg text-center text-sm text-muted-foreground">
+                    Bạn không có quyền thêm comment
+                  </div>
+                )}
               </CardContent>
             </Card>
+
+            {/* Subtasks */}
+            {subtasks.length > 0 && (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Zap className="w-5 h-5" />
+                    Subtasks ({subtasks.length})
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-3">
+                    {subtasks.map((subtask) => (
+                      <div key={subtask.id} className="flex items-center justify-between p-3 border rounded-lg">
+                        <div className="flex items-center gap-3">
+                          <Badge variant="outline" className="text-xs">{subtask.priority}</Badge>
+                          <div>
+                            <div className="font-medium text-sm">{subtask.title}</div>
+                            <div className="text-xs text-muted-foreground">{subtask.key}</div>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Badge className={`text-xs ${getStatusColor(subtask.status)}`}>
+                            {getStatusLabel(subtask.status)}
+                          </Badge>
+                          {subtask.assignee && (
+                            <div className="flex items-center gap-1">
+                              <Avatar className="w-5 h-5">
+                                <AvatarFallback>{subtask.assignee.name.charAt(0)}</AvatarFallback>
+                              </Avatar>
+                              <span className="text-xs">{subtask.assignee.name}</span>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
           </div>
 
           {/* Sidebar */}
@@ -411,6 +524,16 @@ const IssueDetailPage: React.FC = () => {
                 <CardTitle>Chi tiết Issue</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
+                {/* Issue Type */}
+                <div>
+                  <Label className="text-sm font-medium">Loại Issue</Label>
+                  <div className="mt-1">
+                    <Badge variant="outline" className="text-xs">
+                      {issue.issueType || "N/A"}
+                    </Badge>
+                  </div>
+                </div>
+
                 {/* Status */}
                 <div>
                   <Label className="text-sm font-medium">Trạng thái</Label>
@@ -457,15 +580,96 @@ const IssueDetailPage: React.FC = () => {
                   )}
                 </div>
 
+                {/* Project Info */}
+                  <div>
+                  <Label className="text-sm font-medium">Dự án</Label>
+                  <div className="mt-1">
+                    <div className="text-sm font-medium">{issue.projectName || "N/A"}</div>
+                    <div className="text-xs text-muted-foreground">{issue.projectKey || "N/A"}</div>
+                  </div>
+                </div>
+
+                {/* Sprint Info */}
+                {issue.sprintId && (
+                  <div>
+                    <Label className="text-sm font-medium">Sprint</Label>
+                    <div className="mt-1">
+                      <div className="text-sm font-medium">
+                        {sprints.find(s => s.id === issue.sprintId)?.name || "N/A"}
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Parent Issue */}
+                {issue.parentId && (
+                  <div>
+                    <Label className="text-sm font-medium">Issue cha</Label>
+                    <div className="mt-1">
+                      <div className="text-sm font-medium">{issue.parentTitle || "N/A"}</div>
+                      <div className="text-xs text-muted-foreground">
+                        {issue.parentKey || issue.parentId}
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Story Points */}
+                <div>
+                  <Label className="text-sm font-medium">Story Points</Label>
+                  <div className="flex items-center gap-2 mt-1">
+                    <Target className="w-4 h-4 text-muted-foreground" />
+                    <span className="text-sm">{issue.storyPoints || "N/A"}</span>
+                  </div>
+                </div>
+
+                {/* Start Date */}
+                {issue.startDate && (
+                  <div>
+                    <Label className="text-sm font-medium">Ngày bắt đầu</Label>
+                    <div className="mt-1">
+                      <span className="text-sm">
+                        {new Date(issue.startDate).toLocaleDateString('vi-VN')}
+                      </span>
+                    </div>
+                  </div>
+                )}
+
+                {/* Due Date */}
+                {issue.dueDate && (
+                  <div>
+                    <Label className="text-sm font-medium">Hạn hoàn thành</Label>
+                    <div className="mt-1">
+                      <span className="text-sm">
+                        {new Date(issue.dueDate).toLocaleDateString('vi-VN')}
+                      </span>
+                    </div>
+                  </div>
+                )}
+
+                {/* Created At */}
+                <div>
+                  <Label className="text-sm font-medium">Ngày tạo</Label>
+                  <div className="mt-1">
+                    <span className="text-sm">
+                      {new Date(issue.createdAt).toLocaleDateString('vi-VN')}
+                    </span>
+                  </div>
+                </div>
+
                 {/* Reporter */}
                 <div>
                   <Label className="text-sm font-medium">Người tạo</Label>
                   <div className="flex items-center gap-2 mt-1">
                     <Avatar className="w-6 h-6">
-                      <AvatarImage src={issue.reporter?.avatarUrl} />
-                      <AvatarFallback>{issue.reporter?.name.charAt(0)}</AvatarFallback>
+                      <AvatarFallback>{issue.reporter?.name?.charAt(0) || "?"}</AvatarFallback>
                     </Avatar>
-                    <span className="text-sm">{issue.reporter?.name || "N/A"}</span>
+                    <div>
+                      <div className="text-sm font-medium">{issue.reporter?.name || "N/A"}</div>
+                      {issue.reporter?.email && (
+                        <div className="text-xs text-muted-foreground">{issue.reporter.email}</div>
+                      )}
+                    </div>
                   </div>
                 </div>
 
@@ -482,9 +686,9 @@ const IssueDetailPage: React.FC = () => {
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="unassigned">Unassigned</SelectItem>
-                        {projectMembers.map((member) => (
-                          <SelectItem key={member.user.id} value={member.user.id}>
-                            {member.user.name}
+                        {projectUsers.map((user) => (
+                          <SelectItem key={user.id} value={user.id}>
+                            {user.name}
                           </SelectItem>
                         ))}
                       </SelectContent>
@@ -494,10 +698,14 @@ const IssueDetailPage: React.FC = () => {
                       {issue.assignee ? (
                         <>
                           <Avatar className="w-6 h-6">
-                            <AvatarImage src={issue.assignee.avatarUrl} />
-                            <AvatarFallback>{issue.assignee.name.charAt(0)}</AvatarFallback>
+                            <AvatarFallback>{issue.assignee.name?.charAt(0) || "?"}</AvatarFallback>
                           </Avatar>
-                          <span className="text-sm">{issue.assignee.name}</span>
+                          <div>
+                            <div className="text-sm font-medium">{issue.assignee.name || "N/A"}</div>
+                            {issue.assignee.email && (
+                              <div className="text-xs text-muted-foreground">{issue.assignee.email}</div>
+                            )}
+                          </div>
                         </>
                       ) : (
                         <span className="text-sm text-muted-foreground">Unassigned</span>
@@ -509,6 +717,17 @@ const IssueDetailPage: React.FC = () => {
             </Card>
           </div>
         </div>
+
+        {/* Edit Issue Dialog */}
+        <EditIssueDialog
+          open={editDialogOpen}
+          onOpenChange={setEditDialogOpen}
+          issue={issue}
+          sprints={sprints}
+          projectUsers={projectUsers}
+          onSubmit={handleUpdateIssue}
+          loading={updating}
+        />
 
         {/* Delete Confirmation Dialog */}
         <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>

@@ -1,0 +1,1 @@
+ALTER TABLE issues ADD COLUMN sprint_id UUID REFERENCES sprints(id); 

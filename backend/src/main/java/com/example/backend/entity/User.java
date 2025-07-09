@@ -8,6 +8,7 @@ import java.util.UUID;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 
+import org.hibernate.annotations.BatchSize;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
@@ -52,29 +53,36 @@ public class User {
 
     @JsonIgnore
     @OneToMany(mappedBy = "assignee", cascade = CascadeType.ALL)
+    @BatchSize(size = 20)
     List<Issue> assignedIssues = new ArrayList<>();
 
     @JsonIgnore
     @OneToMany(mappedBy = "reporter", cascade = CascadeType.ALL)
+    @BatchSize(size = 20)
     List<Issue> reportedIssues = new ArrayList<>();
 
     @JsonIgnore
     @OneToMany(mappedBy = "creator", cascade = CascadeType.ALL)
+    @BatchSize(size = 20)
     List<Project> createdProjects = new ArrayList<>();
 
     @JsonIgnore
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
+    @BatchSize(size = 20)
     List<Comment> comments = new ArrayList<>();
 
     @JsonIgnore
     @OneToMany(mappedBy = "createdBy", cascade = CascadeType.ALL)
+    @BatchSize(size = 20)
     List<Team> createdTeams = new ArrayList<>();
 
     @JsonIgnore
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
+    @BatchSize(size = 20)
     List<TeamMember> teamMemberships = new ArrayList<>();
 
     @JsonIgnore
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
+    @BatchSize(size = 20)
     List<ProjectMember> projectMembers = new ArrayList<>();
 }

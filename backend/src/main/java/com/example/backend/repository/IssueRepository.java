@@ -5,11 +5,13 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
+import org.springframework.stereotype.Repository;
 
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
+@Repository
 public interface IssueRepository extends JpaRepository<Issue, UUID>{
     @Query("SELECT i FROM Issue i WHERE i.project.id = :projectId ORDER BY i.key DESC")
     List<Issue> findIssuesByProjectOrderByKeyDesc(@Param("projectId") UUID projectId);
@@ -29,4 +31,11 @@ public interface IssueRepository extends JpaRepository<Issue, UUID>{
     
     @Query("SELECT MAX(CAST(SUBSTRING(i.key FROM POSITION('-' IN i.key) + 1) AS integer)) FROM Issue i WHERE i.project.id = :projectId AND i.key LIKE :projectKey || '-%'")
     Optional<Integer> findMaxIssueNumberByProject(@Param("projectId") UUID projectId, @Param("projectKey") String projectKey);
+
+    List<Issue> findBySprintId(UUID sprintId);
+    List<Issue> findBySprintIsNullAndProjectId(UUID projectId);
+    @Query("SELECT i FROM Issue i WHERE i.sprint.status = 'ACTIVE' AND i.project.id = :projectId")
+    List<Issue> findActiveSprintIssues(@Param("projectId") UUID projectId);
+    @Query("SELECT i FROM Issue i WHERE i.sprint.status = 'PLANNED' AND i.project.id = :projectId")
+    List<Issue> findUpcomingSprintIssues(@Param("projectId") UUID projectId);
 }

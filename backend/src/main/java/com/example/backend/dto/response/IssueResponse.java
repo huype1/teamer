@@ -33,6 +33,15 @@ public class IssueResponse {
     private String projectName;
     private String projectKey;
 
+    // Sprint info
+    private UUID sprintId;
+    private String sprintName;
+
+    // Parent issue info
+    private UUID parentId;
+    private String parentKey;
+    private String parentTitle;
+
     // User info (avoiding full entity to prevent recursive joining)
     private UUID reporterId;
     private String reporterName;

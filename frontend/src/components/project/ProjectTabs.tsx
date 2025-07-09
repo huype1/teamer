@@ -20,14 +20,13 @@ export const ProjectTabs: React.FC<ProjectTabsProps> = ({
   children
 }) => {
   return (
-    <div className="border-b">
-      <Tabs value={activeTab} onValueChange={onTabChange} className="w-full">
-        <TabsList className="grid w-full h-12 bg-transparent border-b-0" style={{ gridTemplateColumns: `repeat(${tabs.length}, 1fr)` }}>
+    <div className="space-y-3">
+      <Tabs value={activeTab} onValueChange={onTabChange} className="space-y-3">
+        <TabsList className="grid w-full" style={{ gridTemplateColumns: `repeat(${tabs.length}, 1fr)` }}>
           {tabs.map(tab => (
             <TabsTrigger
               key={tab.key}
               value={tab.key}
-              className="data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=inactive]:text-muted-foreground rounded-none h-full"
             >
               {tab.label}
             </TabsTrigger>

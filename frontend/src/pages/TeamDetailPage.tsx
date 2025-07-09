@@ -2,7 +2,6 @@ import React, { useEffect, useState } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { 
   Dialog, 
@@ -18,12 +17,16 @@ import { Textarea } from "@/components/ui/textarea";
 import { Edit, Trash2, Users, Calendar, FolderOpen, ArrowLeft } from "lucide-react";
 import teamService from "@/service/teamService";
 import projectService from "@/service/projectService";
-import type { Team, TeamMember } from "@/types/team";
+import { TeamMemberManagement } from "@/components/team";
+import type { Team, TeamUser } from "@/types/team";
 import type { Project } from "@/types/project";
 import { toastSuccess, toastError } from "@/utils/toast";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
+import { useSelector } from "react-redux";
+import type { RootState } from "@/store";
+import { getCurrentUserRole } from "@/utils/projectHelpers";
 
 const teamEditSchema = z.object({
   name: z.string().min(1, "Tên nhóm không được để trống"),
@@ -35,14 +38,14 @@ type TeamEditFormData = z.infer<typeof teamEditSchema>;
 const TeamDetailPage: React.FC = () => {
   const { teamId } = useParams<{ teamId: string }>();
   const navigate = useNavigate();
+  const { user } = useSelector((state: RootState) => state.auth);
   const [team, setTeam] = useState<Team | null>(null);
-  const [members, setMembers] = useState<TeamMember[]>([]);
+  const [members, setMembers] = useState<TeamUser[]>([]);
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [search, setSearch] = useState("");
 
   const {
     register,
@@ -68,12 +71,21 @@ const TeamDetailPage: React.FC = () => {
       setLoading(true);
       const [teamRes, membersRes, projectsRes] = await Promise.all([
         teamService.getTeamById(teamId!),
-        teamService.getTeamMembers(teamId!),
+        teamService.getTeamUsers(teamId!),
         projectService.getProjectsByTeam(teamId!)
       ]);
+      console.log("Team data fetched:", teamRes, membersRes, projectsRes);
       
       setTeam(teamRes.result);
-      setMembers(membersRes.result || []);
+      
+      // Handle members data - API trả về thông tin đầy đủ
+      if (membersRes.result && Array.isArray(membersRes.result)) {
+        setMembers(membersRes.result);
+      } else {
+        console.warn("Invalid members data:", membersRes);
+        setMembers([]);
+      }
+      
       setProjects(projectsRes.result || []);
       
       // Set form default values
@@ -84,6 +96,9 @@ const TeamDetailPage: React.FC = () => {
     } catch (error) {
       console.error("Error fetching team data:", error);
       setError("Failed to load team data");
+      // Set empty arrays to prevent further errors
+      setMembers([]);
+      setProjects([]);
     } finally {
       setLoading(false);
     }
@@ -124,10 +139,6 @@ const TeamDetailPage: React.FC = () => {
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('vi-VN');
-  };
-
-  const getInitials = (name: string) => {
-    return name.split(' ').map(n => n[0]).join('').toUpperCase();
   };
 
   if (loading) {
@@ -241,58 +252,13 @@ const TeamDetailPage: React.FC = () => {
         </div>
       </div>
 
-      {/* Search Input for members */}
-      <div className="mb-4">
-        <Input
-          type="text"
-          placeholder="Tìm kiếm thành viên..."
-          value={search}
-          onChange={e => setSearch(e.target.value)}
-          className="max-w-xs"
+      {/* Team Member Management */}
+      <div className="mb-6">
+        <TeamMemberManagement 
+          teamId={teamId!} 
+          canManageTeam={user ? getCurrentUserRole(user, teamId!) === "ADMIN" : false}
         />
       </div>
-
-      {/* Members Section */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Users className="w-5 h-5" />
-            Thành viên nhóm
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          {members.length === 0 ? (
-            <p className="text-muted-foreground text-center py-8">Chưa có thành viên nào</p>
-          ) : (
-            <div className="space-y-4">
-              {members.filter(m => m.user.name.toLowerCase().includes(search.toLowerCase())).map((member) => (
-                <div key={member.userId} className="flex items-center justify-between p-4 border rounded-lg">
-                  <div className="flex items-center gap-3">
-                    <Avatar className="w-10 h-10">
-                      <AvatarImage src={member.user.avatarUrl || undefined} />
-                      <AvatarFallback>
-                        {getInitials(member.user.name)}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div>
-                      <p className="font-medium">{member.user.name}</p>
-                      <p className="text-sm text-muted-foreground">{member.user.email}</p>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Badge variant={member.role === 'ADMIN' ? 'default' : 'secondary'}>
-                      {member.role === 'ADMIN' ? 'Quản trị viên' : 'Thành viên'}
-                    </Badge>
-                    <span className="text-sm text-muted-foreground">
-                      Tham gia {formatDate(member.joinedAt)}
-                    </span>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </CardContent>
-      </Card>
 
       {/* Projects Section */}
       <Card className="mt-6">
@@ -314,7 +280,7 @@ const TeamDetailPage: React.FC = () => {
                       <FolderOpen className="w-5 h-5 text-primary" />
                     </div>
                     <div>
-                      <p className="font-medium">{project.name}</p>
+                      <p className="font-medium" onClick={() => navigate(`/projects/${project.id}`)}>{project.name}</p>
                       <p className="text-sm text-muted-foreground">{project.description}</p>
                       <div className="flex items-center gap-2 mt-1">
                         <span className="text-xs bg-secondary px-2 py-1 rounded">Key: {project.key}</span>

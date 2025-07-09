@@ -66,6 +66,14 @@ export const getProjectsByTeam = async (teamId: string) => {
   return res.data;
 };
 
+export const getProjectUsers = async (projectId: string) => {
+    const res = await axios.get(
+        `${baseUrl}/${projectId}/users`,
+        addReqToken(localStorage.getItem("token")),
+    );
+    return res.data;
+};
+
 export default { 
   getProjects, 
   getProjectById, 
@@ -77,5 +85,6 @@ export default {
   removeProjectMember,
   updateMemberRole,
   acceptProjectInvitation,
-  getProjectsByTeam
+  getProjectsByTeam,
+  getProjectUsers
 }; 

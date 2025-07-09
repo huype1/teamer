@@ -4,8 +4,6 @@ import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.UUID;
 
-import com.example.backend.entity.ProjectMember;
-import com.example.backend.entity.TeamMember;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 
@@ -22,9 +20,9 @@ public class UserResponse {
     String avatarUrl;
     String provider;
 
-    List<ProjectMember> projectMembers;
+    List<ProjectMemberResponse> projectMembers;
 
-    List<TeamMember> teamMembers;
+    List<TeamMemberResponse> teamMembers;
     OffsetDateTime createdAt;
     OffsetDateTime updatedAt;
 }
