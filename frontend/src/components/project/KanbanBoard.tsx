@@ -176,7 +176,7 @@ function DroppableColumn({ status, children, columnConfig }: { status: string; c
         ${isOver ? 'shadow-primary/20' : 'shadow-lg'}
         hover:shadow-xl transform hover:-translate-y-1
       `}
-      style={{ minHeight: '600px' }}
+      className={`min-h-[600px] ${isOver ? 'border-primary scale-105 shadow-2xl' : columnConfig.borderColor}`}
     >
       <div className="p-4">
         <div className="flex items-center gap-3 mb-4">
