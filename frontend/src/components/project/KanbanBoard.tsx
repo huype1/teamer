@@ -276,12 +276,12 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({ issues, onOpenCreateIssue, ca
                           )}
                         </div>
                         
-                        <div 
-                          className="font-bold text-lg mb-2 hover:text-primary transition-colors cursor-pointer group-hover:underline text-gray-800 dark:text-gray-200 line-clamp-2" 
-                          onClick={() => navigate(`/issues/${issue.id}`)}
+                        <Link 
+                          to={`/issues/${issue.id}`}
+                          className="font-bold text-lg mb-2 hover:text-primary transition-colors cursor-pointer group-hover:underline text-gray-800 dark:text-gray-200 line-clamp-2"
                         >
                           {issue.title}
-                        </div>
+                        </Link>
                         
                         {issue.description && (
                           <div className="text-sm text-gray-600 dark:text-gray-400 mb-3 line-clamp-3 leading-relaxed">
