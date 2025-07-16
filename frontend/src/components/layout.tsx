@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import type { ReactNode } from "react";
 import { TopNav } from "@/components/nav/top-nav";
 import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar";
@@ -17,7 +17,19 @@ interface LayoutProps {
 
 export function Layout({ children }: LayoutProps) {
   const dispatch = useAppDispatch();
-  const [isSidebarOpen, setSidebarOpen] = useState(true);
+  const [isSidebarOpen, setSidebarOpen] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const checkMobile = () => setIsMobile(window.innerWidth < 768);
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
+
+  useEffect(() => {
+    if (isMobile) setSidebarOpen(true);
+  }, [isMobile]);
 
   const handleSearch = (query: string) => {
     console.log("Search query:", query);
@@ -49,12 +61,15 @@ export function Layout({ children }: LayoutProps) {
         onCreate={handleCreate}
         onLogout={handleLogout}
       />
-      <SidebarProvider open={isSidebarOpen} onOpenChange={setSidebarOpen}>
+      <SidebarProvider open={isSidebarOpen} onOpenChange={open => {
+        if (isMobile) return; // Không cho phép hide sidebar trên mobile
+        setSidebarOpen(open);
+      }}>
         <div className="flex h-[calc(100vh-3.5rem)] w-full">
           <AppSidebar />
           <SidebarInset>
             <main className="flex-1 overflow-auto p-4">
-              {!isSidebarOpen && (
+              {!isSidebarOpen && !isMobile && (
                 <Button
                   variant="ghost"
                   size="icon"

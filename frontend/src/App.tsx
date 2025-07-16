@@ -16,7 +16,7 @@ import ProjectIssuesTablePage from "@/pages/ProjectIssuesTablePage";
 import ProjectKanbanPage from "@/pages/ProjectKanbanPage";
 import ProjectReportsPage from "@/pages/ProjectReportsPage";
 import ProjectMembersPage from "@/pages/ProjectMembersPage";
-import UserManagementPage from "@/pages/UserManagementPage";
+import UserDetailPage from "@/pages/UserDetailPage";
 import DashboardPage from "@/pages/DashboardPage";
 import LandingPage from "@/pages/LandingPage.tsx";
 import { isTokenExpired } from "@/utils/jwt";
@@ -154,12 +154,13 @@ function App() {
             </ProtectedRoute>
           }
         />
+
         <Route
-          path='/users'
+          path='/profile'
           element={
             <ProtectedRoute>
               <Layout>
-                <UserManagementPage />
+                <UserDetailPage />
               </Layout>
             </ProtectedRoute>
           }

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Bug, FileText, Layers, Target, Zap } from "lucide-react";
+import { Bug, FileText, Target } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from "@/components/ui/select";
@@ -65,7 +65,7 @@ export const SprintIssuesTable: React.FC<SprintIssuesTableProps> = ({
       const response = await sprintService.getIssuesBySprint(sprint.id);
       const mappedIssues = (response.result || []).map(mapIssue);
       setIssues(mappedIssues);
-    } catch (error) {
+    } catch {
       toastError("Không thể tải issues của sprint!");
     } finally {
       setLoading(false);
@@ -123,12 +123,6 @@ export const SprintIssuesTable: React.FC<SprintIssuesTableProps> = ({
 
   const getIssueTypeConfig = (issueType: string) => {
     switch (issueType) {
-      case "EPIC":
-        return {
-          icon: Layers,
-          color: "issue-type-epic",
-          label: "Epic"
-        };
       case "STORY":
         return {
           icon: FileText,
@@ -146,12 +140,6 @@ export const SprintIssuesTable: React.FC<SprintIssuesTableProps> = ({
           icon: Bug,
           color: "issue-type-bug",
           label: "Bug"
-        };
-      case "SUBTASK":
-        return {
-          icon: Zap,
-          color: "issue-type-subtask",
-          label: "Subtask"
         };
       default:
         return {
@@ -227,11 +215,9 @@ export const SprintIssuesTable: React.FC<SprintIssuesTableProps> = ({
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="EPIC">Epic</SelectItem>
                             <SelectItem value="STORY">Story</SelectItem>
                             <SelectItem value="TASK">Task</SelectItem>
                             <SelectItem value="BUG">Bug</SelectItem>
-                            <SelectItem value="SUBTASK">Subtask</SelectItem>
                           </SelectContent>
                         </Select>
                       ) : (

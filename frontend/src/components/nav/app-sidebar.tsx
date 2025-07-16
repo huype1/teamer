@@ -4,7 +4,6 @@ import {
   Users,
   FolderOpen,
   User,
-  Settings2,
 } from "lucide-react";
 
 import { NavMain } from "@/components/nav/nav-main";
@@ -22,7 +21,7 @@ import {
 } from "@/components/ui/sidebar";
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
-  // This is sample data for navigation and projects
+  // This is sample data for navigation
   const data = {
     navMain: [
       {
@@ -47,19 +46,16 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       },
       {
         title: "Người dùng",
-        url: "/users",
+        url: "/profile",
         icon: User,
-        isActive: window.location.pathname === "/users",
+        isActive: window.location.pathname === "/profile",
       },
-      {
-        title: "Cài đặt",
-        url: "/settings",
-        icon: Settings2,
-        isActive: window.location.pathname === "/settings",
-      },
-    ],
-    projects: [
-
+      // {
+      //     title: "Cài đặt",
+      //   url: "/settings",
+      //   icon: Settings2,
+      //   isActive: window.location.pathname === "/settings",
+      // },
     ],
   };
 
@@ -69,7 +65,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       <SidebarContent>
         <TeamSwitcher />
 
-        <NavProjects projects={data.projects} />
+        <NavProjects />
         <NavMain items={data.navMain} />
       </SidebarContent>
       <SidebarTrigger />

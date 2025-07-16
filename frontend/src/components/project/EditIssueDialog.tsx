@@ -171,11 +171,9 @@ const EditIssueDialog: React.FC<EditIssueDialogProps> = ({
                   <SelectValue placeholder="Chọn loại issue" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="EPIC">Epic</SelectItem>
                   <SelectItem value="STORY">Story</SelectItem>
                   <SelectItem value="TASK">Task</SelectItem>
                   <SelectItem value="BUG">Bug</SelectItem>
-                  <SelectItem value="SUBTASK">Subtask</SelectItem>
                 </SelectContent>
               </Select>
               {errors.issueType && (

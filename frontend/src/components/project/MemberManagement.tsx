@@ -106,127 +106,120 @@ const MemberManagement: React.FC<MemberManagementProps> = ({
   return (
     <>
       <Dialog open={isOpen} onOpenChange={handleOpenChange}>
-        <DialogContent className="sm:max-w-[600px]">
-          <DialogHeader>
-            <DialogTitle>Quản lý thành viên dự án</DialogTitle>
-            <DialogDescription>
-              Thêm hoặc xóa thành viên cho dự án {project.name}
-            </DialogDescription>
-          </DialogHeader>
-          
-          <div className="space-y-6">
-            {/* Add Member Form */}
-            {canAddMembers && (
+        <DialogContent className="w-[95vw] max-w-[500px] p-0">
+          <div className="flex flex-col max-h-[80vh]">
+            <DialogHeader className="px-6 pt-6 pb-2">
+              <DialogTitle>Quản lý thành viên dự án</DialogTitle>
+              <DialogDescription>
+                Thêm hoặc xóa thành viên cho dự án {project.name}
+              </DialogDescription>
+            </DialogHeader>
+            <div className="overflow-y-auto px-6 pb-6 pt-2 flex-1 space-y-6">
+              {/* Add Member Form */}
+              {canAddMembers && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-lg">Thêm thành viên mới</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="email">Địa chỉ email</Label>
+                        <Input
+                          id="email"
+                          type="email"
+                          placeholder="Nhập email thành viên"
+                          value={memberFormData.email}
+                          onChange={(e) => setMemberFormData({ ...memberFormData, email: e.target.value })}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="role">Vai trò</Label>
+                        <Select value={memberFormData.role} onValueChange={(value) => setMemberFormData({ ...memberFormData, role: value })}>
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="ADMIN">Quản trị viên</SelectItem>
+                            <SelectItem value="PM">Quản lý dự án</SelectItem>
+                            <SelectItem value="MEMBER">Thành viên</SelectItem>
+                            <SelectItem value="VIEWER">Người xem</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+                    <Button onClick={handleAddMember} disabled={!memberFormData.email.trim()}>
+                      <UserPlus className="mr-2 h-4 w-4" />
+                      Thêm thành viên
+                    </Button>
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* Current Members */}
               <Card>
                 <CardHeader>
-                  <CardTitle className="text-lg">Thêm thành viên mới</CardTitle>
+                  <CardTitle className="text-lg">Danh sách thành viên</CardTitle>
                 </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="email">Địa chỉ email</Label>
-                      <Input
-                        id="email"
-                        type="email"
-                        placeholder="Nhập email thành viên"
-                        value={memberFormData.email}
-                        onChange={(e) => setMemberFormData({ ...memberFormData, email: e.target.value })}
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="role">Vai trò</Label>
-                      <Select value={memberFormData.role} onValueChange={(value) => setMemberFormData({ ...memberFormData, role: value })}>
-                        <SelectTrigger>
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="ADMIN">Quản trị viên</SelectItem>
-                          <SelectItem value="PM">Quản lý dự án</SelectItem>
-                          <SelectItem value="MEMBER">Thành viên</SelectItem>
-                          <SelectItem value="VIEWER">Người xem</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
-                  <Button onClick={handleAddMember} disabled={!memberFormData.email.trim()}>
-                    <UserPlus className="mr-2 h-4 w-4" />
-                    Thêm thành viên
-                  </Button>
-                </CardContent>
-              </Card>
-            )}
-
-            {/* Current Members */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg">Danh sách thành viên</CardTitle>
-              </CardHeader>
-              <CardContent>
-                {projectMembers && projectMembers.length > 0 ? (
-                  <div className="space-y-3">
-                    {projectMembers.map((member) => {
-                      const user = projectUsers.find(u => u.id === member.userId);
-                      return (
-                        <div key={member.userId} className="flex items-center justify-between p-3 border rounded-lg">
-                          <div className="flex items-center space-x-3">
-                            <Avatar className="h-8 w-8">
-                              <AvatarImage src={user?.avatarUrl} />
-                              <AvatarFallback>
-                                {user ? getInitials(user.name) : member.userId.charAt(0).toUpperCase()}
-                              </AvatarFallback>
-                            </Avatar>
-                            <div>
-                              <p className="text-sm font-medium">{user?.name || 'Unknown User'}</p>
-                              <p className="text-xs text-muted-foreground">{user?.email || member.userId}</p>
+                <CardContent>
+                  {projectMembers && projectMembers.length > 0 ? (
+                    <div className="space-y-3">
+                      {projectMembers.map((member) => {
+                        const user = projectUsers.find(u => u.id === member.userId);
+                        return (
+                          <div key={member.userId} className="flex items-center justify-between p-3 border rounded-lg">
+                            <div className="flex items-center space-x-3">
+                              <Avatar className="h-8 w-8">
+                                <AvatarImage src={user?.avatarUrl} />
+                                <AvatarFallback>
+                                  {user ? getInitials(user.name) : member.userId.charAt(0).toUpperCase()}
+                                </AvatarFallback>
+                              </Avatar>
+                              <div>
+                                <p className="text-sm font-medium">{user?.name || 'Unknown User'}</p>
+                                <p className="text-xs text-muted-foreground">{user?.email || member.userId}</p>
+                              </div>
+                            </div>
+                            <div className="flex items-center space-x-2">
+                              <span className="text-xs px-2 py-1 bg-secondary rounded-full">
+                                {member.role}
+                              </span>
+                              <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                  <Button variant="ghost" size="sm">
+                                    <MoreHorizontal className="h-4 w-4" />
+                                  </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end">
+                                  {onUpdateRole && canUpdateRoles && member.userId !== project.creator.id && (
+                                    <DropdownMenuItem onClick={() => handleUpdateRole(member)}>
+                                      <Shield className="mr-2 h-4 w-4" />
+                                      Thay đổi quyền
+                                    </DropdownMenuItem>
+                                  )}
+                                  {canRemoveMembers && (
+                                    <DropdownMenuItem 
+                                      onClick={() => onRemoveMember(member.userId)}
+                                      className="text-red-600"
+                                    >
+                                      <Trash2 className="mr-2 h-4 w-4" />
+                                      Xóa
+                                    </DropdownMenuItem>
+                                  )}
+                                </DropdownMenuContent>
+                              </DropdownMenu>
                             </div>
                           </div>
-                          <div className="flex items-center space-x-2">
-                            <span className="text-xs px-2 py-1 bg-secondary rounded-full">
-                              {member.role}
-                            </span>
-                            <DropdownMenu>
-                              <DropdownMenuTrigger asChild>
-                                <Button variant="ghost" size="sm">
-                                  <MoreHorizontal className="h-4 w-4" />
-                                </Button>
-                              </DropdownMenuTrigger>
-                              <DropdownMenuContent align="end">
-                                {onUpdateRole && canUpdateRoles && member.userId !== project.creator.id && (
-                                  <DropdownMenuItem onClick={() => handleUpdateRole(member)}>
-                                    <Shield className="mr-2 h-4 w-4" />
-                                    Thay đổi quyền
-                                  </DropdownMenuItem>
-                                )}
-                                {canRemoveMembers && (
-                                  <DropdownMenuItem 
-                                    onClick={() => onRemoveMember(member.userId)}
-                                    className="text-red-600"
-                                  >
-                                    <Trash2 className="mr-2 h-4 w-4" />
-                                    Xóa
-                                  </DropdownMenuItem>
-                                )}
-                              </DropdownMenuContent>
-                            </DropdownMenu>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                ) : (
-                  <p className="text-muted-foreground text-center py-4">
-                    Chưa có thành viên nào. Hãy thêm thành viên để cùng cộng tác.
-                  </p>
-                )}
-              </CardContent>
-            </Card>
+                        );
+                      })}
+                    </div>
+                  ) : (
+                    <div className="text-center text-muted-foreground py-4">Chưa có thành viên nào</div>
+                  )}
+                </CardContent>
+              </Card>
+            </div>
           </div>
-
-          <DialogFooter>
-            <Button variant="outline" onClick={() => handleOpenChange(false)}>
-              Đóng
-            </Button>
-          </DialogFooter>
         </DialogContent>
       </Dialog>
 

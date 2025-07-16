@@ -37,10 +37,10 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Layout } from "@/components/layout";
-import EditIssueDialog from "@/components/project/EditIssueDialog";
 import sprintService from "@/service/sprintService";
 import type { User } from "@/types/user";
 import { getCurrentUserRole, isCurrentUserManager } from "@/utils/projectHelpers";
+import {IssueForm} from "@/components/project/IssueForm";
 
 const commentSchema = z.object({
   content: z.string().min(1, "Nội dung comment không được để trống"),
@@ -719,15 +719,21 @@ const IssueDetailPage: React.FC = () => {
         </div>
 
         {/* Edit Issue Dialog */}
-        <EditIssueDialog
-          open={editDialogOpen}
-          onOpenChange={setEditDialogOpen}
-          issue={issue}
-          sprints={sprints}
-          projectUsers={projectUsers}
-          onSubmit={handleUpdateIssue}
-          loading={updating}
-        />
+        <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Chỉnh sửa Issue</DialogTitle>
+            </DialogHeader>
+            <IssueForm
+              initialValues={issue}
+              onSubmit={handleUpdateIssue}
+              loading={updating}
+              projectMembers={projectMembers}
+              sprints={sprints}
+              isEdit={true}
+            />
+          </DialogContent>
+        </Dialog>
 
         {/* Delete Confirmation Dialog */}
         <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>

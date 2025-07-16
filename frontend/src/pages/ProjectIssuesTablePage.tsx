@@ -1,8 +1,6 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { useParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-
 import { IssuesTable, SprintIssuesCombinedTable } from "@/components/project";
 import sprintService from "@/service/sprintService";
 import issueService from "@/service/issueService";
@@ -18,12 +16,13 @@ import { Textarea } from "@/components/ui/textarea";
 import { useForm } from "react-hook-form";
 import { useSelector } from "react-redux";
 import type { RootState } from "@/store";
-import { Plus, Target } from "lucide-react";
+import { Plus } from "lucide-react";
 import { formatDateForAPI, formatEndDateForAPI } from "@/utils/dateUtils";
 import { ProjectHeader, ProjectNavigation } from "@/components/project";
 import ProjectService from "@/service/projectService";
-import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from "@/components/ui/select";
 import { isCurrentUserManager } from "@/utils/projectHelpers";
+import { IssueForm } from "@/components/project/IssueForm";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 const ProjectIssuesTablePage: React.FC = () => {
   const { projectId } = useParams<{ projectId: string }>();
@@ -37,15 +36,6 @@ const ProjectIssuesTablePage: React.FC = () => {
 
   // Thêm state cho modal tạo issue
   const [isCreateIssueDialogOpen, setIsCreateIssueDialogOpen] = useState(false);
-  const { register: issueRegister, handleSubmit: handleIssueSubmit, reset: resetIssueForm, setValue: setIssueValue, watch: watchIssue } = useForm({
-    defaultValues: {
-      title: "",
-      description: "",
-      priority: "P3",
-      issueType: "TASK",
-      assigneeId: "none",
-    },
-  });
 
   const { register, handleSubmit, reset } = useForm({
     defaultValues: {
@@ -57,6 +47,82 @@ const ProjectIssuesTablePage: React.FC = () => {
   });
 
   const [sprintReloadKey, setSprintReloadKey] = useState(0);
+
+  // fetchProject
+  const fetchProject = useCallback(async () => {
+    try {
+      const response = await ProjectService.getProjectById(projectId!);
+      setProject(response.result);
+    } catch (error) {
+      console.error("Error fetching project:", error);
+    }
+  }, [projectId]);
+
+  // fetchSprints
+  const fetchSprints = useCallback(async () => {
+    try {
+      const response = await sprintService.getSprintsByProject(projectId!);
+      setSprints(response.result || []);
+    } catch (error) {
+      console.error("Error fetching sprints:", error);
+      toastError("Không thể tải danh sách sprint!");
+    }
+  }, [projectId]);
+
+  // mapIssue
+  const mapIssue = useCallback((issue: Record<string, unknown>): Issue => {
+    return {
+      ...(issue as unknown as Issue),
+      reporter: issue.reporterId ? {
+        id: String(issue.reporterId),
+        name: String(issue.reporterName),
+        email: String(issue.reporterEmail),
+      } : undefined,
+      assignee: issue.assigneeId ? {
+        id: String(issue.assigneeId),
+        name: String(issue.assigneeName),
+        email: String(issue.assigneeEmail),
+      } : undefined,
+    };
+  }, []);
+
+  // fetchBacklogIssues
+  const fetchBacklogIssues = useCallback(async () => {
+    try {
+      const response = await sprintService.getBacklogIssues(projectId!);
+      const mappedIssues = (response.result || []).map(mapIssue);
+      setBacklogIssues(mappedIssues);
+    } catch (error) {
+      console.error("Error fetching backlog:", error);
+      toastError("Không thể tải backlog!");
+    }
+  }, [projectId, mapIssue]);
+
+  // fetchProjectMembers
+  const fetchProjectMembers = useCallback(async () => {
+    try {
+      const response = await projectService.getProjectUsers(projectId!);
+      const mappedMembers = (response.result || []).map(user => ({
+        projectId: projectId!,
+        userId: user.id,
+        role: "MEMBER" as const,
+        joinedAt: new Date().toISOString(),
+        user: {
+          id: user.id,
+          name: user.name,
+          email: user.email,
+          avatarUrl: user.avatarUrl,
+          provider: user.provider,
+          createdAt: user.createdAt,
+          updatedAt: user.updatedAt,
+        }
+      }));
+      setProjectMembers(mappedMembers);
+    } catch (error) {
+      console.error("Error fetching project users:", error);
+      toastError("Không thể tải danh sách thành viên!");
+    }
+  }, [projectId]);
 
   useEffect(() => {
     if (projectId) {
@@ -76,78 +142,12 @@ const ProjectIssuesTablePage: React.FC = () => {
       };
       fetchData();
     }
-  }, [projectId]);
+  }, [projectId, fetchProject, fetchSprints, fetchBacklogIssues, fetchProjectMembers]);
 
-  const fetchProject = async () => {
-    try {
-      const response = await ProjectService.getProjectById(projectId!);
-      setProject(response.result);
-    } catch (error) {
-      console.error("Error fetching project:", error);
-    }
-  };
-
-  const fetchSprints = async () => {
-    try {
-      const response = await sprintService.getSprintsByProject(projectId!);
-      setSprints(response.result || []);
-    } catch (error) {
-      console.error("Error fetching sprints:", error);
-      toastError("Không thể tải danh sách sprint!");
-    }
-  };
-
-  const mapIssue = (issue: Record<string, unknown>): Issue => {
-    return {
-      ...(issue as Issue),
-      reporter: issue.reporterId ? {
-        id: String(issue.reporterId),
-        name: String(issue.reporterName),
-        email: String(issue.reporterEmail),
-      } : undefined,
-      assignee: issue.assigneeId ? {
-        id: String(issue.assigneeId),
-        name: String(issue.assigneeName),
-        email: String(issue.assigneeEmail),
-      } : undefined,
-    };
-  };
-
-  const fetchBacklogIssues = async () => {
-    try {
-      const response = await sprintService.getBacklogIssues(projectId!);
-      const mappedIssues = (response.result || []).map(mapIssue);
-      setBacklogIssues(mappedIssues);
-    } catch (error) {
-      console.error("Error fetching backlog:", error);
-      toastError("Không thể tải backlog!");
-    }
-  };
-
-  const fetchProjectMembers = async () => {
-    try {
-      const response = await projectService.getProjectUsers(projectId!);
-      // Map UserResponse to ProjectMember structure for compatibility
-      const mappedMembers = (response.result || []).map(user => ({
-        projectId: projectId!,
-        userId: user.id,
-        role: "MEMBER" as const, // Default role since we don't have role info from users endpoint
-        joinedAt: new Date().toISOString(),
-        user: {
-          id: user.id,
-          name: user.name,
-          email: user.email,
-          avatarUrl: user.avatarUrl,
-          provider: user.provider,
-          createdAt: user.createdAt,
-          updatedAt: user.updatedAt,
-        }
-      }));
-      setProjectMembers(mappedMembers);
-    } catch (error) {
-      console.error("Error fetching project users:", error);
-      toastError("Không thể tải danh sách thành viên!");
-    }
+  // Lấy thông tin user hiện tại trong project này
+  const getCurrentUserProjectMember = () => {
+    if (!user || !projectId) return null;
+    return user.projectMembers?.find(m => m.projectId === projectId) || null;
   };
 
   const onCreateSprint = async (data: { name: string; goal: string; startDate: string; endDate: string }) => {
@@ -196,7 +196,7 @@ const ProjectIssuesTablePage: React.FC = () => {
       await sprintService.cancelSprint(sprintId);
       toastSuccess("Hủy sprint thành công!");
       fetchSprints();
-    } catch (error) {
+    } catch {
       toastError("Hủy sprint thất bại!");
     }
   };
@@ -206,6 +206,7 @@ const ProjectIssuesTablePage: React.FC = () => {
       await issueService.updateIssueStatus(issueId, newStatus);
       toastSuccess("Cập nhật trạng thái thành công!");
       fetchBacklogIssues();
+      setSprintReloadKey(prev => prev + 1); // Trigger reload sprint issues
     } catch (error) {
       console.error("Error updating status:", error);
       toastError("Cập nhật trạng thái thất bại!");
@@ -217,6 +218,7 @@ const ProjectIssuesTablePage: React.FC = () => {
       await issueService.updateIssue(issueId, { priority: newPriority });
       toastSuccess("Cập nhật độ ưu tiên thành công!");
       fetchBacklogIssues();
+      setSprintReloadKey(prev => prev + 1); // Trigger reload sprint issues
     } catch (error) {
       console.error("Error updating priority:", error);
       toastError("Cập nhật độ ưu tiên thất bại!");
@@ -228,6 +230,7 @@ const ProjectIssuesTablePage: React.FC = () => {
       await issueService.updateIssue(issueId, { issueType: newIssueType });
       toastSuccess("Cập nhật loại issue thành công!");
       fetchBacklogIssues();
+      setSprintReloadKey(prev => prev + 1); // Trigger reload sprint issues
     } catch (error) {
       console.error("Error updating issue type:", error);
       toastError("Cập nhật loại issue thất bại!");
@@ -243,6 +246,7 @@ const ProjectIssuesTablePage: React.FC = () => {
       }
       toastSuccess("Cập nhật người phụ trách thành công!");
       fetchBacklogIssues();
+      setSprintReloadKey(prev => prev + 1); // Trigger reload sprint issues
     } catch (error) {
       console.error("Error updating assignee:", error);
       toastError("Cập nhật người phụ trách thất bại!");
@@ -260,77 +264,136 @@ const ProjectIssuesTablePage: React.FC = () => {
       fetchBacklogIssues();
       fetchSprints();
       setSprintReloadKey(prev => prev + 1); // Trigger reload sprint issues
-    } catch (error) {
+    } catch {
       toastError("Cập nhật sprint thất bại!");
     }
   };
 
-  // Phân quyền tạo issue
-  const canCreateIssue = () => {
-    if (!user || !projectId) return false;
-    const member = projectMembers.find(m => m.userId === user.id);
-    return member && (member.role === "ADMIN" || member.role === "PM");
-  };
+
 
   // Phân quyền thay đổi sprint, assignee, due date
   const canManageIssue = () => {
     if (!user || !projectId) return false;
-    const result = isCurrentUserManager(user, projectId!, project?.teamId);
-    console.log('canManageIssue', { user, projectId, teamId: project?.teamId, result });
+    const result = isCurrentUserManager(user, projectId!);
+    // console.log('canManageIssue', { user, projectId, result });
     return result;
   };
 
   // Thêm hàm kiểm tra quyền quản lý sprint
   const canManageSprint = () => {
     if (!user || !projectId) return false;
-    const member = projectMembers.find(m => m.userId === user.id);
-    return member && (member.role === "ADMIN" || member.role === "PM");
+    const currentUserMember = getCurrentUserProjectMember();
+    const result = !!(currentUserMember && (currentUserMember.role === "ADMIN" || currentUserMember.role === "PM"));
+    // console.log('canManageSprint result', { currentUserMember, result });
+    return result;
   };
 
   const canEditIssue = (issue: Issue) => {
     if (!user) return false;
-    const member = projectMembers.find(m => m.userId === user.id);
-    return issue.reporter?.id === user.id || member?.role === "ADMIN" || member?.role === "PM";
+    const currentUserMember = getCurrentUserProjectMember();
+    return issue.reporter?.id === user.id || currentUserMember?.role === "ADMIN" || currentUserMember?.role === "PM";
   };
 
   const canChangeStatus = (issue: Issue) => {
     if (!user) return false;
-    const member = projectMembers.find(m => m.userId === user.id);
-    const result = issue.reporter?.id === user.id || member?.role === "ADMIN" || member?.role === "PM";
-    console.log('canChangeStatus', { user, issue, member, result });
+    const currentUserMember = getCurrentUserProjectMember();
+    const result = issue.assignee?.id === user.id || issue.reporter?.id === user.id || currentUserMember?.role === "ADMIN" || currentUserMember?.role === "PM";
+    // console.log('canChangeStatus', { user, issue, currentUserMember, result });
     return result;
   };
 
   // Tạo issue mới
-  const onCreateIssue = async (data: { title: string; description: string; priority: string; issueType: string; assigneeId: string }) => {
+  const onCreateIssue = async (data: import("@/components/project/IssueForm").IssueFormValues) => {
     try {
-      const requestBody: { title: string; description: string; priority: string; issueType: string; projectId: string; assigneeId?: string; } = {
+      const requestBody: Record<string, unknown> = {
         title: data.title,
-        description: data.description,
+        description: data.description || "",
         priority: data.priority,
         issueType: data.issueType,
         projectId: projectId!,
       };
-      if (data.assigneeId !== "none") {
-        requestBody.assigneeId = data.assigneeId;
-      }
+      if (data.assigneeId && data.assigneeId !== "none") requestBody.assigneeId = data.assigneeId;
+      if (data.sprintId && data.sprintId !== "backlog") requestBody.sprintId = data.sprintId;
+      if (data.storyPoints !== undefined) requestBody.storyPoints = data.storyPoints;
+      if (data.startDate) requestBody.startDate = data.startDate;
+      if (data.dueDate) requestBody.dueDate = data.dueDate;
+      if (data.parentId) requestBody.parentId = data.parentId;
       await issueService.createIssue(requestBody);
       toastSuccess("Tạo issue thành công!");
       setIsCreateIssueDialogOpen(false);
-      resetIssueForm();
       fetchBacklogIssues();
-    } catch (error) {
+      setSprintReloadKey(prev => prev + 1);
+    } catch {
       toastError("Tạo issue thất bại!");
     }
   };
 
-  // Thêm biến kiểm tra quyền tạo assignee khi tạo issue
-  const canAssignWhenCreate = () => {
+  // Phân quyền tạo issue - chỉ PM và ADMIN mới được tạo
+  const canCreateIssue = () => {
     if (!user || !projectId) return false;
-    const member = projectMembers.find(m => m.userId === user.id);
-    return member && (member.role === "ADMIN" || member.role === "PM");
+    const currentUserMember = getCurrentUserProjectMember();
+    return !!(currentUserMember && (currentUserMember.role === "ADMIN" || currentUserMember.role === "PM"));
   };
 
+  // State cho popup edit/delete
+  const [editIssue, setEditIssue] = useState<Issue | null>(null);
+  const [deleteIssue, setDeleteIssue] = useState<Issue | null>(null);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+
+  // Mở popup edit
+  const openEditIssueDialog = (issue: Issue) => {
+    setEditIssue(issue);
+    setIsEditDialogOpen(true);
+  };
+  // Mở popup xác nhận xoá
+  const openDeleteIssueDialog = (issue: Issue) => {
+    setDeleteIssue(issue);
+    setIsDeleteDialogOpen(true);
+  };
+
+  // Xử lý cập nhật issue
+  const onEditIssueSubmit = async (data: import("@/components/project/IssueForm").IssueFormValues) => {
+    if (!editIssue) return;
+    try {
+      const requestBody: Record<string, unknown> = {
+        title: data.title,
+        description: data.description || "",
+        priority: data.priority,
+        issueType: data.issueType,
+        projectId: projectId!,
+      };
+      if (data.assigneeId && data.assigneeId !== "none") requestBody.assigneeId = data.assigneeId;
+      if (data.sprintId && data.sprintId !== "backlog") requestBody.sprintId = data.sprintId;
+      if (data.storyPoints !== undefined) requestBody.storyPoints = data.storyPoints;
+      if (data.startDate) requestBody.startDate = data.startDate;
+      if (data.dueDate) requestBody.dueDate = data.dueDate;
+      if (data.parentId) requestBody.parentId = data.parentId;
+      await issueService.updateIssue(editIssue.id, requestBody);
+      toastSuccess("Cập nhật issue thành công!");
+      setIsEditDialogOpen(false);
+      setEditIssue(null);
+      fetchBacklogIssues();
+      setSprintReloadKey(prev => prev + 1);
+    } catch {
+      toastError("Cập nhật issue thất bại!");
+    }
+  };
+
+  // Xử lý xoá issue
+  const onDeleteIssueConfirm = async () => {
+    if (!deleteIssue) return;
+    try {
+      await issueService.deleteIssue(deleteIssue.id);
+      toastSuccess("Xoá issue thành công!");
+      setIsDeleteDialogOpen(false);
+      setDeleteIssue(null);
+      fetchBacklogIssues();
+      setSprintReloadKey(prev => prev + 1);
+    } catch {
+      toastError("Xoá issue thất bại!");
+    }
+  };
 
   if (loading) {
     return (
@@ -370,57 +433,57 @@ const ProjectIssuesTablePage: React.FC = () => {
       <ProjectNavigation projectId={projectId!} activeTab="issues" />
 
       <div className="space-y-6">
-      {/* Sprint Management Section */}
-      <div className="space-y-4">
-        <div className="flex items-center justify-between">
-          <h3 className="text-lg font-semibold">Quản lý Sprint</h3>
-            {/* {canManageSprint() && ( */}
-              <Button onClick={() => setIsCreateDialogOpen(true)}>
-                <Plus className="h-4 w-4 mr-2" />
-                Tạo Sprint
-              </Button>
-            {/* )} */}
-        </div>
-                    </div>
-
-        {/* Sprint Issues Section */}
-        {sprints.length > 0 && (
+        {/* Sprint Section: chỉ render nếu có sprint hoặc có quyền quản lý */}
+        {(canManageSprint() || sprints.length > 0) && (
           <div className="space-y-4">
-            <h3 className="text-lg font-semibold">Issues trong Sprint</h3>
-            {sortedSprints.map((sprint) => (
-              <SprintIssuesCombinedTable
-                key={sprint.id}
-                sprint={sprint}
-                projectMembers={projectMembers}
-                canEditIssue={canEditIssue}
-                canChangeStatus={canChangeStatus}
-                onStatusChange={handleStatusChange}
-                onPriorityChange={handlePriorityChange}
-                onIssueTypeChange={handleIssueTypeChange}
-                onAssigneeChange={handleAssigneeChange}
-                onStartSprint={onStartSprint}
-                onEndSprint={onEndSprint}
-                onCancelSprint={onCancelSprint}
-                activeSprintId={activeSprint?.id}
-                sprintReloadKey={sprintReloadKey}
-                canManageSprint={canManageSprint()}
-              />
-            ))}
+            <div className="flex items-center justify-between">
+              <h3 className="text-lg font-semibold">Quản lý Sprint</h3>
+              {canManageSprint() && (
+                <Button onClick={() => setIsCreateDialogOpen(true)}>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Tạo Sprint
+                </Button>
+              )}
+            </div>
+            {/* Sprint Issues Section */}
+            {sprints.length > 0 && (
+              <div className="space-y-4" style={{ maxWidth: '100%' }}>
+                <h3 className="text-lg font-semibold">Issues trong Sprint</h3>
+                {sortedSprints.map((sprint) => (
+                  <SprintIssuesCombinedTable
+                    key={sprint.id}
+                    sprint={sprint}
+                    projectMembers={projectMembers}
+                    canEditIssue={canEditIssue}
+                    canChangeStatus={canChangeStatus}
+                    onStatusChange={handleStatusChange}
+                    onPriorityChange={handlePriorityChange}
+                    onIssueTypeChange={handleIssueTypeChange}
+                    onAssigneeChange={handleAssigneeChange}
+                    onStartSprint={onStartSprint}
+                    onEndSprint={onEndSprint}
+                    onCancelSprint={onCancelSprint}
+                    activeSprintId={activeSprint?.id}
+                    sprintReloadKey={sprintReloadKey}
+                    canManageSprint={canManageSprint()}
+                    onOpenCreateIssue={() => setIsCreateIssueDialogOpen(true)}
+                    canCreateIssue={canCreateIssue()}
+                  />
+                ))}
+              </div>
+            )}
           </div>
         )}
 
-        {/* Backlog Section (moved to bottom) */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Target className="h-5 w-5" />
-              Backlog Issues
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-        {backlogIssues.length > 0 ? (
-          <IssuesTable
-              issues={backlogIssues}
+        {/* Backlog Section */}
+        <div className="w-full max-w-full">
+          <Card>
+            <CardHeader>
+              <CardTitle>Backlog</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <IssuesTable
+                issues={backlogIssues}
                 projectMembers={projectMembers}
                 sprints={sprints}
                 canEditIssue={canEditIssue}
@@ -430,22 +493,14 @@ const ProjectIssuesTablePage: React.FC = () => {
                 onIssueTypeChange={handleIssueTypeChange}
                 onAssigneeChange={canManageIssue() ? handleAssigneeChange : () => {}}
                 onSprintChange={canManageIssue() ? handleSprintChange : () => {}}
+                onOpenCreateIssue={() => setIsCreateIssueDialogOpen(true)}
+                canCreateIssue={canCreateIssue()}
+                onEditIssue={openEditIssueDialog}
+                onDeleteIssue={openDeleteIssueDialog}
               />
-            ) : (
-              <p className="text-sm text-muted-foreground text-center py-8">
-                Không có issue nào trong backlog.
-              </p>
-            )}
-            {/* Nút tạo issue mới */}
-            {/* {canCreateIssue() && ( */}
-              <div className="flex justify-center mt-4">
-                <Button variant="outline" onClick={() => setIsCreateIssueDialogOpen(true)}>
-                  + Tạo Issue mới
-                </Button>
-              </div>
-            {/* )} */}
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
+        </div>
       </div>
 
       {/* Create Sprint Dialog */}
@@ -496,75 +551,42 @@ const ProjectIssuesTablePage: React.FC = () => {
           <DialogHeader>
             <DialogTitle>Tạo Issue mới</DialogTitle>
           </DialogHeader>
-          <form onSubmit={handleIssueSubmit(onCreateIssue)} className="space-y-4">
-            <div>
-              <Input
-                placeholder="Tiêu đề"
-                {...issueRegister("title", { required: true })}
-              />
-            </div>
-            <div>
-              <Textarea
-                placeholder="Mô tả"
-                {...issueRegister("description")}
-              />
-            </div>
-            <div>
-              <Select
-                value={watchIssue("priority")}
-                onValueChange={v => setIssueValue("priority", v)}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Độ ưu tiên" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="P0">P0</SelectItem>
-                  <SelectItem value="P1">P1</SelectItem>
-                  <SelectItem value="P2">P2</SelectItem>
-                  <SelectItem value="P3">P3</SelectItem>
-                  <SelectItem value="P4">P4</SelectItem>
-                  <SelectItem value="P5">P5</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div>
-              <Select
-                value={watchIssue("issueType")}
-                onValueChange={v => setIssueValue("issueType", v)}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Loại issue" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="STORY">Story</SelectItem>
-                  <SelectItem value="TASK">Task</SelectItem>
-                  <SelectItem value="BUG">Bug</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div>
-              <Select
-                value={watchIssue("assigneeId")}
-                onValueChange={v => setIssueValue("assigneeId", v)}
-                disabled={!canAssignWhenCreate()}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Người được giao" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="none">Không chọn</SelectItem>
-                  {projectMembers.map(member => (
-                    <SelectItem key={member.userId} value={member.userId}>
-                      {member.user.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <DialogFooter>
-              <Button type="submit">Tạo</Button>
-            </DialogFooter>
-          </form>
+          <IssueForm
+            onSubmit={onCreateIssue}
+            loading={false}
+            projectMembers={projectMembers}
+            sprints={sprints}
+          />
+        </DialogContent>
+      </Dialog>
+      {/* Dialog edit issue */}
+      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Chỉnh sửa Issue</DialogTitle>
+          </DialogHeader>
+          {editIssue && (
+            <IssueForm
+              onSubmit={onEditIssueSubmit}
+              loading={false}
+              projectMembers={projectMembers}
+              sprints={sprints}
+              defaultValues={editIssue}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
+      {/* Dialog xác nhận xoá issue */}
+      <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Xác nhận xoá Issue</DialogTitle>
+          </DialogHeader>
+          <div>Bạn có chắc chắn muốn xoá issue này không?</div>
+          <DialogFooter>
+            <Button variant="destructive" onClick={onDeleteIssueConfirm}>Xoá</Button>
+            <Button variant="outline" onClick={() => setIsDeleteDialogOpen(false)}>Huỷ</Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>

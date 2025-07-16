@@ -7,7 +7,6 @@ const baseUrl = "http://localhost:8080/api/sprints";
 export const getSprintsByProject = async (projectId: string) => {
   try {
     const res = await axios.get(`${baseUrl}/project/${projectId}`, addReqToken(localStorage.getItem("token")));
-    console.log("Sprints fetched:", res.data); // Debug log
     return res.data;
   } catch (error) {
     console.error("Error fetching sprints:", error);

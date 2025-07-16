@@ -10,6 +10,8 @@ import { toastError, toastSuccess } from "@/utils/toast";
 import sprintService from "@/service/sprintService";
 import type { Sprint } from "@/types/sprint";
 import { Play, Square, Edit, Trash2, Plus } from "lucide-react";
+import { z } from "zod";
+import { zodResolver } from "@hookform/resolvers/zod";
 
 interface SprintManagementProps {
   projectId: string;
@@ -17,6 +19,24 @@ interface SprintManagementProps {
   onSprintUpdate: () => void;
   canManageSprint: boolean;
 }
+
+const sprintSchema = z.object({
+  name: z.string().min(1, "Tên sprint không được để trống"),
+  goal: z.string().optional(),
+  startDate: z.string().optional(),
+  endDate: z.string().optional(),
+}).refine(
+  (data) => {
+    if (data.startDate && data.endDate) {
+      return new Date(data.startDate) <= new Date(data.endDate);
+    }
+    return true;
+  },
+  {
+    message: "Ngày bắt đầu phải trước hoặc bằng ngày kết thúc",
+    path: ["startDate"],
+  }
+);
 
 const SprintManagement: React.FC<SprintManagementProps> = ({
   projectId,
@@ -29,7 +49,8 @@ const SprintManagement: React.FC<SprintManagementProps> = ({
   const [selectedSprint, setSelectedSprint] = useState<Sprint | null>(null);
   const [loading, setLoading] = useState(false);
 
-  const { register, handleSubmit, reset, setValue } = useForm({
+  const { register, handleSubmit, reset, setValue, formState: { errors } } = useForm({
+    resolver: zodResolver(sprintSchema),
     defaultValues: {
       name: "",
       goal: "",
@@ -116,7 +137,7 @@ const SprintManagement: React.FC<SprintManagementProps> = ({
   const handleStartSprint = async (sprintId: string) => {
     try {
       await sprintService.startSprint(sprintId);
-      toastSuccess("Bắt đầu sprint thành công!");
+      toastSuccess("Cập nhật trạng thái sprint thành công!");
       onSprintUpdate();
     } catch (error) {
       toastError("Bắt đầu sprint thất bại!");
@@ -127,7 +148,7 @@ const SprintManagement: React.FC<SprintManagementProps> = ({
   const handleEndSprint = async (sprintId: string) => {
     try {
       await sprintService.endSprint(sprintId);
-      toastSuccess("Kết thúc sprint thành công!");
+      toastSuccess("Cập nhật trạng thái sprint thành công!");
       onSprintUpdate();
     } catch (error) {
       toastError("Kết thúc sprint thất bại!");
@@ -289,8 +310,9 @@ const SprintManagement: React.FC<SprintManagementProps> = ({
             <div>
               <Input
                 placeholder="Tên sprint"
-                {...register("name", { required: true })}
+                {...register("name")}
               />
+              {errors.name && <span className="text-xs text-red-500">{errors.name.message}</span>}
             </div>
             <div>
               <Textarea
@@ -305,6 +327,7 @@ const SprintManagement: React.FC<SprintManagementProps> = ({
                   placeholder="Ngày bắt đầu"
                   {...register("startDate")}
                 />
+                {errors.startDate && <span className="text-xs text-red-500">{errors.startDate.message}</span>}
               </div>
               <div>
                 <Input
@@ -312,6 +335,7 @@ const SprintManagement: React.FC<SprintManagementProps> = ({
                   placeholder="Ngày kết thúc"
                   {...register("endDate")}
                 />
+                {errors.endDate && <span className="text-xs text-red-500">{errors.endDate.message}</span>}
               </div>
             </div>
             <DialogFooter>
@@ -333,8 +357,9 @@ const SprintManagement: React.FC<SprintManagementProps> = ({
             <div>
               <Input
                 placeholder="Tên sprint"
-                {...register("name", { required: true })}
+                {...register("name")}
               />
+              {errors.name && <span className="text-xs text-red-500">{errors.name.message}</span>}
             </div>
             <div>
               <Textarea
@@ -349,6 +374,7 @@ const SprintManagement: React.FC<SprintManagementProps> = ({
                   placeholder="Ngày bắt đầu"
                   {...register("startDate")}
                 />
+                {errors.startDate && <span className="text-xs text-red-500">{errors.startDate.message}</span>}
               </div>
               <div>
                 <Input
@@ -356,6 +382,7 @@ const SprintManagement: React.FC<SprintManagementProps> = ({
                   placeholder="Ngày kết thúc"
                   {...register("endDate")}
                 />
+                {errors.endDate && <span className="text-xs text-red-500">{errors.endDate.message}</span>}
               </div>
             </div>
             <DialogFooter>

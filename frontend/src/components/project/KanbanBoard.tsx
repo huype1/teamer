@@ -7,7 +7,7 @@ import { Button } from "../ui/button";
 import { DndContext, useDraggable, useDroppable, PointerSensor, useSensor, useSensors, closestCorners } from '@dnd-kit/core';
 import type { DragEndEvent } from '@dnd-kit/core';
 import { Bug, FileText, Layers, Target, Zap, Plus, AlertCircle, CheckCircle2, Clock, Eye } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 
 interface KanbanBoardProps {
   issues: Issue[];
@@ -170,13 +170,12 @@ function DroppableColumn({ status, children, columnConfig }: { status: string; c
     <div
       ref={setNodeRef}
       className={`
-        min-w-[280px] w-80 flex-shrink-0 transition-all duration-300 rounded-xl
+        min-h-[600px] min-w-[280px] w-80 flex-shrink-0 transition-all duration-300 rounded-xl
         bg-gradient-to-br ${columnConfig.gradient} backdrop-blur-sm
         border-2 ${isOver ? 'border-primary scale-105 shadow-2xl' : columnConfig.borderColor}
         ${isOver ? 'shadow-primary/20' : 'shadow-lg'}
         hover:shadow-xl transform hover:-translate-y-1
       `}
-      className={`min-h-[600px] ${isOver ? 'border-primary scale-105 shadow-2xl' : columnConfig.borderColor}`}
     >
       <div className="p-4">
         <div className="flex items-center gap-3 mb-4">
@@ -202,7 +201,6 @@ function DroppableColumn({ status, children, columnConfig }: { status: string; c
 }
 
 const KanbanBoard: React.FC<KanbanBoardProps> = ({ issues, onOpenCreateIssue, canCreateIssue, onStatusChange, onCreateSubtask }) => {
-  const navigate = useNavigate();
   const sensors = useSensors(
     useSensor(PointerSensor, {
       activationConstraint: {
@@ -251,7 +249,6 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({ issues, onOpenCreateIssue, ca
                       <Card className="group p-4 cursor-pointer hover:shadow-xl transition-all duration-300 border-0 bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm hover:scale-105 hover:bg-white dark:hover:bg-gray-800">
                         <div className="flex items-start gap-3 mb-3">
                           <Badge className={`bg-gradient-to-r ${typeConfig.gradient} ${typeConfig.textColor} text-xs flex items-center gap-1.5 px-2 py-1 font-semibold shadow-lg`}>
-                            <span className="text-sm">{typeConfig.emoji}</span>
                             <TypeIcon className="h-3 w-3" />
                             {typeConfig.label}
                           </Badge>

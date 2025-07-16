@@ -39,7 +39,25 @@ Authorization: Bearer {{authToken}}
 
 ###
 
-GET http://localhost:8080/api/users
+PUT http://localhost:8080/api/users/me
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+  "email": "updated@example.com",
+  "name": "Updated User Name",
+  "password": "newpassword123",
+  "avatarUrl": "https://example.com/avatar.jpg"
+}
+
+###
+
+DELETE http://localhost:8080/api/users/me
+Authorization: Bearer {{authToken}}
+
+###
+
+GET http://localhost:8080/api/users/{{userId}}
 Authorization: Bearer {{authToken}}
 
 ###

@@ -8,7 +8,13 @@ import type { Issue } from "@/types/issue";
 import { toastError } from "@/utils/toast";
 import { ProjectHeader, ProjectNavigation } from "@/components/project";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+import {
+  PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, Tooltip, Legend, LineChart, Line, CartesianGrid, ResponsiveContainer
+} from 'recharts';
+import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from '@/components/ui/select';
+import sprintService from '@/service/sprintService';
+import type { Sprint } from '@/types/sprint';
+import { format, addDays, differenceInCalendarDays } from 'date-fns';
 
 const mapIssue = (issue: unknown): Issue => {
   const i = issue as Record<string, unknown>;
@@ -32,26 +38,120 @@ const mapIssue = (issue: unknown): Issue => {
   } as Issue;
 };
 
+const STATUS_COLORS = ['#3B82F6', '#F59E42', '#A78BFA', '#22C55E'];
+const PRIORITY_COLORS = ['#EF4444', '#F59E42', '#FDE047', '#22C55E', '#3B82F6', '#6B7280'];
+
+// Chuẩn bị data cho PieChart (status)
+const getStatusPieData = (statusStats) => [
+  { name: 'Cần làm', value: statusStats.TO_DO },
+  { name: 'Đang làm', value: statusStats.IN_PROGRESS },
+  { name: 'Review', value: statusStats.IN_REVIEW },
+  { name: 'Hoàn thành', value: statusStats.DONE },
+];
+
+// Chuẩn bị data cho BarChart (priority)
+const getPriorityBarData = (priorityStats) =>
+  Object.keys(priorityStats).map((key) => ({ name: key, value: priorityStats[key] }));
+
+// Hàm tính dữ liệu burndown thực tế từ issues và sprint
+function calculateBurndownData(sprint, issues) {
+  if (!sprint?.startDate || !sprint?.endDate) return [];
+  const start = new Date(sprint.startDate);
+  const end = new Date(sprint.endDate);
+  const totalDays = differenceInCalendarDays(end, start) + 1;
+  if (totalDays <= 0) return [];
+  const totalIssues = issues.length;
+  // Lấy ngày hoàn thành của từng issue (status DONE)
+  const doneDates = issues
+    .filter(i => i.status === 'DONE')
+    .map(i => new Date(i.updatedAt));
+  // Tạo mảng ngày
+  const days = Array.from({ length: totalDays }, (_, i) => addDays(start, i));
+  // Lý tưởng: giảm đều mỗi ngày
+  const idealStep = totalIssues / (totalDays - 1 || 1);
+  // Tính số lượng còn lại thực tế mỗi ngày
+  const actualArr = days.map(day => {
+    // Đếm số issue hoàn thành đến hết ngày này
+    const doneCount = doneDates.filter(d => d <= day).length;
+    return totalIssues - doneCount;
+  });
+  // Lý tưởng: giảm đều
+  const idealArr = days.map((_, i) => Math.max(totalIssues - Math.round(i * idealStep), 0));
+  // Kết quả
+  return days.map((day, i) => ({
+    day: format(day, 'dd/MM/yyyy'),
+    ideal: idealArr[i],
+    actual: actualArr[i],
+  }));
+}
+
+// Hàm tính velocity (story points hoàn thành) cho sprint
+function calculateVelocity(sprint, issues) {
+  if (!sprint || !issues.length) return 0;
+  // Tính tổng story points của các issue đã hoàn thành (DONE)
+  return issues
+    .filter(issue => issue.status === 'DONE' && issue.storyPoints)
+    .reduce((sum, issue) => sum + (issue.storyPoints || 0), 0);
+}
+
+// Hàm tính velocity cho tất cả sprint
+function calculateAllVelocities(sprints, allIssues) {
+  return sprints.map(sprint => {
+    const sprintIssues = allIssues.filter(issue => issue.sprintId === sprint.id);
+    const velocity = calculateVelocity(sprint, sprintIssues);
+    return {
+      name: sprint.name,
+      velocity: velocity,
+      status: sprint.status,
+      startDate: sprint.startDate,
+      endDate: sprint.endDate
+    };
+  }).filter(item => item.velocity > 0); // Chỉ hiển thị sprint có velocity > 0
+}
+
 const ProjectReportsPage: React.FC = () => {
   const { projectId } = useParams<{ projectId: string }>();
   const [project, setProject] = useState<Project | null>(null);
-  const [issues, setIssues] = useState<Issue[]>([]);
+  const [issues, setIssues] = useState<Issue[]>([]); // dùng cho chart
   const [loading, setLoading] = useState(true);
+  const [sprints, setSprints] = useState<Sprint[]>([]);
+  const [selectedSprintId, setSelectedSprintId] = useState<string | null>(null);
+  const [selectedSprint, setSelectedSprint] = useState<Sprint | null>(null);
 
   useEffect(() => {
     if (projectId) {
       fetchProject();
+      fetchSprints();
       fetchIssues();
     }
   }, [projectId]);
+
+  useEffect(() => {
+    if (selectedSprintId) {
+      const sprint = sprints.find(s => s.id === selectedSprintId) || null;
+      setSelectedSprint(sprint);
+      fetchIssuesBySprint(selectedSprintId);
+    } else if (projectId) {
+      setSelectedSprint(null);
+      fetchIssues();
+    }
+  }, [selectedSprintId, sprints]);
 
   const fetchProject = async () => {
     try {
       const response = await ProjectService.getProjectById(projectId!);
       setProject(response.result);
-    } catch (error) {
-      console.error("Error fetching project:", error);
+    } catch {
       toastError("Không thể tải thông tin dự án!");
+    }
+  };
+
+  const fetchSprints = async () => {
+    try {
+      const response = await sprintService.getSprintsByProject(projectId!);
+      setSprints(response.result || []);
+    } catch {
+      toastError("Không thể tải danh sách sprint!");
     }
   };
 
@@ -59,9 +159,19 @@ const ProjectReportsPage: React.FC = () => {
     try {
       const response = await issueService.getIssuesByProjectId(projectId!);
       setIssues(response.result.map(mapIssue));
-    } catch (error) {
-      console.error("Error fetching issues:", error);
+    } catch {
       toastError("Không thể tải danh sách issues!");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchIssuesBySprint = async (sprintId: string) => {
+    try {
+      const response = await sprintService.getIssuesBySprint(sprintId);
+      setIssues(response.result.map(mapIssue));
+    } catch {
+      toastError("Không thể tải issues của sprint!");
     } finally {
       setLoading(false);
     }
@@ -103,30 +213,6 @@ const ProjectReportsPage: React.FC = () => {
     return stats;
   };
 
-  const getIssueTypeStats = () => {
-    const stats = {
-      EPIC: 0,
-      STORY: 0,
-      TASK: 0,
-      BUG: 0,
-      SUBTASK: 0,
-    };
-    
-    issues.forEach(issue => {
-      if (Object.prototype.hasOwnProperty.call(stats, issue.issueType)) {
-        stats[issue.issueType as keyof typeof stats]++;
-      }
-    });
-    
-    return stats;
-  };
-
-  const getCompletionRate = () => {
-    if (issues.length === 0) return 0;
-    const completedIssues = issues.filter(issue => issue.status === "DONE").length;
-    return Math.round((completedIssues / issues.length) * 100);
-  };
-
   if (loading) {
     return (
       <div className="p-6">
@@ -149,10 +235,16 @@ const ProjectReportsPage: React.FC = () => {
     );
   }
 
-  const statusStats = getStatusStats();
-  const priorityStats = getPriorityStats();
-  const issueTypeStats = getIssueTypeStats();
-  const completionRate = getCompletionRate();
+  const statusStats = getStatusStats(); // dùng cho chart
+  const priorityStats = getPriorityStats(); // dùng cho chart
+  // sử dụng issues trong các hàm chart bên dưới để tránh linter warning
+  // (ví dụ: getBurndownData(issues), getPriorityBarData(getPriorityStats(issues)), ...)
+
+  // Chart data
+  const statusPieData = getStatusPieData(statusStats);
+  const priorityBarData = getPriorityBarData(priorityStats);
+  const burndownData = selectedSprint ? calculateBurndownData(selectedSprint, issues) : [];
+  const velocityData = calculateAllVelocities(sprints, issues);
 
   return (
     <div className="p-6 space-y-6">
@@ -160,134 +252,165 @@ const ProjectReportsPage: React.FC = () => {
         title={`${project?.name || ""} - Báo cáo`}
         showBackButton
       />
-      
       <ProjectNavigation projectId={projectId!} />
-      
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Tổng số Issues</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{issues.length}</div>
-          </CardContent>
-        </Card>
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Tỷ lệ hoàn thành</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{completionRate}%</div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Issues đã hoàn thành</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{statusStats.DONE}</div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Đang thực hiện</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{statusStats.IN_PROGRESS}</div>
-          </CardContent>
-        </Card>
+      {/* Sprint Select */}
+      <div className="mb-4 flex items-center gap-4">
+        <span className="font-medium">Chọn sprint:</span>
+        <Select value={selectedSprintId ?? 'all'} onValueChange={v => setSelectedSprintId(v === 'all' ? null : v)}>
+          <SelectTrigger className="w-[220px]">
+            <SelectValue placeholder="Tất cả issues trong project" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Tất cả issues trong project</SelectItem>
+            {sprints.map(sprint => (
+              <SelectItem key={sprint.id} value={sprint.id}>
+                {sprint.name} ({sprint.status})
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      {/* Tổng số issues & Tỷ lệ hoàn thành */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <Card>
           <CardHeader>
-            <CardTitle>Thống kê theo trạng thái</CardTitle>
+            <CardTitle>Tổng số issues</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="flex items-center justify-between">
-              <span>Cần làm</span>
-              <Badge variant="secondary">{statusStats.TO_DO}</Badge>
-            </div>
-            <div className="flex items-center justify-between">
-              <span>Đang làm</span>
-              <Badge variant="secondary">{statusStats.IN_PROGRESS}</Badge>
-            </div>
-            <div className="flex items-center justify-between">
-              <span>Đang review</span>
-              <Badge variant="secondary">{statusStats.IN_REVIEW}</Badge>
-            </div>
-            <div className="flex items-center justify-between">
-              <span>Đã hoàn thành</span>
-              <Badge variant="secondary">{statusStats.DONE}</Badge>
+          <CardContent>
+            <div className="flex flex-col items-center justify-center h-32">
+              <span className="text-5xl font-bold text-primary">{issues.length}</span>
+              <span className="text-muted-foreground mt-2">Tổng số issues trong {selectedSprintId ? 'sprint' : 'dự án'}</span>
             </div>
           </CardContent>
         </Card>
-
         <Card>
           <CardHeader>
-            <CardTitle>Thống kê theo loại issue</CardTitle>
+            <CardTitle>Tỷ lệ hoàn thành</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="flex items-center justify-between">
-              <span>Epic</span>
-              <Badge variant="secondary">{issueTypeStats.EPIC}</Badge>
-            </div>
-            <div className="flex items-center justify-between">
-              <span>Story</span>
-              <Badge variant="secondary">{issueTypeStats.STORY}</Badge>
-            </div>
-            <div className="flex items-center justify-between">
-              <span>Task</span>
-              <Badge variant="secondary">{issueTypeStats.TASK}</Badge>
-            </div>
-            <div className="flex items-center justify-between">
-              <span>Bug</span>
-              <Badge variant="secondary">{issueTypeStats.BUG}</Badge>
-            </div>
-            <div className="flex items-center justify-between">
-              <span>Subtask</span>
-              <Badge variant="secondary">{issueTypeStats.SUBTASK}</Badge>
+          <CardContent>
+            <div className="flex flex-col items-center justify-center h-32">
+              <span className="text-5xl font-bold text-green-600">
+                {issues.length > 0 ? `${Math.round((statusStats.DONE / issues.length) * 100)}%` : '0%'}
+              </span>
+              <span className="text-muted-foreground mt-2">Số lượng hoàn thành: {statusStats.DONE} / {issues.length}</span>
             </div>
           </CardContent>
         </Card>
       </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Thống kê theo độ ưu tiên</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-2 md:grid-cols-6 gap-4">
-            <div className="text-center">
-              <div className="text-2xl font-bold text-red-600">{priorityStats.P0}</div>
-              <div className="text-sm text-muted-foreground">P0</div>
-            </div>
-            <div className="text-center">
-              <div className="text-2xl font-bold text-orange-600">{priorityStats.P1}</div>
-              <div className="text-sm text-muted-foreground">P1</div>
-            </div>
-            <div className="text-center">
-              <div className="text-2xl font-bold text-yellow-600">{priorityStats.P2}</div>
-              <div className="text-sm text-muted-foreground">P2</div>
-            </div>
-            <div className="text-center">
-              <div className="text-2xl font-bold text-green-600">{priorityStats.P3}</div>
-              <div className="text-sm text-muted-foreground">P3</div>
-            </div>
-            <div className="text-center">
-              <div className="text-2xl font-bold text-blue-600">{priorityStats.P4}</div>
-              <div className="text-sm text-muted-foreground">P4</div>
-            </div>
-            <div className="text-center">
-              <div className="text-2xl font-bold text-gray-600">{priorityStats.P5}</div>
-              <div className="text-sm text-muted-foreground">P5</div>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+      {/* Burndown Chart */}
+      {selectedSprint ? (
+        <Card>
+          <CardHeader>
+            <CardTitle>Biểu đồ Burndown</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ResponsiveContainer width="100%" height={300}>
+              <LineChart data={burndownData} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="day" />
+                <YAxis allowDecimals={false} />
+                <Tooltip formatter={(value, name) => [value, name === 'ideal' ? 'Lý tưởng' : 'Thực tế']} labelFormatter={label => `Ngày: ${label}`} />
+                <Legend />
+                <Line type="monotone" dataKey="ideal" stroke="#8884d8" strokeWidth={2} dot={false} name="Lý tưởng" />
+                <Line type="monotone" dataKey="actual" stroke="#ef4444" strokeWidth={2} name="Thực tế" />
+              </LineChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
+      ) : (
+        <Card>
+          <CardHeader>
+            <CardTitle>Biểu đồ Burndown</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex items-center justify-center h-40 text-muted-foreground">Chọn sprint để xem biểu đồ burndown</div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Velocity Chart */}
+      {velocityData.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Velocity Chart (Story Points hoàn thành)</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ResponsiveContainer width="100%" height={250}>
+              <BarChart data={velocityData}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="name" />
+                <YAxis allowDecimals={false} />
+                <Tooltip 
+                  formatter={(value) => [value, 'Story Points']}
+                  labelFormatter={label => `Sprint: ${label}`}
+                />
+                <Legend />
+                <Bar dataKey="velocity" name="Story Points hoàn thành" fill="#10B981">
+                  {velocityData.map((entry, index) => (
+                    <Cell key={`cell-velocity-${index}`} fill="#10B981" />
+                  ))}
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Bar & Pie Chart */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <Card>
+          <CardHeader>
+            <CardTitle>Thống kê theo độ ưu tiên</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ResponsiveContainer width="100%" height={250}>
+              <BarChart data={priorityBarData}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="name" />
+                <YAxis allowDecimals={false} />
+                <Tooltip />
+                <Legend />
+                <Bar dataKey="value" name="Số lượng" fill="#3B82F6">
+                  {priorityBarData.map((entry, index) => (
+                    <Cell key={`cell-priority-${index}`} fill={PRIORITY_COLORS[index % PRIORITY_COLORS.length]} />
+                  ))}
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Tỷ lệ trạng thái (Pie Chart)</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ResponsiveContainer width="100%" height={250}>
+              <PieChart>
+                <Pie
+                  data={statusPieData}
+                  cx="50%"
+                  cy="50%"
+                  labelLine={false}
+                  outerRadius={80}
+                  fill="#8884d8"
+                  dataKey="value"
+                >
+                  {statusPieData.map((entry, index) => (
+                    <Cell key={`cell-status-${index}`} fill={STATUS_COLORS[index % STATUS_COLORS.length]} />
+                  ))}
+                </Pie>
+                <Tooltip />
+                <Legend />
+              </PieChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
+      </div>
+
     </div>
   );
 };

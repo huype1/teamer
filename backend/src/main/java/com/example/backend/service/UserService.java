@@ -58,9 +58,18 @@ public class UserService {
     }
 
     public UserResponse getMyInfo() {
-        // Sử dụng user ID từ JWT thay vì email - nhanh hơn vì có index
         UUID userId = JwtUtils.getSubjectFromJwt();
         return getMyInfoOptimized(userId);
+    }
+
+    public UserResponse updateMyInfo(UserUpdateRequest request) {
+        UUID userId = JwtUtils.getSubjectFromJwt();
+        return updateUser(userId, request);
+    }
+
+    public void deleteMyAccount() {
+        UUID userId = JwtUtils.getSubjectFromJwt();
+        userRepository.deleteById(userId);
     }
     
     private UserResponse getMyInfoOptimized(UUID userId) {

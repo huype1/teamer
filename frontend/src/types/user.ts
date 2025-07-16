@@ -24,14 +24,15 @@ export interface User {
   updatedAt: string;
 }
 
+export interface UserUpdateRequest {
+  email: string;
+  name: string;
+  password?: string;
+  avatarUrl?: string;
+}
+
 export interface UserResponse {
   code: number;
   message: string;
   result: User;
-}
-
-export interface UsersResponse {
-  code: number;
-  message: string;
-  result: User[];
 } 

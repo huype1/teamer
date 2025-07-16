@@ -5,6 +5,7 @@ import java.util.UUID;
 
 import org.springframework.web.bind.annotation.*;
 
+import com.example.backend.dto.request.UserUpdateRequest;
 import com.example.backend.dto.response.ApiResponse;
 import com.example.backend.dto.response.UserResponse;
 import com.example.backend.service.UserService;
@@ -45,6 +46,31 @@ public class UserController {
         return ApiResponse.<UserResponse>builder()
                 .message("User info fetched successfully")
                 .result(userService.getMyInfo())
+                .build();
+    }
+
+    @PutMapping("/me")
+    public ApiResponse<UserResponse> updateMyInfo(@RequestBody UserUpdateRequest request) {
+        log.info("Updating current user info");
+        return ApiResponse.<UserResponse>builder()
+                .message("User info updated successfully")
+                .result(userService.updateMyInfo(request))
+                .build();
+    }
+
+    @DeleteMapping("/me")
+    public ApiResponse<Void> deleteMyAccount() {
+        log.info("Deleting current user account");
+        userService.deleteMyAccount();
+        return ApiResponse.<Void>builder().message("Account deleted successfully").build();
+    }
+
+    @GetMapping("/{userId}")
+    public ApiResponse<UserResponse> getUserById(@PathVariable("userId") UUID userId) {
+        log.info("Fetching user with ID: {}", userId);
+        return ApiResponse.<UserResponse>builder()
+                .message("User fetched successfully")
+                .result(userService.getUser(userId))
                 .build();
     }
 }
