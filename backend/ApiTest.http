@@ -360,3 +360,26 @@ GET http://localhost:8080/api/comments/issue/{{issueId}}
 Authorization: Bearer {{authToken}}
 
 ###
+
+### Lấy danh sách issue được giao cho user (by assigneeId)
+GET http://localhost:8080/issues/assignee/{{userId}}
+Authorization: Bearer {{token}}
+
+###
+
+### Lấy presigned URL upload file S3
+POST http://localhost:8080/api/attachments/presigned-url
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+  "fileName": "teamer-uploader_accessKeys.csv",
+  "fileType": "text/csv"
+}
+
+### Upload file lên S3 bằng presigned URL (chạy sau khi lấy được url)
+# Thay {{presignedUrl}} bằng giá trị url nhận được ở trên
+PUT {{presignedUrl}}
+Content-Type: text/csv
+
+< ./teamer-uploader_accessKeys.csv

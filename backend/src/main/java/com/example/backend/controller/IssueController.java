@@ -58,6 +58,19 @@ public class IssueController {
                 .build();
     }
 
+    @GetMapping("/assignee/{userId}")
+    public ApiResponse<List<IssueResponse>> getIssuesByAssigneeId(@PathVariable UUID userId) {
+        UUID currentUserId = JwtUtils.getSubjectFromJwt();
+        log.info("Fetching issues assigned to user: {} by user: {}", userId, currentUserId);
+        // Có thể kiểm tra quyền nếu cần
+        List<Issue> issues = issueService.getIssuesByAssigneeId(userId);
+        List<IssueResponse> responses = issueMapper.toResponseList(issues);
+        return ApiResponse.<List<IssueResponse>>builder()
+                .message("Issues fetched successfully")
+                .result(responses)
+                .build();
+    }
+
     @PostMapping
     public ApiResponse<IssueResponse> createIssue(@RequestBody @Valid IssueRequest issueRequest) {
         UUID userId = JwtUtils.getSubjectFromJwt();

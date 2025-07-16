@@ -16,10 +16,18 @@ export interface Comment {
   };
 }
 
+export interface AttachmentMeta {
+  fileName: string;
+  fileType: string;
+  fileSize: number;
+  filePath: string;
+}
+
 export interface CommentCreationRequest {
   issueId: string;
   userId: string;
   content: string;
+  attachments?: AttachmentMeta[];
 }
 
 // Get comments by issue ID

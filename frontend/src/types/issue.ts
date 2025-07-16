@@ -24,6 +24,7 @@ export interface Issue {
   createdAt: string;
   updatedAt: string;
   projectId?: string;
+  project?: any;
 }
 
 export interface CreateIssueRequest {

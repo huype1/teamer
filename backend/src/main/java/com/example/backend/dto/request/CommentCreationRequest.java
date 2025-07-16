@@ -4,6 +4,7 @@ import lombok.*;
 import lombok.experimental.FieldDefaults;
 
 import java.util.UUID;
+import java.util.List;
 
 @Data
 @NoArgsConstructor
@@ -15,4 +16,6 @@ public class CommentCreationRequest {
     UUID issueId;
     UUID userId;
     String content;
+    List<AttachmentMeta> attachments;
 }
+

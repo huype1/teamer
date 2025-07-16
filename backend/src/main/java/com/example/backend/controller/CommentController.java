@@ -11,6 +11,7 @@ import com.example.backend.service.CommentService;
 import com.example.backend.service.UserService;
 import com.example.backend.utils.JwtUtils;
 import com.example.backend.entity.Comment;
+import com.example.backend.dto.request.AttachmentMeta;
 
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
@@ -31,7 +32,12 @@ public class CommentController {
         log.info("Creating comment for issue with ID: {}", commentRequest.getIssueId());
         return ApiResponse.<Comment>builder()
                 .message("Comment created successfully")
-                .result(commentService.createComment(commentRequest.getIssueId(), commentRequest.getUserId(), commentRequest.getContent()))
+                .result(commentService.createComment(
+                    commentRequest.getIssueId(),
+                    commentRequest.getUserId(),
+                    commentRequest.getContent(),
+                    commentRequest.getAttachments()
+                ))
                 .build();
     }
 

@@ -1,653 +1,279 @@
-import React, { useState } from "react";
+import React from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Progress } from "@/components/ui/progress";
-import { 
-  Activity, 
-  Calendar, 
-  Clock, 
-  FileText, 
-  Plus, 
-  Users, 
-  Zap,
-  BookOpen,
-  Target,
-  FolderOpen,
-  CheckCircle,
-  AlertCircle,
-  TrendingUp,
-  BarChart3,
-  CalendarDays,
-  User,
-  ListTodo
-} from "lucide-react";
+import { Bell } from "lucide-react";
+import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
+import { useSelector } from "react-redux";
+import type { RootState } from "@/store";
+import { useEffect, useState } from "react";
+import issueService from "@/service/issueService";
+import projectService from "@/service/projectService";
+import type { Issue } from "@/types/issue";
+import type { Project } from "@/types/project";
 
-interface QuickAction {
-  id: string;
-  title: string;
-  description: string;
-  icon: React.ReactNode;
-  color: string;
-  href: string;
-}
-
-interface RecentDocument {
-  id: string;
-  title: string;
-  type: "page" | "blog" | "space";
-  lastModified: string;
-  author: {
-    name: string;
-    avatar: string;
-  };
-  views: number;
-}
-
-interface SprintProgress {
+// Interface chuẩn hóa cho dữ liệu từ API
+interface Project {
   id: string;
   name: string;
   progress: number;
   totalIssues: number;
   completedIssues: number;
-  remainingDays: number;
-}
-
-interface TeamActivity {
-  id: string;
-  user: {
-    name: string;
-    avatar: string;
-  };
-  action: string;
-  target: string;
-  timestamp: string;
 }
 
 interface Issue {
   id: string;
   title: string;
-  status: "todo" | "in-progress" | "done";
+  status: "TO_DO" | "IN_PROGRESS" | "IN_REVIEW" | "DONE";
   priority: "P0" | "P1" | "P2" | "P3" | "P4" | "P5";
-  assignee: string;
   dueDate: string;
+  project: {
+    id: string;
+    name: string;
+  };
+  projectId: string; // Added for consistency with API response
 }
 
 export default function DashboardPage() {
-  const [activeTab, setActiveTab] = useState("overview");
+  const user = useSelector((state: RootState) => state.auth.user);
+  const [issues, setIssues] = useState<Issue[]>([]);
+  const [projects, setProjects] = useState<Project[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  const quickActions: QuickAction[] = [
-    {
-      id: "1",
-      title: "Tạo Issue",
-      description: "Báo lỗi hoặc yêu cầu tính năng mới",
-      icon: <Plus className="h-5 w-5" />,
-      color: "bg-blue-500",
-      href: "/projects/new-issue"
-    },
-    {
-      id: "2",
-      title: "Tạo Tài liệu",
-      description: "Tạo trang hoặc bài viết blog",
-      icon: <FileText className="h-5 w-5" />,
-      color: "bg-green-500",
-      href: "/docs/new"
-    },
-    {
-      id: "3",
-      title: "Bắt đầu Sprint",
-      description: "Bắt đầu một sprint phát triển mới",
-      icon: <Zap className="h-5 w-5" />,
-      color: "bg-purple-500",
-      href: "/sprints/new"
-    },
-  ];
+  useEffect(() => {
+    const fetchData = async () => {
+      if (!user?.id) return;
+      setLoading(true);
+      setError(null);
+      try {
+        const [issueRes, projectRes] = await Promise.all([
+          issueService.getIssuesByAssigneeId(user.id),
+          projectService.getProjects(),
+        ]);
+        // Map lại để đảm bảo mỗi issue có projectId, project
+        const projectsArr = projectRes.result || [];
+        // Khi map issueArr, dùng Partial<Issue> để tránh lỗi thiếu trường project
+        const issuesArr = (issueRes.result || []).map((issue: Partial<Issue>) => ({
+          ...issue,
+          status: issue.status === "TO_DO" ? "TO_DO" : issue.status,
+          projectId: issue.projectId || (issue as any).project?.id,
+          project: (issue as any).project || projectsArr.find((p: Project) => p.id === (issue.projectId || (issue as any).project?.id)),
+        }));
+        setIssues(issuesArr);
+        setProjects(projectsArr);
+      } catch {
+        setError("Lỗi khi tải dữ liệu dashboard");
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchData();
+  }, [user?.id]);
 
-  const recentDocuments: RecentDocument[] = [
-    {
-      id: "1",
-      title: "Tài liệu API v2.1",
-      type: "page",
-      lastModified: "2 giờ trước",
-      author: { name: "Sarah Chen", avatar: "" },
-      views: 156
-    },
-    {
-      id: "2",
-      title: "Lộ trình sản phẩm Q4",
-      type: "blog",
-      lastModified: "1 ngày trước",
-      author: { name: "Mike Johnson", avatar: "" },
-      views: 89
-    },
-    {
-      id: "3",
-      title: "Hướng dẫn hệ thống thiết kế",
-      type: "page",
-      lastModified: "3 ngày trước",
-      author: { name: "Emma Wilson", avatar: "" },
-      views: 234
-    }
-  ];
+  // Chuẩn bị dữ liệu cho PieChart trạng thái issue
+  const statusColors: Record<Issue["status"], string> = {
+    TO_DO: "#6B7280",
+    IN_PROGRESS: "#3B82F6",
+    IN_REVIEW: "#F59E42",
+    DONE: "#22C55E"
+  };
+  const statusLabels: Record<Issue["status"], string> = {
+    TO_DO: "Cần làm",
+    IN_PROGRESS: "Đang làm",
+    IN_REVIEW: "Đang review",
+    DONE: "Hoàn thành"
+  };
+  // Sửa lại statusData mapping cho PieChart
+  const statusKeys: Issue["status"][] = ["TO_DO", "IN_PROGRESS", "IN_REVIEW", "DONE"];
+  const statusData = statusKeys.map(status => ({
+    name: statusLabels[status],
+    value: issues.filter(i => i.status === status).length,
+    color: statusColors[status]
+  }));
 
-  const activeSprints: SprintProgress[] = [
-    {
-      id: "1",
-      name: "Sprint 23 - User Dashboard",
-      progress: 75,
-      totalIssues: 12,
-      completedIssues: 9,
-      remainingDays: 3
-    },
-    {
-      id: "2",
-      name: "Sprint 22 - API Integration",
-      progress: 45,
-      totalIssues: 8,
-      completedIssues: 4,
-      remainingDays: 7
-    }
-  ];
+  // Chuẩn bị dữ liệu cho BarChart priority
+  const priorityColors: Record<string, string> = {
+    P0: "#B91C1C",
+    P1: "#EF4444",
+    P2: "#F59E42",
+    P3: "#FACC15",
+    P4: "#4ADE80",
+    P5: "#BBF7D0"
+  };
+  const priorityData = ["P0", "P1", "P2", "P3", "P4", "P5"].map(priority => ({
+    name: priority,
+    value: issues.filter(i => i.priority === priority).length,
+    color: priorityColors[priority]
+  }));
 
-  const teamActivity: TeamActivity[] = [
-    {
-      id: "1",
-      user: { name: "Alex Kim", avatar: "" },
-      action: "completed issue",
-      target: "Fix login validation",
-      timestamp: "5 minutes ago"
-    },
-    {
-      id: "2",
-      user: { name: "Lisa Park", avatar: "" },
-      action: "commented on",
-      target: "User Dashboard Design",
-      timestamp: "15 minutes ago"
-    },
-    {
-      id: "3",
-      user: { name: "David Lee", avatar: "" },
-      action: "started working on",
-      target: "API Rate Limiting",
-      timestamp: "1 hour ago"
-    }
-  ];
-
-  const upcomingIssues: Issue[] = [
-    {
-      id: "1",
-      title: "Fix login validation",
-      status: "in-progress",
-      priority: "P0",
-      assignee: "Alex Kim",
-      dueDate: "2024-01-15"
-    },
-    {
-      id: "2",
-      title: "Update API documentation",
-      status: "todo",
-      priority: "P2",
-      assignee: "Sarah Chen",
-      dueDate: "2024-01-18"
-    },
-    {
-      id: "3",
-      title: "Implement dark mode",
-      status: "todo",
-      priority: "P5",
-      assignee: "Emma Wilson",
-      dueDate: "2024-01-25"
-    }
-  ];
-
-  const getStatusIcon = (status: string) => {
+  // Định nghĩa lại getStatusBadge, getPriorityBadge đúng chuẩn type Issue
+  const getStatusBadge = (status: Issue["status"]) => {
     switch (status) {
-      case "done":
-        return <CheckCircle className="h-4 w-4 text-green-500" />;
-      case "in-progress":
-        return <Clock className="h-4 w-4 text-blue-500" />;
+      case "DONE":
+        return <Badge className="bg-green-500 text-white">Hoàn thành</Badge>;
+      case "IN_PROGRESS":
+        return <Badge className="bg-blue-500 text-white">Đang làm</Badge>;
+      case "IN_REVIEW":
+        return <Badge className="bg-orange-400 text-white">Đang review</Badge>;
+      case "TO_DO":
       default:
-        return <AlertCircle className="h-4 w-4 text-gray-500" />;
+        return <Badge className="bg-gray-400 text-white">Cần làm</Badge>;
     }
   };
 
-  const getPriorityColor = (priority: string) => {
+  const getPriorityBadge = (priority: Issue["priority"]) => {
     switch (priority) {
       case "P0":
-        return "bg-red-700 text-white";
+        return <Badge className="bg-red-700 text-white">P0</Badge>;
       case "P1":
-        return "bg-red-500 text-white";
+        return <Badge className="bg-red-500 text-white">P1</Badge>;
       case "P2":
-        return "bg-orange-500 text-white";
+        return <Badge className="bg-orange-500 text-white">P2</Badge>;
       case "P3":
-        return "bg-yellow-400 text-black";
+        return <Badge className="bg-yellow-400 text-black">P3</Badge>;
       case "P4":
-        return "bg-green-400 text-black";
+        return <Badge className="bg-green-400 text-black">P4</Badge>;
       case "P5":
-        return "bg-green-200 text-black";
+        return <Badge className="bg-green-200 text-black">P5</Badge>;
       default:
-        return "bg-gray-200 text-black";
+        return <Badge className="bg-gray-200 text-black">{priority}</Badge>;
     }
   };
+
+  if (!user) {
+    return <div className="text-center py-10">Vui lòng đăng nhập để xem dashboard.</div>;
+  }
+
+  if (loading) {
+    return <div className="text-center py-10">Đang tải dữ liệu...</div>;
+  }
+
+  if (error) {
+    return <div className="text-center py-10 text-red-500">{error}</div>;
+  }
 
   return (
     <div className="space-y-6 w-full">
-      {/* Header */}
+      {/* Header cá nhân hóa */}
       <div className="flex items-center justify-between w-full">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Bảng điều khiển</h1>
-          <p className="text-muted-foreground">
-            Chào mừng trở lại! Đây là những gì đang diễn ra với các dự án của bạn hôm nay.
-          </p>
-        </div>
-        <div className="flex items-center space-x-2">
-          <Button variant="outline" size="sm">
-            <Calendar className="h-4 w-4 mr-2" />
-            Hôm nay
-          </Button>
-          <Button size="sm">
-            <Plus className="h-4 w-4 mr-2" />
-            Thêm nhanh
-          </Button>
+        <div className="flex items-center space-x-3">
+          <Avatar className="h-12 w-12">
+            <AvatarImage src={user.avatarUrl} />
+            <AvatarFallback>{user.name.split(' ').map(n => n[0]).join('')}</AvatarFallback>
+          </Avatar>
+          <div>
+            <h1 className="text-2xl font-bold">Xin chào, {user.name}!</h1>
+            </div>
         </div>
       </div>
 
-      {/* Quick Actions */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {quickActions.map((action) => (
-          <Card key={action.id} className="hover:shadow-md transition-shadow cursor-pointer">
-            <CardContent className="p-4">
-              <div className="flex items-center space-x-3">
-                <div className={`p-2 rounded-lg ${action.color} text-white`}>
-                  {action.icon}
-                </div>
-                <div>
-                  <h3 className="font-semibold">{action.title}</h3>
-                  <p className="text-sm text-muted-foreground">{action.description}</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
 
-      {/* Summary Cards */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Dự án của tôi</CardTitle>
-            <Users className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">5</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Tổng số Issue</CardTitle>
-            <ListTodo className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">89</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Issue được giao cho tôi</CardTitle>
-            <User className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">7</div>
-
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Main Dashboard Content */}
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-3">
-        <TabsList className="grid w-full grid-cols-3">
-          <TabsTrigger value="overview">Tổng quan</TabsTrigger>
-          <TabsTrigger value="projects">Dự án</TabsTrigger>
-          <TabsTrigger value="docs">Tài liệu</TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="overview" className="space-y-6">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* Issue Status Chart */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center">
-                  <BarChart3 className="h-5 w-5 mr-2" />
-                  Trạng thái Issue
-                </CardTitle>
-                <CardDescription>Phân bố hiện tại của các issue theo trạng thái</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-2">
-                      <div className="w-3 h-3 bg-gray-400 rounded-full"></div>
-                      <span className="text-sm">Chưa làm</span>
-                    </div>
-                    <span className="text-sm font-medium">23</span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-2">
-                      <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
-                      <span className="text-sm">Đang làm</span>
-                    </div>
-                    <span className="text-sm font-medium">34</span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-2">
-                      <div className="w-3 h-3 bg-orange-500 rounded-full"></div>
-                      <span className="text-sm">Đang review</span>
-                    </div>
-                    <span className="text-sm font-medium">34</span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-2">
-                      <div className="w-3 h-3 bg-green-500 rounded-full"></div>
-                      <span className="text-sm">Hoàn thành</span>
-                    </div>
-                    <span className="text-sm font-medium">32</span>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Issue Priority Chart */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center">
-                  <TrendingUp className="h-5 w-5 mr-2" />
-                  Mức độ ưu tiên Issue
-                </CardTitle>
-                <CardDescription>Phân loại issue theo mức độ ưu tiên</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-2">
-                      <div className="w-3 h-3 bg-red-700 rounded-full"></div>
-                      <span className="text-sm">P0 (Cao nhất)</span>
-                    </div>
-                    <span className="text-sm font-medium">5</span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-2">
-                      <div className="w-3 h-3 bg-red-500 rounded-full"></div>
-                      <span className="text-sm">P1</span>
-                    </div>
-                    <span className="text-sm font-medium">8</span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-2">
-                      <div className="w-3 h-3 bg-orange-500 rounded-full"></div>
-                      <span className="text-sm">P2</span>
-                    </div>
-                    <span className="text-sm font-medium">12</span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-2">
-                      <div className="w-3 h-3 bg-yellow-400 rounded-full"></div>
-                      <span className="text-sm">P3</span>
-                    </div>
-                    <span className="text-sm font-medium">18</span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-2">
-                      <div className="w-3 h-3 bg-green-400 rounded-full"></div>
-                      <span className="text-sm">P4</span>
-                    </div>
-                    <span className="text-sm font-medium">22</span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-2">
-                      <div className="w-3 h-3 bg-green-200 rounded-full"></div>
-                      <span className="text-sm">P5 (Thấp nhất)</span>
-                    </div>
-                    <span className="text-sm font-medium">24</span>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Active Sprints
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center">
-                <Target className="h-5 w-5 mr-2" />
-                Active Sprints
-              </CardTitle>
-              <CardDescription>Current sprint progress and remaining work</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {activeSprints.map((sprint) => (
-                  <div key={sprint.id} className="space-y-2">
-                    <div className="flex items-center justify-between">
-                      <h4 className="font-medium">{sprint.name}</h4>
-                      <Badge variant="secondary">
-                        {sprint.remainingDays} days left
-                      </Badge>
-                    </div>
-                    <div className="flex items-center space-x-4 text-sm text-muted-foreground">
-                      <span>{sprint.completedIssues}/{sprint.totalIssues} issues completed</span>
-                      <span>{sprint.progress}% complete</span>
-                    </div>
-                    <Progress value={sprint.progress} className="h-2" />
-                  </div>
+      {/* Issue của tôi */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Issue của tôi</CardTitle>
+          <CardDescription>Các issue bạn được giao</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="overflow-x-auto">
+            <table className="min-w-full text-sm">
+              <thead>
+                <tr className="border-b">
+                  <th className="py-2 px-2 text-left">Tiêu đề</th>
+                  <th className="py-2 px-2 text-left">Dự án</th>
+                  <th className="py-2 px-2 text-left">Trạng thái</th>
+                  <th className="py-2 px-2 text-left">Ưu tiên</th>
+                  <th className="py-2 px-2 text-left">Hạn</th>
+                </tr>
+              </thead>
+              <tbody>
+                {issues.map(issue => (
+                  <tr key={issue.id} className="border-b hover:bg-muted/50">
+                    <td className="py-2 px-2 font-medium">{issue.title}</td>
+                    <td className="py-2 px-2">{projects.find(p => p.id === (issue.projectId || issue.project?.id))?.name || ""}</td>
+                    <td className="py-2 px-2">{getStatusBadge(issue.status)}</td>
+                    <td className="py-2 px-2">{getPriorityBadge(issue.priority)}</td>
+                    <td className="py-2 px-2">{issue.dueDate}</td>
+                  </tr>
                 ))}
-              </div>
-            </CardContent>
-          </Card> */}
-        </TabsContent>
-
-        <TabsContent value="projects" className="space-y-6">
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            {/* Project Overview */}
-            <Card className="lg:col-span-2">
-              <CardHeader>
-                <CardTitle>Dự án gần đây</CardTitle>
-                <CardDescription>Các dự án bạn hoạt động nhiều nhất</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  {[
-                    { name: "Nền tảng thương mại điện tử", progress: 85, issues: 23, members: 8 },
-                    { name: "Ứng dụng di động", progress: 62, issues: 15, members: 5 },
-                    { name: "Thiết kế lại website", progress: 45, issues: 31, members: 12 }
-                  ].map((project, index) => (
-                    <div key={index} className="flex items-center justify-between p-3 border rounded-lg">
-                      <div className="flex items-center space-x-3">
-                        <div className="p-2 bg-blue-100 rounded-lg">
-                          <FolderOpen className="h-4 w-4 text-blue-600" />
-                        </div>
-                        <div>
-                          <h4 className="font-medium">{project.name}</h4>
-                          <p className="text-sm text-muted-foreground">
-                            {project.issues} issue • {project.members} thành viên
-                          </p>
-                        </div>
-                      </div>
-                      <div className="text-right">
-                        <div className="text-sm font-medium">{project.progress}%</div>
-                        <Progress value={project.progress} className="w-20 h-2" />
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Quick Stats */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Thống kê dự án</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <span className="text-sm">Issue đang hoạt động</span>
-                  <span className="font-semibold">89</span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-sm">Hoàn thành hôm nay</span>
-                  <span className="font-semibold">7</span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-sm">Thành viên nhóm</span>
-                  <span className="font-semibold">24</span>
-                </div>
-              </CardContent>
-            </Card>
+              </tbody>
+            </table>
           </div>
-        </TabsContent>
+        </CardContent>
+      </Card>
 
-        <TabsContent value="docs" className="space-y-6">
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            {/* Recent Documents */}
-            <Card className="lg:col-span-2">
-              <CardHeader>
-                <CardTitle className="flex items-center">
-                  <BookOpen className="h-5 w-5 mr-2" />
-                  Tài liệu gần đây
-                </CardTitle>
-                <CardDescription>Tài liệu và trang vừa được cập nhật</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  {recentDocuments.map((doc) => (
-                    <div key={doc.id} className="flex items-center justify-between p-3 border rounded-lg hover:bg-muted/50 cursor-pointer">
-                      <div className="flex items-center space-x-3">
-                        <div className="p-2 bg-green-100 rounded-lg">
-                          <FileText className="h-4 w-4 text-green-600" />
-                        </div>
-                        <div>
-                          <h4 className="font-medium">{doc.title}</h4>
-                          <p className="text-sm text-muted-foreground">
-                            {doc.type === "page" ? "Trang" : doc.type === "blog" ? "Blog" : "Không gian"} • {doc.lastModified} • {doc.views} lượt xem
-                          </p>
-                        </div>
-                      </div>
-                      <Avatar className="h-8 w-8">
-                        <AvatarImage src={doc.author.avatar} />
-                        <AvatarFallback>{doc.author.name.split(' ').map(n => n[0]).join('')}</AvatarFallback>
-                      </Avatar>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
+      {/* Biểu đồ cá nhân hóa */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {/* PieChart trạng thái issue */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Trạng thái Issue của tôi</CardTitle>
+            <CardDescription>Phân bố trạng thái các issue bạn được giao</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="h-64 w-full flex items-center justify-center">
+              <ResponsiveContainer width="90%" height="90%">
+                <PieChart>
+                  <Pie
+                    data={statusData}
+                    dataKey="value"
+                    nameKey="name"
+                    cx="50%"
+                    cy="50%"
+                    outerRadius={90}
+                    innerRadius={50}
+                    label={({ name, percent }) => `${name} (${((percent ?? 0) * 100).toFixed(0)}%)`}
+                  >
+                    {statusData.map((entry, idx) => (
+                      <Cell key={`cell-status-${idx}`} fill={entry.color} />
+                    ))}
+                  </Pie>
+                </PieChart>
+              </ResponsiveContainer>
+            </div>
+          </CardContent>
+        </Card>
+        {/* BarChart priority issue */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Mức độ ưu tiên Issue</CardTitle>
+            <CardDescription>Phân loại issue theo mức độ ưu tiên</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="h-64 w-full flex items-center justify-center">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={priorityData}>
+                  <XAxis dataKey="name" />
+                  <YAxis allowDecimals={false} />
+                  <Tooltip />
+                  <Bar dataKey="value">
+                    {priorityData.map((entry, idx) => (
+                      <Cell key={`cell-priority-${idx}`} fill={entry.color} />
+                    ))}
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
 
-            {/* Documentation Stats */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Tài liệu</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <span className="text-sm">Tổng số trang</span>
-                  <span className="font-semibold">156</span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-sm">Bài viết blog</span>
-                  <span className="font-semibold">23</span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-sm">Không gian</span>
-                  <span className="font-semibold">8</span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-sm">Tổng lượt xem</span>
-                  <span className="font-semibold">2.4k</span>
-                </div>
-              </CardContent>
-            </Card>
+      {/* Thông báo cá nhân */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Bell className="h-5 w-5" />
+            Thông báo
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-2">
+            {[] && <div className="text-muted-foreground text-sm">Không có thông báo nào.</div>}
+            {[] && []}
           </div>
-        </TabsContent>
-
-        <TabsContent value="activity" className="space-y-6">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* Recent Activity */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center">
-                  <Activity className="h-5 w-5 mr-2" />
-                  Hoạt động gần đây
-                </CardTitle>
-                <CardDescription>Cập nhật mới nhất từ nhóm của bạn</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  {teamActivity.map((activity) => (
-                    <div key={activity.id} className="flex items-start space-x-3">
-                      <Avatar className="h-8 w-8">
-                        <AvatarImage src={activity.user.avatar} />
-                        <AvatarFallback>{activity.user.name.split(' ').map(n => n[0]).join('')}</AvatarFallback>
-                      </Avatar>
-                      <div className="flex-1">
-                        <p className="text-sm">
-                          <span className="font-medium">{activity.user.name}</span>{" "}
-                          {activity.action === "completed issue"
-                            ? "đã hoàn thành"
-                            : activity.action === "commented on"
-                            ? "đã bình luận về"
-                            : activity.action === "started working on"
-                            ? "bắt đầu làm"
-                            : activity.action}{" "}
-                          <span className="font-medium">{activity.target}</span>
-                        </p>
-                        <p className="text-xs text-muted-foreground">{activity.timestamp}</p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Upcoming Deadlines */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center">
-                  <Clock className="h-5 w-5 mr-2" />
-                  Hạn sắp tới
-                </CardTitle>
-                <CardDescription>Các issue và công việc sắp đến hạn</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  {upcomingIssues.map((issue) => (
-                    <div key={issue.id} className="flex items-center justify-between p-3 border rounded-lg">
-                      <div className="flex items-center space-x-3">
-                        {getStatusIcon(issue.status)}
-                        <div>
-                          <h4 className="font-medium text-sm">{issue.title}</h4>
-                          <p className="text-xs text-muted-foreground">
-                            Giao cho {issue.assignee}
-                          </p>
-                        </div>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <Badge className={getPriorityColor(issue.priority)}>
-                          {issue.priority}
-                        </Badge>
-                        <div className="text-xs text-muted-foreground">
-                          <CalendarDays className="h-3 w-3 inline mr-1" />
-                          {issue.dueDate}
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        </TabsContent>
-      </Tabs>
+        </CardContent>
+      </Card>
     </div>
   );
 }

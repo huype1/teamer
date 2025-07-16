@@ -4,11 +4,14 @@ package com.example.backend.service;
 import com.example.backend.entity.Comment;
 import com.example.backend.entity.Issue;
 import com.example.backend.entity.User;
+import com.example.backend.entity.Attachment;
 import com.example.backend.exception.AppException;
 import com.example.backend.exception.ErrorCode;
 import com.example.backend.repository.CommentRepository;
 import com.example.backend.repository.IssueRepository;
 import com.example.backend.repository.UserRepository;
+import com.example.backend.repository.AttachmentRepository;
+import com.example.backend.dto.request.AttachmentMeta;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
@@ -29,8 +32,9 @@ public class CommentService {
     CommentRepository commentRepository;
     IssueRepository issueRepository;
     UserRepository userRepository;
+    AttachmentRepository attachmentRepository;
 
-    public Comment createComment(UUID issueId, UUID userId, String content) {
+    public Comment createComment(UUID issueId, UUID userId, String content, List<AttachmentMeta> attachments) {
       Optional<Issue> issue = issueRepository.findById(issueId);
       Optional<User> user = userRepository.findById(userId);
 
@@ -45,12 +49,27 @@ public class CommentService {
       comment.setCreatedAt(OffsetDateTime.now());
       comment.setUpdatedAt(OffsetDateTime.now());
 
-        try {
-            return commentRepository.save(comment);
-        } catch (Exception e) {
-            log.error("Error creating comment: {}", e.getMessage());
-            throw new AppException(ErrorCode.CREATION_FAILED);
-        }
+      try {
+          Comment savedComment = commentRepository.save(comment);
+          // Lưu attachments nếu có
+          if (attachments != null) {
+              for (AttachmentMeta meta : attachments) {
+                  Attachment att = Attachment.builder()
+                          .comment(savedComment)
+                          .fileName(meta.getFileName())
+                          .fileType(meta.getFileType())
+                          .fileSize(meta.getFileSize())
+                          .filePath(meta.getFilePath())
+                          .uploader(user.get())
+                          .build();
+                  attachmentRepository.save(att);
+              }
+          }
+          return savedComment;
+      } catch (Exception e) {
+          log.error("Error creating comment: {}", e.getMessage());
+          throw new AppException(ErrorCode.CREATION_FAILED);
+      }
     }
 
     public void deleteComment(UUID commentId, UUID userId) {

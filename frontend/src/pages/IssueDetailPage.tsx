@@ -22,7 +22,8 @@ import {
   Calendar,
   Clock,
   Zap,
-  Target
+  Target,
+  Paperclip
 } from "lucide-react";
 import { useSelector } from "react-redux";
 import type { RootState } from "@/store";
@@ -41,6 +42,7 @@ import sprintService from "@/service/sprintService";
 import type { User } from "@/types/user";
 import { getCurrentUserRole, isCurrentUserManager } from "@/utils/projectHelpers";
 import {IssueForm} from "@/components/project/IssueForm";
+import attachmentService from "@/service/attachmentService";
 
 const commentSchema = z.object({
   content: z.string().min(1, "Nội dung comment không được để trống"),
@@ -85,6 +87,13 @@ const IssueDetailPage: React.FC = () => {
   const [subtasks, setSubtasks] = useState<Issue[]>([]);
   const [updating, setUpdating] = useState(false);
   const [projectMembers, setProjectMembers] = useState<ProjectMember[]>([]);
+
+  // Thêm state cho file upload
+  const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
+  const [uploading, setUploading] = useState(false);
+
+  // Thêm state lưu attachments cho từng comment
+  const [commentAttachments, setCommentAttachments] = useState<Record<string, any[]>>({});
 
   const {
     register,
@@ -223,18 +232,52 @@ const IssueDetailPage: React.FC = () => {
     }
   };
 
+  // Hàm upload file lên S3 và lấy metadata
+  const uploadFilesToS3 = async (files: File[]) => {
+    setUploading(true);
+    const uploaded: any[] = [];
+    for (const file of files) {
+      // 1. Lấy presigned URL
+      const presignedRes = await fetch('/api/attachments/presigned-url', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${localStorage.getItem('token')}` },
+        body: JSON.stringify({ fileName: file.name, fileType: file.type }),
+      });
+      const { url, filePath } = await presignedRes.json();
+      // 2. Upload file lên S3
+      await fetch(url, {
+        method: 'PUT',
+        headers: { 'Content-Type': file.type },
+        body: file,
+      });
+      // 3. Lưu metadata
+      uploaded.push({
+        fileName: file.name,
+        fileType: file.type,
+        fileSize: file.size,
+        filePath,
+      });
+    }
+    setUploading(false);
+    return uploaded;
+  };
+
   const onSubmitComment = async (data: CommentFormData) => {
     if (!issue || !user) return;
-    
+    let attachments = [];
+    if (selectedFiles.length > 0) {
+      attachments = await uploadFilesToS3(selectedFiles);
+    }
     try {
       await commentService.createComment({
         content: data.content,
         issueId: issue.id,
         userId: user.id,
+        attachments,
       });
       toastSuccess("Thêm comment thành công!");
       reset();
-      // Refresh comments
+      setSelectedFiles([]);
       fetchIssueData();
     } catch (error) {
       toastError("Thêm comment thất bại!");
@@ -322,6 +365,83 @@ const IssueDetailPage: React.FC = () => {
       console.error("Error deleting comment:", error);
     }
   };
+
+  // Hàm lấy attachments cho tất cả comment
+  const fetchAttachmentsForComments = async (comments: Comment[]) => {
+    const result: Record<string, any[]> = {};
+    for (const c of comments) {
+      try {
+        const res = await attachmentService.getByCommentId(c.id);
+        result[c.id] = res;
+      } catch {
+        result[c.id] = [];
+      }
+    }
+    setCommentAttachments(result);
+  };
+
+  // Gọi khi fetch comment xong
+  useEffect(() => {
+    if (comments.length > 0) {
+      fetchAttachmentsForComments(comments);
+    }
+  }, [comments]);
+
+  // Component upload file đẹp cho comment
+  function FileUploadInput({
+    selectedFiles,
+    setSelectedFiles,
+    uploading
+  }: {
+    selectedFiles: File[];
+    setSelectedFiles: (files: File[]) => void;
+    uploading: boolean;
+  }) {
+    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+      setSelectedFiles(Array.from(e.target.files || []));
+    };
+
+    const removeFile = (index: number) => {
+      setSelectedFiles(selectedFiles.filter((_, i) => i !== index));
+    };
+
+    return (
+      <div className="mt-2">
+        <label className="flex items-center gap-2 cursor-pointer">
+          <Paperclip className="w-4 h-4" />
+          <span className="text-sm text-muted-foreground">Đính kèm file</span>
+          <input
+            type="file"
+            multiple
+            className="hidden"
+            onChange={handleFileChange}
+            disabled={uploading}
+          />
+        </label>
+        {selectedFiles.length > 0 && (
+          <ul className="mt-2 space-y-1">
+            {selectedFiles.map((file, idx) => (
+              <li key={idx} className="flex items-center gap-2 text-sm bg-muted rounded px-2 py-1">
+                <span className="truncate max-w-xs">{file.name}</span>
+                <span className="text-xs text-muted-foreground">({Math.round(file.size / 1024)} KB)</span>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  className="h-5 w-5"
+                  onClick={() => removeFile(idx)}
+                  disabled={uploading}
+                >
+                  <Trash2 className="w-4 h-4 text-destructive" />
+                </Button>
+              </li>
+            ))}
+          </ul>
+        )}
+        {uploading && <div className="text-xs text-blue-500 mt-1">Đang upload file...</div>}
+      </div>
+    );
+  }
 
   if (loading) {
     return (
@@ -447,6 +567,22 @@ const IssueDetailPage: React.FC = () => {
                           </div>
                           <div className="whitespace-pre-wrap text-sm">{comment.content}</div>
                         </div>
+                        {/* Hiển thị file đính kèm */}
+                        {commentAttachments[comment.id] && commentAttachments[comment.id].length > 0 && (
+                          <div className="mt-2">
+                            <div className="text-xs font-semibold mb-1">File đính kèm:</div>
+                            <ul className="list-disc ml-4">
+                              {commentAttachments[comment.id].map((file) => (
+                                <li key={file.id}>
+                                  <a href={`https://${bucketName}.s3.${region}.amazonaws.com/${file.filePath}`} target="_blank" rel="noopener noreferrer" className="text-blue-600 underline">
+                                    {file.fileName}
+                                  </a>
+                                  <span className="ml-2 text-xs text-muted-foreground">({Math.round(file.fileSize/1024)} KB)</span>
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
                       </div>
                     ))}
                   </div>
@@ -459,6 +595,11 @@ const IssueDetailPage: React.FC = () => {
                     placeholder="Thêm comment..."
                     {...register("content")}
                     rows={3}
+                  />
+                  <FileUploadInput
+                    selectedFiles={selectedFiles}
+                    setSelectedFiles={setSelectedFiles}
+                    uploading={uploading}
                   />
                   {errors.content && (
                     <span className="text-xs text-red-500">{errors.content.message}</span>

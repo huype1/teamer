@@ -177,6 +177,10 @@ public class IssueService {
         return issueRepository.save(issue);
     }
 
+    public List<Issue> getIssuesByAssigneeId(UUID userId) {
+        return issueRepository.findByAssigneeId(userId);
+    }
+
     private String generateIssueKey(Project project) {
         // Get the next issue number for this project by finding the highest existing number
         Optional<Integer> maxNumber = issueRepository.findMaxIssueNumberByProject(project.getId(), project.getKey());
