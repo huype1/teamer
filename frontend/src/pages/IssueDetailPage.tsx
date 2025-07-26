@@ -42,7 +42,11 @@ import sprintService from "@/service/sprintService";
 import type { User } from "@/types/user";
 import { getCurrentUserRole, isCurrentUserManager } from "@/utils/projectHelpers";
 import {IssueForm} from "@/components/project/IssueForm";
-import attachmentService from "@/service/attachmentService";
+// import attachmentService from "@/service/attachmentService";
+import { IssuesTable } from "@/components/project/IssuesTable";
+// import { useWebSocket } from "@/hooks/useWebSocket";
+import type { CommentMessage } from "@/service/websocketService";
+import websocketService from "@/service/websocketService";
 
 const commentSchema = z.object({
   content: z.string().min(1, "Nội dung comment không được để trống"),
@@ -53,6 +57,7 @@ type CommentFormData = z.infer<typeof commentSchema>;
 // Map API response to FE Issue type
 const mapIssue = (issue: Record<string, unknown>): Issue => ({
   ...(issue as Issue),
+  sprintId: issue.sprintId ? String(issue.sprintId) : undefined,
   reporter: issue.reporterId
     ? {
         id: issue.reporterId as string,
@@ -92,8 +97,80 @@ const IssueDetailPage: React.FC = () => {
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [uploading, setUploading] = useState(false);
 
-  // Thêm state lưu attachments cho từng comment
-  const [commentAttachments, setCommentAttachments] = useState<Record<string, any[]>>({});
+  // Comment out attachment state for now
+  // const [commentAttachments, setCommentAttachments] = useState<Record<string, unknown[]>>({});
+
+  // State for create subtask dialog
+  const [isCreateSubtaskOpen, setIsCreateSubtaskOpen] = useState(false);
+
+  // WebSocket integration
+  // const { subscribeToComments, unsubscribeFromComments } = useWebSocket(issueId);
+
+  // WebSocket comment handling
+  useEffect(() => {
+    if (issueId) {
+      const handleCommentMessage = async (message: CommentMessage) => {
+        if (message.type === 'CREATE') {
+          const newComment: Comment = {
+            id: message.commentId,
+            content: message.content || '',
+            createdAt: message.createdAt || new Date().toISOString(),
+            updatedAt: message.updatedAt || new Date().toISOString(),
+            user: {
+              id: message.userId || '',
+              name: message.userName || '',
+              email: message.userEmail || '',
+              avatarUrl: message.userAvatarUrl || '',
+            },
+          };
+          console.log('newComment', newComment);
+          setComments(prev => [...prev, newComment]);
+        } else if (message.type === 'UPDATE') {
+          setComments(prev => prev.map(comment => 
+            comment.id === message.commentId 
+              ? { ...comment, content: message.content || '', updatedAt: message.updatedAt || new Date().toISOString() }
+              : comment
+          ));
+        } else if (message.type === 'DELETE') {
+          setComments(prev => prev.filter(comment => comment.id !== message.commentId));
+        }
+      };
+      
+      websocketService.onConnect(() => {
+        websocketService.subscribeToIssueComments(issueId, handleCommentMessage);
+      });
+      
+      // Cleanup function
+      return () => {
+        websocketService.unsubscribeFromIssueComments(issueId);
+      };
+    }
+  }, [issueId]); // Only depend on issueId
+
+  // Handler for creating subtask
+  const handleCreateSubtask = async (data: import("@/components/project/IssueForm").IssueFormValues) => {
+    try {
+      const requestBody: Record<string, unknown> = {
+        title: data.title,
+        description: data.description || "",
+        priority: data.priority,
+        issueType: data.issueType, // will be locked to TASK/BUG/STORY
+        projectId: issue?.projectId!, // parent issue's project
+        parentId: issue?.id,
+      };
+      if (data.assigneeId && data.assigneeId !== "none") requestBody.assigneeId = data.assigneeId;
+      if (data.sprintId && data.sprintId !== "backlog" && data.sprintId !== "none") requestBody.sprintId = data.sprintId;
+      if (data.storyPoints !== undefined) requestBody.storyPoints = data.storyPoints;
+      if (data.startDate) requestBody.startDate = data.startDate;
+      if (data.dueDate) requestBody.dueDate = data.dueDate;
+      await issueService.createIssue(requestBody);
+      toastSuccess("Tạo subtask thành công!");
+      setIsCreateSubtaskOpen(false);
+      fetchIssueData();
+    } catch {
+      toastError("Tạo subtask thất bại!");
+    }
+  };
 
   const {
     register,
@@ -117,6 +194,7 @@ const IssueDetailPage: React.FC = () => {
     try {
       setLoading(true);
       const issueRes = await issueService.getIssueById(issueId!);
+      console.log(issueRes);
       console.log("Issue response:", issueRes);
       setIssue(mapIssue(issueRes.result));
       
@@ -235,7 +313,7 @@ const IssueDetailPage: React.FC = () => {
   // Hàm upload file lên S3 và lấy metadata
   const uploadFilesToS3 = async (files: File[]) => {
     setUploading(true);
-    const uploaded: any[] = [];
+    const uploaded: unknown[] = [];
     for (const file of files) {
       // 1. Lấy presigned URL
       const presignedRes = await fetch('/api/attachments/presigned-url', {
@@ -264,23 +342,22 @@ const IssueDetailPage: React.FC = () => {
 
   const onSubmitComment = async (data: CommentFormData) => {
     if (!issue || !user) return;
-    let attachments = [];
-    if (selectedFiles.length > 0) {
-      attachments = await uploadFilesToS3(selectedFiles);
-    }
+    // Comment out S3 logic for now
+    // let attachments = [];
+    // if (selectedFiles.length > 0) {
+    //   attachments = await uploadFilesToS3(selectedFiles);
+    // }
     try {
       await commentService.createComment({
         content: data.content,
         issueId: issue.id,
         userId: user.id,
-        attachments,
+        attachments: [], // Empty array for now
       });
-      toastSuccess("Thêm comment thành công!");
       reset();
       setSelectedFiles([]);
-      fetchIssueData();
+      // Don't call fetchIssueData() - let WebSocket handle the update
     } catch (error) {
-      toastError("Thêm comment thất bại!");
       console.error("Error creating comment:", error);
     }
   };
@@ -358,34 +435,34 @@ const IssueDetailPage: React.FC = () => {
   const handleDeleteComment = async (commentId: string) => {
     try {
       await commentService.deleteComment(commentId);
-      toastSuccess("Xóa comment thành công!");
-      fetchIssueData();
+      // Don't call fetchIssueData() - let WebSocket handle the update
     } catch (error) {
-      toastError("Xóa comment thất bại!");
       console.error("Error deleting comment:", error);
     }
   };
 
-  // Hàm lấy attachments cho tất cả comment
-  const fetchAttachmentsForComments = async (comments: Comment[]) => {
-    const result: Record<string, any[]> = {};
-    for (const c of comments) {
-      try {
-        const res = await attachmentService.getByCommentId(c.id);
-        result[c.id] = res;
-      } catch {
-        result[c.id] = [];
-      }
-    }
-    setCommentAttachments(result);
-  };
+  // Comment out attachment fetching for now
+  // const fetchAttachmentsForComments = async (comments: Comment[]) => {
+  //   const result: Record<string, unknown[]> = {};
+  //   for (const c of comments) {
+  //     try {
+  //       const res = await attachmentService.getByCommentId(c.id);
+  //       result[c.id] = res;
+  //     } catch {
+  //       result[c.id] = [];
+  //     }
+  //   }
+  //   setCommentAttachments(result);
+  // };
 
   // Gọi khi fetch comment xong
-  useEffect(() => {
-    if (comments.length > 0) {
-      fetchAttachmentsForComments(comments);
-    }
-  }, [comments]);
+  // useEffect(() => {
+  //   if (comments.length > 0) {
+  //     fetchAttachmentsForComments(comments);
+  //   }
+  // }, [comments]);
+
+
 
   // Component upload file đẹp cho comment
   function FileUploadInput({
@@ -471,6 +548,9 @@ const IssueDetailPage: React.FC = () => {
               <div className="flex items-center gap-2 mb-2">
                 <h1 className="text-3xl font-bold">{issue.title}</h1>
                 <Badge variant="outline">{issue.key}</Badge>
+                <Button size="sm" variant="outline" className="ml-2" onClick={() => setIsCreateSubtaskOpen(true)}>
+                  <Zap className="w-4 h-4 mr-1" /> Tạo subtask
+                </Button>
               </div>
               <div className="flex items-center gap-4 text-sm text-muted-foreground">
                 <div className="flex items-center gap-2">
@@ -567,8 +647,8 @@ const IssueDetailPage: React.FC = () => {
                           </div>
                           <div className="whitespace-pre-wrap text-sm">{comment.content}</div>
                         </div>
-                        {/* Hiển thị file đính kèm */}
-                        {commentAttachments[comment.id] && commentAttachments[comment.id].length > 0 && (
+                        {/* Comment out attachment display for now */}
+                        {/* {commentAttachments[comment.id] && commentAttachments[comment.id].length > 0 && (
                           <div className="mt-2">
                             <div className="text-xs font-semibold mb-1">File đính kèm:</div>
                             <ul className="list-disc ml-4">
@@ -582,7 +662,7 @@ const IssueDetailPage: React.FC = () => {
                               ))}
                             </ul>
                           </div>
-                        )}
+                        )} */}
                       </div>
                     ))}
                   </div>
@@ -626,31 +706,19 @@ const IssueDetailPage: React.FC = () => {
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="space-y-3">
-                    {subtasks.map((subtask) => (
-                      <div key={subtask.id} className="flex items-center justify-between p-3 border rounded-lg">
-                        <div className="flex items-center gap-3">
-                          <Badge variant="outline" className="text-xs">{subtask.priority}</Badge>
-                          <div>
-                            <div className="font-medium text-sm">{subtask.title}</div>
-                            <div className="text-xs text-muted-foreground">{subtask.key}</div>
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <Badge className={`text-xs ${getStatusColor(subtask.status)}`}>
-                            {getStatusLabel(subtask.status)}
-                          </Badge>
-                          {subtask.assignee && (
-                            <div className="flex items-center gap-1">
-                              <Avatar className="w-5 h-5">
-                                <AvatarFallback>{subtask.assignee.name.charAt(0)}</AvatarFallback>
-                              </Avatar>
-                              <span className="text-xs">{subtask.assignee.name}</span>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    ))}
+                  <div className="overflow-x-auto">
+                    <IssuesTable
+                      issues={subtasks}
+                      allIssues={subtasks}
+                      projectMembers={projectMembers}
+                      sprints={sprints}
+                      onStatusChange={() => {}}
+                      onPriorityChange={() => {}}
+                      onIssueTypeChange={() => {}}
+                      onAssigneeChange={() => {}}
+                      canEditIssue={() => false}
+                      canChangeStatus={() => false}
+                    />
                   </div>
                 </CardContent>
               </Card>
@@ -684,10 +752,10 @@ const IssueDetailPage: React.FC = () => {
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="TO_DO">To Do</SelectItem>
-                        <SelectItem value="IN_PROGRESS">In Progress</SelectItem>
-                        <SelectItem value="IN_REVIEW">In Review</SelectItem>
-                        <SelectItem value="DONE">Done</SelectItem>
+                                        <SelectItem value="TO_DO">Cần làm</SelectItem>
+                <SelectItem value="IN_PROGRESS">Đang làm</SelectItem>
+                <SelectItem value="IN_REVIEW">Đang review</SelectItem>
+                <SelectItem value="DONE">Đã hoàn thành</SelectItem>
                       </SelectContent>
                     </Select>
                   ) : (
@@ -891,6 +959,26 @@ const IssueDetailPage: React.FC = () => {
                 Xóa Issue
               </Button>
             </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Create Subtask Dialog */}
+        <Dialog open={isCreateSubtaskOpen} onOpenChange={setIsCreateSubtaskOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Tạo Subtask cho: {issue.title}</DialogTitle>
+            </DialogHeader>
+            <IssueForm
+              onSubmit={handleCreateSubtask}
+              loading={false}
+              projectMembers={projectMembers}
+              sprints={sprints}
+              initialValues={{ parentId: issue.id }}
+              isEdit={false}
+              // Disable issueType field
+              // We'll add a prop to IssueForm to disable issueType
+              disableIssueType
+            />
           </DialogContent>
         </Dialog>
       </div>

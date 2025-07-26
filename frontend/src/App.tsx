@@ -26,6 +26,7 @@ import NotFoundPage from "./pages/NotFoundPage";
 import TeamDetailPage from "@/pages/TeamDetailPage";
 import { Toaster } from "sonner"
 import IssueDetailPage from "@/pages/IssueDetailPage";
+import { WebSocketProvider } from "@/components/WebSocketProvider";
 
 const useAppDispatch: () => AppDispatch = useDispatch;
 const useAppSelector: TypedUseSelectorHook<RootState> = useSelector;
@@ -44,6 +45,13 @@ function App() {
       dispatch(fetchUserInfo());
     }
 
+    // Check for pending invitation token
+    const pendingInvitationToken = localStorage.getItem("pendingInvitationToken");
+    if (isAuthenticated && pendingInvitationToken) {
+      window.location.href = "/invitation/accept_invitation";
+      return;
+    }
+
     const interval = setInterval(() => {
       if (isAuthenticated && token && isTokenExpired(token)) {
         dispatch(logout());
@@ -55,7 +63,8 @@ function App() {
 
   return (
     <ThemeProvider>
-      <Routes>
+      <WebSocketProvider>
+        <Routes>
         <Route path='/' element={<LandingPage />} />
         <Route path='/login' element={<LoginForm />} />
         <Route path='/register' element={<RegisterForm />} />
@@ -169,6 +178,7 @@ function App() {
         <Route path='*' element={<NotFoundPage />} />
       </Routes>
       <Toaster position="top-right" richColors closeButton />
+        </WebSocketProvider>
     </ThemeProvider>
   );
 }

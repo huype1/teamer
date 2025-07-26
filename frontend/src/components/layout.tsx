@@ -8,6 +8,7 @@ import type { AppDispatch } from "@/store";
 import { logout } from "@/store/authReducer";
 import { Button } from "@/components/ui/button";
 import { PanelLeftOpen } from "lucide-react";
+// import { WebSocketStatus } from "@/components/WebSocketStatus";
 
 const useAppDispatch: () => AppDispatch = useDispatch;
 
@@ -84,6 +85,7 @@ export function Layout({ children }: LayoutProps) {
           </SidebarInset>
         </div>
       </SidebarProvider>
+      {/* <WebSocketStatus /> */}
     </div>
   );
 } 

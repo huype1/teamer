@@ -29,7 +29,7 @@ const LandingPage = () => {
                   <h1 className="text-3xl font-bold tracking-tighter sm:text-5xl xl:text-6xl/none">
                     Quản lý dự án hiệu quả cho đội ngũ của bạn
                   </h1>
-                  <p className="max-w-[600px] text-gray-500 md:text-xl">
+                  <p className="text-gray-500 md:text-xl leading-relaxed">
                     Teamer là công cụ hiện đại giúp bạn quản lý đội nhóm, dự án và năng suất. Được thiết kế đặc biệt cho các nhóm phát triển phần mềm theo phương pháp Agile Scrum hoặc Kanban.
                   </p>
                 </div>

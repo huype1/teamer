@@ -73,6 +73,7 @@ const ProjectIssuesTablePage: React.FC = () => {
   const mapIssue = useCallback((issue: Record<string, unknown>): Issue => {
     return {
       ...(issue as unknown as Issue),
+      sprintId: issue.sprintId ? String(issue.sprintId) : undefined,
       reporter: issue.reporterId ? {
         id: String(issue.reporterId),
         name: String(issue.reporterName),
@@ -313,7 +314,7 @@ const ProjectIssuesTablePage: React.FC = () => {
         projectId: projectId!,
       };
       if (data.assigneeId && data.assigneeId !== "none") requestBody.assigneeId = data.assigneeId;
-      if (data.sprintId && data.sprintId !== "backlog") requestBody.sprintId = data.sprintId;
+      if (data.sprintId && data.sprintId !== "backlog" && data.sprintId !== "none") requestBody.sprintId = data.sprintId;
       if (data.storyPoints !== undefined) requestBody.storyPoints = data.storyPoints;
       if (data.startDate) requestBody.startDate = data.startDate;
       if (data.dueDate) requestBody.dueDate = data.dueDate;
@@ -364,7 +365,7 @@ const ProjectIssuesTablePage: React.FC = () => {
         projectId: projectId!,
       };
       if (data.assigneeId && data.assigneeId !== "none") requestBody.assigneeId = data.assigneeId;
-      if (data.sprintId && data.sprintId !== "backlog") requestBody.sprintId = data.sprintId;
+      if (data.sprintId && data.sprintId !== "backlog" && data.sprintId !== "none") requestBody.sprintId = data.sprintId;
       if (data.storyPoints !== undefined) requestBody.storyPoints = data.storyPoints;
       if (data.startDate) requestBody.startDate = data.startDate;
       if (data.dueDate) requestBody.dueDate = data.dueDate;
@@ -394,6 +395,9 @@ const ProjectIssuesTablePage: React.FC = () => {
       toastError("Xoá issue thất bại!");
     }
   };
+
+  // Filter out EPIC and SUBTASK for IssuesTable
+  const filteredBacklogIssues = backlogIssues.filter(issue => issue.issueType !== "EPIC" && issue.issueType !== "SUBTASK");
 
   if (loading) {
     return (
@@ -483,7 +487,8 @@ const ProjectIssuesTablePage: React.FC = () => {
             </CardHeader>
             <CardContent>
               <IssuesTable
-                issues={backlogIssues}
+                issues={filteredBacklogIssues}
+                allIssues={backlogIssues}
                 projectMembers={projectMembers}
                 sprints={sprints}
                 canEditIssue={canEditIssue}

@@ -10,6 +10,7 @@ import type { Sprint } from "@/types/sprint";
 
 interface IssuesTableProps {
   issues: Issue[];
+  allIssues?: Issue[];
   projectMembers: ProjectMember[];
   sprints?: Sprint[];
   onStatusChange: (issueId: string, newStatus: string) => void;
@@ -30,6 +31,7 @@ interface IssuesTableProps {
 
 export const IssuesTable: React.FC<IssuesTableProps> = ({
   issues,
+  allIssues,
   projectMembers,
   sprints,
   onStatusChange,
@@ -122,15 +124,23 @@ export const IssuesTable: React.FC<IssuesTableProps> = ({
     }
   };
 
+  // Helper to get Epic title
+  const getEpicTitle = (issue: Issue) => {
+    if (!issue.parentId || !allIssues) return null;
+    const parent = allIssues.find(i => i.id === issue.parentId && i.issueType === "EPIC");
+    return parent ? parent.title : null;
+  };
+
   return (
     <div className="border rounded-lg overflow-hidden">
       <div className="overflow-x-auto" style={{ maxHeight: '400px' }}>
-        <table className="w-full" style={{ minWidth: '1200px' }}>
+        <table className="w-full" style={{ minWidth: '1300px' }}>
               <thead className="sticky top-0 bg-background z-10">
                 <tr className="border-b">
                   <th className="px-2 py-2 text-left text-xs font-semibold w-16">Key</th>
                   <th className="px-2 py-2 text-left text-xs font-semibold w-48">Tên issue</th>
                   <th className="px-2 py-2 text-left text-xs font-semibold w-24">Loại</th>
+                  <th className="px-2 py-2 text-left text-xs font-semibold w-24">Epic</th>
                   <th className="px-2 py-2 text-left text-xs font-semibold w-24">Trạng thái</th>
                   <th className="px-2 py-2 text-left text-xs font-semibold w-20">Độ ưu tiên</th>
                   <th className="px-2 py-2 text-left text-xs font-semibold w-24">Người tạo</th>
@@ -145,7 +155,7 @@ export const IssuesTable: React.FC<IssuesTableProps> = ({
               <tbody>
                 {issues.length === 0 && (
                   <tr>
-                    <td colSpan={12} className="p-2 text-center text-muted-foreground">Không có issue</td>
+                    <td colSpan={13} className="p-2 text-center text-muted-foreground">Không có issue</td>
                   </tr>
                 )}
                 {issues.map((issue: Issue) => {
@@ -186,6 +196,9 @@ export const IssuesTable: React.FC<IssuesTableProps> = ({
                             {typeConfig.label}
                           </Badge>
                         )}
+                      </td>
+                      <td className="px-2 py-2 text-xs truncate">
+                        {getEpicTitle(issue) || "-"}
                       </td>
                       <td className="px-2 py-2">
                         {canChangeStatus(issue) ? (

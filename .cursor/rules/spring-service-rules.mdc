@@ -1,0 +1,378 @@
+---
+alwaysApply: false
+---
+# Spring Boot Service Layer Conventions
+
+## Class Structure and Annotations
+
+### Required Annotations
+```java
+@Slf4j
+@Service
+@RequiredArgsConstructor
+@FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
+public class ProjectService {
+    // Dependencies injected via constructor
+}
+```
+
+### Dependency Injection Pattern
+- Use `@RequiredArgsConstructor` with `@FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)`
+- Declare dependencies as `private final` fields
+- Avoid `@Autowired` annotation - use constructor injection
+
+```java
+// Good - Constructor injection with Lombok
+@RequiredArgsConstructor
+@FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
+public class ProjectService {
+    ProjectRepository projectRepository;
+    ChatService chatService;
+    ProjectMemberRepository projectMemberRepository;
+    TeamService teamService;
+    ProjectMapper projectMapper;
+    SprintRepository sprintRepository;
+}
+
+// Bad - Field injection
+@Service
+public class ProjectService {
+    @Autowired
+    private ProjectRepository projectRepository;
+}
+```
+
+## Method Naming Conventions
+
+### CRUD Operations
+- `create[Entity]()` - Create new entities
+- `get[Entity]ById()` - Retrieve by ID
+- `update[Entity]()` - Update existing entities
+- `delete[Entity]()` - Delete entities
+- `get[Entity]As[Context]()` - Context-specific retrieval
+
+### Business Logic Methods
+- `isUser[Entity]Member()` - Check membership
+- `isUser[Entity]Manager()` - Check management role
+- `addUserTo[Entity]()` - Add user to entity
+- `removeUserFrom[Entity]()` - Remove user from entity
+- `updateUserRole()` - Update user permissions
+- `hasAccessTo[Entity]()` - Check access rights
+- `getUser[Entity]Role()` - Get user's role
+
+## Exception Handling Pattern
+
+### Standard Exception Handling
+```java
+public Project getProjectById(UUID id) throws AppException {
+    Optional<Project> project = projectRepository.findById(id);
+    if (project.isEmpty()) {
+        log.error("Project not found for id: {}", id);
+        throw new AppException(ErrorCode.NOT_FOUND);
+    }
+    return project.get();
+}
+```
+
+### Validation Patterns
+```java
+// Check existence before operations
+if (projectMemberRepository.existsByProjectIdAndUserId(projectId, userId)) {
+    log.error("User with id: {} is already a member of project with id: {}", userId, projectId);
+    throw new AppException(ErrorCode.USER_EXISTED);
+}
+
+// Validate required parameters
+if (keywords == null || keywords.trim().isEmpty()) {
+    // Handle empty/null case
+}
+```
+
+## Logging Conventions
+
+### Log Levels and Messages
+```java
+// Error logging for business exceptions
+log.error("Project not found for id: {}", id);
+
+// Info logging for successful operations
+log.info("User with id: {} added to project with id: {}", userId, projectId);
+
+// Warning for non-critical failures
+log.warn("Failed to automatically add user {} to team {}: {}", 
+        userId, project.getTeam().getId(), e.getMessage());
+```
+
+### Logging Best Practices
+- Use parameterized logging: `log.error("Message: {}", variable)`
+- Include relevant IDs in error messages
+- Log both success and failure scenarios
+- Use appropriate log levels (error, warn, info, debug)
+
+## Business Logic Patterns
+
+### Entity Creation Pattern
+```java
+public Project createProject(Project project, User creator, UUID teamId) throws AppException {
+    // 1. Validate input
+    if (projectRepository.existsByKey(project.getKey())) {
+        log.error("Project key already exists: {}", project.getKey());
+        throw new AppException(ErrorCode.PROJECT_KEY_EXISTS);
+    }
+
+    // 2. Create new entity
+    Project createdProject = new Project();
+    createdProject.setCreator(creator);
+    createdProject.setName(project.getName());
+    // ... set other properties
+
+    // 3. Create related entities
+    Chat chat = new Chat();
+    chat.setName("Project Chat - " + project.getName());
+    Chat chatProject = chatService.createChat(chat);
+
+    // 4. Set relationships
+    if (teamId != null) {
+        Team team = teamService.findById(teamId);
+        createdProject.setTeam(team);
+    }
+    createdProject.setChat(chatProject);
+
+    // 5. Save main entity
+    Project savedProject = projectRepository.save(createdProject);
+
+    // 6. Create related records
+    ProjectMember projectMember = new ProjectMember();
+    projectMember.setProjectId(savedProject.getId());
+    projectMember.setUserId(creator.getId());
+    projectMember.setRole("ADMIN");
+    projectMember.setJoinedAt(OffsetDateTime.now());
+    projectMemberRepository.save(projectMember);
+
+    return savedProject;
+}
+```
+
+### Update Pattern
+```java
+public Project updateProject(Project updatedProject, UUID id) throws AppException {
+    Project project = getProjectById(id);
+
+    // Conditional updates with null checks
+    if (updatedProject.getName() != null && !updatedProject.getName().isEmpty()) {
+        project.setName(updatedProject.getName());
+    }
+    if (updatedProject.getDescription() != null && !updatedProject.getDescription().isEmpty()) {
+        project.setDescription(updatedProject.getDescription());
+    }
+    // ... other conditional updates
+
+    return projectRepository.save(project);
+}
+```
+
+### Access Control Pattern
+```java
+public boolean isUserProjectMember(UUID projectId, UUID userId) {
+    Project project = getProjectById(projectId);
+    
+    // 1. Check if user is creator
+    if (project.getCreator().getId().equals(userId)) {
+        return true;
+    }
+    
+    // 2. Check explicit membership
+    Optional<ProjectMember> member = projectMemberRepository.findByProjectIdAndUserId(projectId, userId);
+    if (member.isPresent()) {
+        return true;
+    }
+    
+    // 3. Check team-based access
+    if (project.getTeam() != null && teamService.isUserTeamAdmin(project.getTeam().getId(), userId)) {
+        return true;
+    }
+    
+    return false;
+}
+```
+
+## Repository Integration
+
+### Standard Repository Methods
+```java
+// Find by ID with exception handling
+public Project getProjectById(UUID id) throws AppException {
+    Optional<Project> project = projectRepository.findById(id);
+    if (project.isEmpty()) {
+        log.error("Project not found for id: {}", id);
+        throw new AppException(ErrorCode.NOT_FOUND);
+    }
+    return project.get();
+}
+
+// Custom repository methods
+public List<Project> getProjectAsMember(UUID userId) throws AppException {
+    List<Project> projects = projectRepository.findAllProjectsByUserId(userId);
+    return projects;
+}
+```
+
+### Existence Checks
+```java
+// Check existence before operations
+if (projectMemberRepository.existsByProjectIdAndUserId(projectId, userId)) {
+    throw new AppException(ErrorCode.USER_EXISTED);
+}
+
+// Validate non-existence for creation
+if (!projectMemberRepository.existsByProjectIdAndUserId(projectId, userId)) {
+    throw new AppException(ErrorCode.NOT_FOUND);
+}
+```
+
+## Service Collaboration
+
+### Inter-Service Communication
+```java
+// Call other services for business logic
+if (project.getTeam() != null) {
+    try {
+        if (!teamService.isUserTeamMember(project.getTeam().getId(), userId)) {
+            teamService.addMemberToTeam(project.getTeam().getId(), userId, "VIEWER");
+        }
+    } catch (Exception e) {
+        log.warn("Failed to automatically add user {} to team {}: {}", 
+                userId, project.getTeam().getId(), e.getMessage());
+        // Don't throw exception - main operation should still succeed
+    }
+}
+```
+
+### Error Handling in Service Calls
+- Wrap service calls in try-catch when failure shouldn't stop main operation
+- Log warnings for non-critical failures
+- Continue with main operation even if secondary operations fail
+
+## Data Transformation
+
+### DTO Mapping
+```java
+// Use mappers for entity-to-DTO conversion
+public List<ProjectResponse> searchProjects(String keywords, UUID userId) {
+    if (keywords == null || keywords.trim().isEmpty()) {
+        List<Project> projects = projectRepository.findAllProjectsByUserId(userId);
+        return projectMapper.toResponseList(projects);
+    }
+    List<Project> projects = projectRepository.findByNameOrKeyContainingIgnoreCase(keywords.trim(), userId);
+    return projectMapper.toResponseList(projects);
+}
+```
+
+## Method Organization
+
+### Recommended Method Order
+1. **CRUD Operations** - create, read, update, delete
+2. **Business Logic** - validation, access control, role management
+3. **Query Methods** - search, filter, get by criteria
+4. **Utility Methods** - helper functions, data transformation
+5. **Private Methods** - internal implementation details
+
+## Security and Access Control
+
+### Role-Based Access Control
+```java
+public boolean isUserProjectManager(UUID projectId, UUID userId) {
+    Project project = getProjectById(projectId);
+    
+    // Check creator access
+    if (project.getCreator().getId().equals(userId)) {
+        return true;
+    }
+    
+    // Check explicit role
+    Optional<ProjectMember> member = projectMemberRepository.findByProjectIdAndUserId(projectId, userId);
+    if (member.isPresent() && ("ADMIN".equals(member.get().getRole()) || "PM".equals(member.get().getRole()))) {
+        return true;
+    }
+    
+    // Check team-based access
+    if (project.getTeam() != null && teamService.isUserTeamAdmin(project.getTeam().getId(), userId)) {
+        return true;
+    }
+    
+    return false;
+}
+```
+
+## Performance Considerations
+
+### Efficient Queries
+```java
+// Use specific repository methods instead of loading all data
+public long getProjectMemberCount(UUID projectId) {
+    return projectMemberRepository.countByProjectId(projectId);
+}
+
+// Use projection queries for large datasets
+public List<Project> getPublicProjects() {
+    return projectRepository.findByIsPublicTrue();
+}
+```
+
+## Error Codes and Messages
+
+### Standard Error Handling
+- Use `AppException` with `ErrorCode` enum
+- Include relevant context in error messages
+- Log errors with appropriate details
+- Return meaningful error responses
+
+```java
+// Standard error pattern
+if (project.isEmpty()) {
+    log.error("Project not found for id: {}", id);
+    throw new AppException(ErrorCode.NOT_FOUND);
+}
+```
+
+## Testing Considerations
+
+### Service Layer Testing
+- Test business logic independently of repositories
+- Mock dependencies using `@MockBean`
+- Test both success and failure scenarios
+- Verify logging and exception handling
+- Test access control methods thoroughly
+
+## Code Quality Guidelines
+
+### Method Length and Complexity
+- Keep methods focused on single responsibility
+- Extract complex logic into private methods
+- Use meaningful method names that describe the business operation
+- Document complex business rules with comments
+
+### Null Safety
+```java
+// Always check for null before operations
+if (updatedProject.getName() != null && !updatedProject.getName().isEmpty()) {
+    project.setName(updatedProject.getName());
+}
+
+// Use Optional for repository returns
+Optional<Project> project = projectRepository.findById(id);
+if (project.isEmpty()) {
+    throw new AppException(ErrorCode.NOT_FOUND);
+}
+```
+
+### Immutability and Thread Safety
+- Use `final` fields for dependencies
+- Avoid mutable state in service classes
+- Use defensive copying when returning collections
+- Consider thread safety for shared resources
+
+description:
+globs:
+alwaysApply: false
+---

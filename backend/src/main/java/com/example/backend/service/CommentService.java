@@ -33,6 +33,7 @@ public class CommentService {
     IssueRepository issueRepository;
     UserRepository userRepository;
     AttachmentRepository attachmentRepository;
+    WebSocketService webSocketService;
 
     public Comment createComment(UUID issueId, UUID userId, String content, List<AttachmentMeta> attachments) {
       Optional<Issue> issue = issueRepository.findById(issueId);
@@ -51,20 +52,24 @@ public class CommentService {
 
       try {
           Comment savedComment = commentRepository.save(comment);
-          // Lưu attachments nếu có
-          if (attachments != null) {
-              for (AttachmentMeta meta : attachments) {
-                  Attachment att = Attachment.builder()
-                          .comment(savedComment)
-                          .fileName(meta.getFileName())
-                          .fileType(meta.getFileType())
-                          .fileSize(meta.getFileSize())
-                          .filePath(meta.getFilePath())
-                          .uploader(user.get())
-                          .build();
-                  attachmentRepository.save(att);
-              }
-          }
+          // Comment out attachment logic for now
+          // if (attachments != null) {
+          //     for (AttachmentMeta meta : attachments) {
+          //         Attachment att = Attachment.builder()
+          //                 .comment(savedComment)
+          //                 .fileName(meta.getFileName())
+          //                 .fileType(meta.getFileType())
+          //                 .fileSize(meta.getFileSize())
+          //                 .filePath(meta.getFilePath())
+          //                 .uploader(user.get())
+          //                 .build();
+          //         attachmentRepository.save(att);
+          //     }
+          // }
+          
+          // Broadcast comment creation via WebSocket
+          webSocketService.broadcastCommentCreated(savedComment);
+          
           return savedComment;
       } catch (Exception e) {
           log.error("Error creating comment: {}", e.getMessage());
@@ -85,7 +90,11 @@ public class CommentService {
         throw new AppException(ErrorCode.UNAUTHORIZED);
       }
 
+      UUID issueId = comment.get().getIssue().getId();
       commentRepository.deleteById(commentId);
+      
+      // Broadcast comment deletion via WebSocket
+      webSocketService.broadcastCommentDeleted(commentId, issueId);
     }
 
     public Comment updateComment(UUID id, Comment comment) {
@@ -93,7 +102,13 @@ public class CommentService {
       .orElseThrow(() -> new AppException(ErrorCode.NOT_FOUND));
 
       existingComment.setContent(comment.getContent());
-      return commentRepository.save(existingComment);
+      existingComment.setUpdatedAt(OffsetDateTime.now());
+      Comment savedComment = commentRepository.save(existingComment);
+      
+      // Broadcast comment update via WebSocket
+      webSocketService.broadcastCommentUpdated(savedComment);
+      
+      return savedComment;
     }
 
     public List<Comment> getCommentsByIssueId(UUID issueId) {

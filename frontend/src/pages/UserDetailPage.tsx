@@ -7,14 +7,15 @@ import { Label } from "@/components/ui/label";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { User } from "lucide-react";
+import { User, Lock } from "lucide-react";
 import type { User as UserType } from "@/types/user";
 import { getMyInfo, updateMyInfo, deleteMyAccount } from "@/service/userService";
 import { toastError, toastSuccess } from "@/utils/toast";
 import { useNavigate } from "react-router-dom";
 import { useDispatch } from "react-redux";
-import { logout } from "@/store/authReducer";
+import { logout, fetchUserInfo } from "@/store/authReducer";
 import type { AppDispatch } from "@/store";
+import { PasswordUpdateModal } from "@/components/ui/password-update-modal";
 
 interface UserFormData {
   email: string;
@@ -28,6 +29,7 @@ const UserDetailPage: React.FC = () => {
   const dispatch = useDispatch<AppDispatch>();
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState(false);
+  const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
 
   const {
     register,
@@ -59,6 +61,8 @@ const UserDetailPage: React.FC = () => {
       setUpdating(true);
       const response = await updateMyInfo(data);
       setUserInfo(response.result);
+      // Refetch user info in auth reducer
+      await dispatch(fetchUserInfo()).unwrap();
       toastSuccess("Cập nhật thông tin thành công!");
     } finally {
       setUpdating(false);
@@ -161,9 +165,16 @@ const UserDetailPage: React.FC = () => {
               <Button type="submit" disabled={updating} className="bg-primary text-white">
                 Lưu thay đổi
               </Button>
-              {/* <Button type="button" variant="outline" onClick={handleCancel} disabled={updating}>
-                Hủy
-              </Button> */}
+              <Button 
+                type="button" 
+                variant="outline" 
+                onClick={() => setIsPasswordModalOpen(true)}
+                disabled={updating}
+                className="flex items-center gap-2"
+              >
+                <Lock className="h-4 w-4" />
+                Đổi mật khẩu
+              </Button>
               <Button type="button" variant="destructive" onClick={handleDeleteAccount} disabled={updating}>
                 Xóa tài khoản
               </Button>
@@ -171,6 +182,14 @@ const UserDetailPage: React.FC = () => {
           </form>
         </CardContent>
       </Card>
+      
+      <PasswordUpdateModal
+        isOpen={isPasswordModalOpen}
+        onClose={() => setIsPasswordModalOpen(false)}
+        onSuccess={() => {
+          // Optionally refetch user info after password update
+        }}
+      />
     </div>
   );
 };

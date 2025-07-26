@@ -8,8 +8,10 @@ import {
   CreateProjectDialog,
 } from "@/components/project";
 import { toastSuccess, toastError } from "@/utils/toast";
+import { useNavigate } from "react-router-dom";
 
 const ProjectManagementPage: React.FC = () => {
+  const navigate = useNavigate();
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
@@ -39,6 +41,28 @@ const ProjectManagementPage: React.FC = () => {
       toastError("Tạo dự án thất bại!");
       console.error("Error creating project:", error);
     }
+  };
+
+  const handleEditProject = (project: Project) => {
+    navigate(`/projects/${project.id}`);
+  };
+
+  const handleDeleteProject = async (projectId: string) => {
+    if (!confirm("Bạn có chắc chắn muốn xóa dự án này?")) {
+      return;
+    }
+    try {
+      await ProjectService.deleteProject(projectId);
+      toastSuccess("Xóa dự án thành công!");
+      fetchProjects();
+    } catch (error) {
+      toastError("Xóa dự án thất bại!");
+      console.error("Error deleting project:", error);
+    }
+  };
+
+  const handleManageMembers = (project: Project) => {
+    navigate(`/projects/${project.id}/members`);
   };
 
   const filteredProjects = projects.filter(project =>
@@ -75,6 +99,9 @@ const ProjectManagementPage: React.FC = () => {
           <ProjectCard
             key={project.id}
             project={project}
+            onEdit={handleEditProject}
+            onDelete={handleDeleteProject}
+            onManageMembers={handleManageMembers}
           />
         ))}
       </div>

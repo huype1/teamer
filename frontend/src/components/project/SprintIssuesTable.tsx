@@ -46,6 +46,7 @@ export const SprintIssuesTable: React.FC<SprintIssuesTableProps> = ({
   const mapIssue = (issue: Record<string, unknown>): Issue => {
     return {
       ...issue,
+      sprintId: issue.sprintId ? String(issue.sprintId) : undefined,
       reporter: issue.reporterId ? {
         id: String(issue.reporterId),
         name: String(issue.reporterName),

@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button.tsx";
 import {
   Card,
   CardContent,
+  CardFooter,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card.tsx";
@@ -155,6 +156,11 @@ export function RegisterForm({
             </div>
           </form>
         </CardContent>
+        <CardFooter className="flex justify-center">
+          <div className="text-muted-foreground text-center text-xs text-balance">
+            Bạn đã có tài khoản? <a href="/login" className="text-primary hover:underline">Đăng nhập</a>
+          </div>
+        </CardFooter>
       </Card>
       <div className="text-muted-foreground *:[a]:hover:text-primary text-center text-xs text-balance *:[a]:underline *:[a]:underline-offset-4">
         Bằng cách nhấp tiếp tục, bạn đồng ý với <a href="#">Điều khoản dịch vụ</a>{" "}

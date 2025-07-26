@@ -1,0 +1,362 @@
+---
+description: Complete project structure and important files documentation for the teamer project
+globs: **/*
+alwaysApply: true
+---
+# Project Structure Overview
+
+The teamer project is a full-stack application with a Spring Boot backend and React TypeScript frontend.
+
+## Root Directory Structure
+
+```
+teamer/
+├── .cursor/rules/           # Cursor AI rules and documentation
+├── .idea/                   # IntelliJ IDEA project files
+├── backend/                 # Spring Boot backend application
+├── frontend/                # React TypeScript frontend application
+├── node_modules/            # Root-level node dependencies
+├── package.json             # Root package configuration
+├── package-lock.json        # Root dependency lock file
+├── README.md                # Project documentation
+├── LICENSE                  # Project license
+```
+
+## Backend Structure (Spring Boot)
+
+### Main Application
+```
+backend/
+├── src/main/java/com/example/backend/
+│   ├── BackendApplication.java     # Main Spring Boot application
+│   ├── config/                     # Configuration classes
+│   │   ├── AppConfig.java
+│   │   ├── CustomJWTDecoder.java
+│   │   ├── OpenApiConfiguration.java
+│   │   └── SecurityConfig.java
+│   ├── controller/                 # REST API controllers
+│   │   ├── AttachmentController.java
+│   │   ├── AuthController.java
+│   │   ├── CommentController.java
+│   │   ├── HealthController.java
+│   │   ├── IssueController.java
+│   │   ├── MessageController.java
+│   │   ├── ProjectController.java
+│   │   ├── SprintController.java
+│   │   ├── TeamController.java
+│   │   └── UserController.java
+│   ├── dto/                       # Data Transfer Objects
+│   │   ├── request/               # Request DTOs
+│   │   │   ├── AttachmentMeta.java
+│   │   │   ├── AuthenticationRequest.java
+│   │   │   ├── CommentCreationRequest.java
+│   │   │   ├── GoogleLoginRequest.java
+│   │   │   ├── IntrospectRequest.java
+│   │   │   ├── InvitationRequest.java
+│   │   │   ├── IssueRequest.java
+│   │   │   ├── MessageCreationRequest.java
+│   │   │   ├── PresignedUrlRequest.java
+│   │   │   ├── ProjectCreationRequest.java
+│   │   │   ├── ProjectMemberRequest.java
+│   │   │   ├── ProjectUpdateRequest.java
+│   │   │   ├── SprintRequest.java
+│   │   │   ├── TeamCreationRequest.java
+│   │   │   ├── TeamInvitationRequest.java
+│   │   │   ├── TeamUpdateRequest.java
+│   │   │   └── UserCreationRequest.java
+│   │   └── response/              # Response DTOs
+│   │       ├── ApiResponse.java
+│   │       ├── AuthenticationResponse.java
+│   │       ├── dashboard/
+│   │       │   ├── DashboardSummaryResponse.java
+│   │       │   └── RecentActivityResponse.java
+│   │       ├── IntrospectResponse.java
+│   │       ├── IssueResponse.java
+│   │       ├── ProjectMemberResponse.java
+│   │       ├── ProjectResponse.java
+│   │       ├── SprintResponse.java
+│   │       ├── TeamMemberResponse.java
+│   │       ├── TeamResponse.java
+│   │       ├── TeamUserResponse.java
+│   │       └── UserResponse.java
+│   ├── entity/                    # JPA entities
+│   │   ├── Attachment.java
+│   │   ├── Chat.java
+│   │   ├── Comment.java
+│   │   ├── InvalidatedToken.java
+│   │   ├── Invitation.java
+│   │   ├── Issue.java
+│   │   ├── Message.java
+│   │   ├── Project.java
+│   │   ├── ProjectMember.java
+│   │   ├── ProjectMemberId.java
+│   │   ├── Sprint.java
+│   │   ├── Team.java
+│   │   ├── TeamMember.java
+│   │   ├── TeamMemberId.java
+│   │   └── User.java
+│   ├── exception/                 # Exception handling
+│   │   ├── AppException.java
+│   │   ├── ErrorCode.java
+│   │   └── GlobalExceptionHandler.java
+│   ├── mapper/                    # Object mappers
+│   │   ├── IssueMapper.java
+│   │   ├── ProjectMapper.java
+│   │   ├── ProjectMemberMapper.java
+│   │   ├── SprintMapper.java
+│   │   ├── TeamMapper.java
+│   │   ├── TeamMemberMapper.java
+│   │   └── UserMapper.java
+│   ├── repository/                # JPA repositories
+│   │   ├── AttachmentRepository.java
+│   │   ├── ChatRepository.java
+│   │   ├── CommentRepository.java
+│   │   ├── InvalidatedTokenRepository.java
+│   │   ├── InvitationRepository.java
+│   │   ├── IssueRepository.java
+│   │   ├── MessageRepository.java
+│   │   ├── ProjectMemberRepository.java
+│   │   ├── ProjectRepository.java
+│   │   ├── SprintRepository.java
+│   │   ├── TeamMemberRepository.java
+│   │   ├── TeamRepository.java
+│   │   └── UserRepository.java
+│   ├── service/                   # Business logic services
+│   │   ├── AttachmentService.java
+│   │   ├── AuthenticationService.java
+│   │   ├── ChatService.java
+│   │   ├── CommentService.java
+│   │   ├── EmailService.java
+│   │   ├── InvitationService.java
+│   │   ├── IssueService.java
+│   │   ├── MessageService.java
+│   │   ├── ProjectService.java
+│   │   ├── TeamService.java
+│   │   └── UserService.java
+│   ├── utils/                     # Utility classes
+│   │   └── JwtUtils.java
+│   ├── constants/                 # Application constants
+│   └── validator/                 # Validation classes
+```
+
+### Resources and Configuration
+```
+backend/src/main/resources/
+├── application.yaml              # Main application configuration
+├── application-heroku.yaml       # Heroku deployment configuration
+├── db/migration/                 # Flyway database migrations
+│   ├── V1__Create_users_table.sql
+│   ├── V2__Create_invalidated_tokens_table.sql
+│   ├── V3__Create_teams_and_member_table.sql
+│   ├── V4__Create_projects_table.sql
+│   ├── V5__Create_project_members_table.sql
+│   ├── V7__Create_chats_table.sql
+│   ├── V8__Create_issues_table.sql
+│   ├── V9__Create_comments_table.sql
+│   ├── V10__Create_messages_table.sql
+│   ├── V11__Create_invitations_table.sql
+│   ├── V12__Replace_invited_by_with_role.sql
+│   ├── V13__Add_chat_id_to_projects.sql
+│   ├── V14__Update_chats_table_structure.sql
+│   ├── V15__Make_team_id_nullable_in_projects.sql
+│   ├── V16__Add_creators_as_team_members.sql
+│   ├── V17__Create_sprints_table.sql
+│   ├── V19__Add_sprint_id_to_issues.sql
+│   └── V20__Create_attachments_table.sql
+├── static/                       # Static resources
+└── templates/                    # Template files
+```
+
+### Build and Deployment Files
+```
+backend/
+├── pom.xml                       # Maven project configuration
+├── mvnw                          # Maven wrapper script (Unix)
+├── mvnw.cmd                      # Maven wrapper script (Windows)
+├── flyway.conf                   # Flyway database migration config
+├── Procfile                      # Heroku deployment configuration
+├── system.properties             # Heroku system properties
+├── ApiTest.http                  # API testing file
+└── target/                       # Maven build output
+```
+
+## Frontend Structure (React TypeScript)
+
+### Source Code Organization
+```
+frontend/src/
+├── main.tsx                      # Application entry point
+├── App.tsx                       # Main application component
+├── App.css                       # Main app styles
+├── index.css                     # Global styles
+├── theme.css                     # Theme configuration
+├── vite-env.d.ts                 # Vite environment types
+├── components/                    # Reusable UI components
+│   ├── ui/                       # Base UI components
+│   │   ├── avatar.tsx
+│   │   ├── badge.tsx
+│   │   ├── breadcrumb.tsx
+│   │   ├── button.tsx
+│   │   ├── card.tsx
+│   │   ├── chart.tsx
+│   │   ├── checkbox.tsx
+│   │   ├── collapsible.tsx
+│   │   ├── dialog.tsx
+│   │   ├── drawer.tsx
+│   │   ├── dropdown-menu.tsx
+│   │   ├── input.tsx
+│   │   ├── label.tsx
+│   │   ├── progress.tsx
+│   │   ├── select.tsx
+│   │   ├── separator.tsx
+│   │   ├── sheet.tsx
+│   │   ├── sidebar.tsx
+│   │   ├── skeleton.tsx
+│   │   ├── sonner.tsx
+│   │   ├── switch.tsx
+│   │   ├── table.tsx
+│   │   ├── tabs.tsx
+│   │   ├── textarea.tsx
+│   │   ├── theme-provider.tsx
+│   │   ├── toggle-group.tsx
+│   │   ├── toggle.tsx
+│   │   └── tooltip.tsx
+│   ├── nav/                      # Navigation components
+│   │   ├── app-sidebar.tsx
+│   │   ├── nav-documents.tsx
+│   │   ├── nav-main.tsx
+│   │   ├── nav-projects.tsx
+│   │   ├── nav-secondary.tsx
+│   │   ├── team-switcher.tsx
+│   │   └── top-nav.tsx
+│   ├── project/                  # Project-specific components
+│   │   ├── CreateProjectDialog.tsx
+│   │   ├── EditIssueDialog.tsx
+│   │   ├── EditProjectDialog.tsx
+│   │   ├── IssueForm.tsx
+│   │   ├── IssuesTable.tsx
+│   │   ├── KanbanBoard.tsx
+│   │   ├── ManageMembersDialog.tsx
+│   │   ├── MemberManagement.tsx
+│   │   ├── ProjectActions.tsx
+│   │   ├── ProjectCard.tsx
+│   │   ├── ProjectHeader.tsx
+│   │   ├── ProjectNavigation.tsx
+│   │   ├── ProjectSearch.tsx
+│   │   ├── ProjectTabs.tsx
+│   │   ├── SprintIssuesCombinedTable.tsx
+│   │   ├── SprintIssuesTable.tsx
+│   │   └── SprintManagement.tsx
+│   ├── team/                     # Team-specific components
+│   │   ├── CreateTeamDialog.tsx
+│   │   ├── TeamCard.tsx
+│   │   └── TeamMemberManagement.tsx
+│   ├── layout.tsx                # Main layout component
+│   ├── ProtectedRoute.tsx        # Route protection component
+│   ├── section-cards.tsx         # Section card components
+│   ├── data-table.tsx            # Data table component
+│   └── chart-area-interactive.tsx # Chart component
+├── pages/                        # Page components
+│   ├── DashboardPage.tsx
+│   ├── InvitationAcceptPage.tsx
+│   ├── IssueDetailPage.tsx
+│   ├── LandingPage.tsx
+│   ├── LoginForm.tsx
+│   ├── NotFoundPage.tsx
+│   ├── ProjectIssuesTablePage.tsx
+│   ├── ProjectKanbanPage.tsx
+│   ├── ProjectManagementPage.tsx
+│   ├── ProjectMembersPage.tsx
+│   ├── ProjectOverviewPage.tsx
+│   ├── ProjectReportsPage.tsx
+│   ├── RegisterForm.tsx
+│   ├── TeamDetailPage.tsx
+│   ├── TeamManagementPage.tsx
+│   └── UserDetailPage.tsx
+├── service/                      # API service layer
+│   ├── authService.ts
+│   ├── attachmentService.ts
+│   ├── commentService.ts
+│   ├── issueService.ts
+│   ├── projectService.ts
+│   ├── sprintService.ts
+│   ├── teamService.ts
+│   └── userService.ts
+├── store/                        # State management
+│   ├── index.ts
+│   └── authReducer.ts
+├── types/                        # TypeScript type definitions
+│   ├── auth.ts
+│   ├── dashboard.ts
+│   ├── issue.ts
+│   ├── project.ts
+│   ├── sprint.ts
+│   ├── team.ts
+│   └── user.ts
+├── utils/                        # Utility functions
+│   ├── addReqToken.ts
+│   ├── dateUtils.ts
+│   ├── invitation.ts
+│   ├── jwt.ts
+│   ├── projectHelpers.ts
+│   └── toast.ts
+├── hooks/                        # Custom React hooks
+│   └── use-mobile.ts
+├── lib/                          # Library configurations
+│   └── utils.ts
+├── assets/                       # Static assets
+│   └── react.svg
+└── app/                          # App-specific data
+    └── dashboard/
+        └── data.json
+```
+
+### Configuration Files
+```
+frontend/
+├── package.json                  # Node.js dependencies and scripts
+├── package-lock.json             # Dependency lock file
+├── tsconfig.json                 # TypeScript configuration
+├── tsconfig.app.json             # App-specific TypeScript config
+├── tsconfig.node.json            # Node-specific TypeScript config
+├── vite.config.ts                # Vite build configuration
+├── eslint.config.js              # ESLint configuration
+├── components.json               # UI components configuration
+├── index.html                    # HTML entry point
+├── public/                       # Public static assets
+│   └── vite.svg
+└── README.md                     # Frontend documentation
+```
+
+## Cursor Rules Structure
+
+```
+.cursor/rules/
+├── cursor-rules.mdc              # Cursor rules documentation
+├── frontend-rules.mdc            # Frontend development guidelines
+├── self-improvement.mdc          # Rule improvement guidelines
+└── project-structure.mdc         # This file - project structure documentation
+```
+
+## Key Development Guidelines
+
+### Backend Development
+- Follow Spring Boot conventions for package structure
+- Use JPA entities for database modeling
+- Implement proper DTOs for API requests/responses
+- Use Flyway for database migrations
+- Follow RESTful API design principles
+
+### Frontend Development
+- Use TypeScript for type safety
+- Organize components by feature/domain
+- Use service layer for API communication
+- Implement proper state management
+- Follow React best practices and hooks
+
+### Project Organization
+- Keep backend and frontend in separate directories
+- Use consistent naming conventions
+- Maintain proper separation of concerns
+- Document important architectural decisions
+- Follow the established directory structure for new features

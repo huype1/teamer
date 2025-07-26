@@ -1,0 +1,564 @@
+# React Component Patterns and Conventions
+
+## Automatic Application
+
+This rule automatically applies when:
+- Creating new React components in `frontend/src/components/`
+- Creating new pages in `frontend/src/pages/`
+- Editing existing TypeScript React files
+- Generating component code
+- Refactoring React components
+
+## Component Structure and Organization
+
+### 1. Import Organization Pattern
+Always organize imports in this specific order:
+
+```typescript
+// 1. React and routing imports
+import React, { useState, useEffect, useCallback } from "react";
+import { useParams, useNavigate } from "react-router-dom";
+
+// 2. UI components (shadcn/ui)
+import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+
+// 3. Custom components
+import { IssuesTable, SprintIssuesCombinedTable } from "@/components/project";
+import { ProjectHeader, ProjectNavigation } from "@/components/project";
+import { TeamCard } from "@/components/team";
+
+// 4. Services
+import sprintService from "@/service/sprintService";
+import issueService from "@/service/issueService";
+import projectService from "@/service/projectService";
+
+// 5. Utilities and types
+import { toastError, toastSuccess } from "@/utils/toast";
+import type { Sprint } from "@/types/sprint";
+import type { Issue } from "@/types/issue";
+import type { Project } from "@/types/project";
+
+// 6. Third-party libraries
+import { useForm } from "react-hook-form";
+import { useSelector } from "react-redux";
+import { Plus, Edit, Trash2 } from "lucide-react";
+```
+
+### 2. State Management Pattern
+Use multiple `useState` hooks for different concerns:
+
+```typescript
+// Data states
+const [project, setProject] = useState<Project | null>(null);
+const [sprints, setSprints] = useState<Sprint[]>([]);
+const [backlogIssues, setBacklogIssues] = useState<Issue[]>([]);
+
+// UI states
+const [loading, setLoading] = useState(true);
+const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+const [isCreateIssueDialogOpen, setIsCreateIssueDialogOpen] = useState(false);
+
+// Form states
+const { register, handleSubmit, reset, formState: { errors } } = useForm({
+  defaultValues: {
+    name: "",
+    goal: "",
+    startDate: "",
+    endDate: "",
+  },
+});
+```
+
+### 3. Data Fetching Pattern
+Use `useCallback` for data fetching functions to prevent unnecessary re-renders:
+
+```typescript
+const fetchProject = useCallback(async () => {
+  try {
+    setLoading(true);
+    const response = await projectService.getProjectById(projectId!);
+    setProject(response.result);
+  } catch (error) {
+    console.error("Error fetching project:", error);
+    toastError("Không thể tải thông tin dự án!");
+  } finally {
+    setLoading(false);
+  }
+}, [projectId]);
+
+const fetchSprints = useCallback(async () => {
+  try {
+    const response = await sprintService.getSprintsByProject(projectId!);
+    setSprints(response.result || []);
+  } catch (error) {
+    console.error("Error fetching sprints:", error);
+    toastError("Không thể tải danh sách sprint!");
+  }
+}, [projectId]);
+```
+
+### 4. Data Mapping Pattern
+Create mapping functions for API responses:
+
+```typescript
+const mapIssue = useCallback((issue: Record<string, unknown>): Issue => {
+  return {
+    ...(issue as unknown as Issue),
+    reporter: issue.reporterId ? {
+      id: String(issue.reporterId),
+      name: String(issue.reporterName),
+      email: String(issue.reporterEmail),
+    } : undefined,
+    assignee: issue.assigneeId ? {
+      id: String(issue.assigneeId),
+      name: String(issue.assigneeName),
+      email: String(issue.assigneeEmail),
+    } : undefined,
+  };
+}, []);
+```
+
+## Component Function Structure
+
+### 1. Function Component Pattern
+```typescript
+const ProjectManagementPage = () => {
+  // 1. Hooks and state
+  const { projectId } = useParams<{ projectId: string }>();
+  const navigate = useNavigate();
+  
+  // 2. State declarations
+  const [project, setProject] = useState<Project | null>(null);
+  const [loading, setLoading] = useState(true);
+  
+  // 3. Data fetching
+  const fetchProject = useCallback(async () => {
+    // Implementation
+  }, [projectId]);
+  
+  // 4. Event handlers
+  const handleCreateSprint = async (data: SprintCreationRequest) => {
+    try {
+      await sprintService.createSprint(data);
+      toastSuccess("Tạo sprint thành công!");
+      fetchSprints();
+    } catch (error) {
+      toastError("Không thể tạo sprint!");
+    }
+  };
+  
+  // 5. Effects
+  useEffect(() => {
+    if (projectId) {
+      fetchProject();
+    }
+  }, [projectId, fetchProject]);
+  
+  // 6. Render
+  if (loading) {
+    return <div>Loading...</div>;
+  }
+  
+  return (
+    <div>
+      {/* Component JSX */}
+    </div>
+  );
+};
+
+export default ProjectManagementPage;
+```
+
+### 2. Event Handler Pattern
+```typescript
+// Form submission
+const handleSubmit = async (data: FormData) => {
+  try {
+    setLoading(true);
+    await service.createResource(data);
+    toastSuccess("Tạo thành công!");
+    onSuccess?.();
+  } catch (error) {
+    console.error("Error:", error);
+    toastError("Có lỗi xảy ra!");
+  } finally {
+    setLoading(false);
+  }
+};
+
+// Button click handlers
+const handleEdit = () => {
+  setIsEditMode(true);
+};
+
+const handleDelete = async () => {
+  if (window.confirm("Bạn có chắc chắn muốn xóa?")) {
+    try {
+      await service.deleteResource(id);
+      toastSuccess("Xóa thành công!");
+      onDelete?.();
+    } catch (error) {
+      toastError("Không thể xóa!");
+    }
+  }
+};
+```
+
+## Form Handling Pattern
+
+### 1. React Hook Form Pattern
+```typescript
+const { register, handleSubmit, reset, formState: { errors } } = useForm({
+  defaultValues: {
+    name: "",
+    description: "",
+    startDate: "",
+    endDate: "",
+  },
+});
+
+const onSubmit = async (data: FormData) => {
+  try {
+    await service.createResource(data);
+    toastSuccess("Tạo thành công!");
+    reset();
+    onClose?.();
+  } catch (error) {
+    toastError("Có lỗi xảy ra!");
+  }
+};
+```
+
+### 2. Form JSX Pattern
+```typescript
+<form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+  <div>
+    <Label htmlFor="name">Tên</Label>
+    <Input
+      id="name"
+      {...register("name", { required: "Tên là bắt buộc" })}
+      placeholder="Nhập tên"
+    />
+    {errors.name && (
+      <p className="text-sm text-red-500">{errors.name.message}</p>
+    )}
+  </div>
+  
+  <div>
+    <Label htmlFor="description">Mô tả</Label>
+    <Textarea
+      id="description"
+      {...register("description")}
+      placeholder="Nhập mô tả"
+    />
+  </div>
+  
+  <div className="flex gap-2">
+    <Button type="submit" disabled={loading}>
+      {loading ? "Đang tạo..." : "Tạo"}
+    </Button>
+    <Button type="button" variant="outline" onClick={onClose}>
+      Hủy
+    </Button>
+  </div>
+</form>
+```
+
+## Dialog and Modal Pattern
+
+### 1. Dialog State Pattern
+```typescript
+const [isDialogOpen, setIsDialogOpen] = useState(false);
+const [editingItem, setEditingItem] = useState<Item | null>(null);
+
+const handleEdit = (item: Item) => {
+  setEditingItem(item);
+  setIsDialogOpen(true);
+};
+
+const handleClose = () => {
+  setIsDialogOpen(false);
+  setEditingItem(null);
+};
+```
+
+### 2. Dialog JSX Pattern
+```typescript
+<Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+  <DialogContent>
+    <DialogHeader>
+      <DialogTitle>
+        {editingItem ? "Chỉnh sửa" : "Tạo mới"}
+      </DialogTitle>
+    </DialogHeader>
+    
+    <Form onSubmit={handleSubmit} />
+    
+    <DialogFooter>
+      <Button type="submit" disabled={loading}>
+        {loading ? "Đang lưu..." : "Lưu"}
+      </Button>
+      <Button type="button" variant="outline" onClick={handleClose}>
+        Hủy
+      </Button>
+    </DialogFooter>
+  </DialogContent>
+</Dialog>
+```
+
+## Table and List Pattern
+
+### 1. Table Structure Pattern
+```typescript
+<Table>
+  <TableHeader>
+    <TableRow>
+      <TableHead>Tên</TableHead>
+      <TableHead>Mô tả</TableHead>
+      <TableHead>Trạng thái</TableHead>
+      <TableHead>Thao tác</TableHead>
+    </TableRow>
+  </TableHeader>
+  <TableBody>
+    {items.map((item) => (
+      <TableRow key={item.id}>
+        <TableCell>{item.name}</TableCell>
+        <TableCell>{item.description}</TableCell>
+        <TableCell>
+          <Badge variant={item.status === 'ACTIVE' ? 'default' : 'secondary'}>
+            {item.status}
+          </Badge>
+        </TableCell>
+        <TableCell>
+          <div className="flex gap-2">
+            <Button size="sm" onClick={() => handleEdit(item)}>
+              <Edit className="h-4 w-4" />
+            </Button>
+            <Button size="sm" variant="destructive" onClick={() => handleDelete(item.id)}>
+              <Trash2 className="h-4 w-4" />
+            </Button>
+          </div>
+        </TableCell>
+      </TableRow>
+    ))}
+  </TableBody>
+</Table>
+```
+
+## Error Handling Pattern
+
+### 1. Try-Catch Pattern
+```typescript
+const handleAction = async () => {
+  try {
+    setLoading(true);
+    await service.performAction();
+    toastSuccess("Thành công!");
+  } catch (error) {
+    console.error("Error:", error);
+    toastError("Có lỗi xảy ra!");
+  } finally {
+    setLoading(false);
+  }
+};
+```
+
+### 2. Error Boundary Pattern
+```typescript
+const ErrorFallback = ({ error, resetErrorBoundary }: { error: Error; resetErrorBoundary: () => void }) => {
+  return (
+    <div className="flex flex-col items-center justify-center p-8">
+      <h2 className="text-lg font-semibold text-red-600">Đã xảy ra lỗi</h2>
+      <p className="text-sm text-gray-600 mt-2">{error.message}</p>
+      <Button onClick={resetErrorBoundary} className="mt-4">
+        Thử lại
+      </Button>
+    </div>
+  );
+};
+```
+
+## Loading States Pattern
+
+### 1. Loading Component Pattern
+```typescript
+if (loading) {
+  return (
+    <div className="flex items-center justify-center p-8">
+      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
+      <span className="ml-2">Đang tải...</span>
+    </div>
+  );
+}
+```
+
+### 2. Skeleton Loading Pattern
+```typescript
+{loading ? (
+  <div className="space-y-4">
+    <Skeleton className="h-4 w-[250px]" />
+    <Skeleton className="h-4 w-[200px]" />
+    <Skeleton className="h-4 w-[300px]" />
+  </div>
+) : (
+  <div>
+    {/* Actual content */}
+  </div>
+)}
+```
+
+## Automatic Code Generation Patterns
+
+### 1. Component Template
+```typescript
+// Pattern: ${ComponentName} component
+const ${ComponentName} = () => {
+  // State
+  const [loading, setLoading] = useState(false);
+  
+  // Data fetching
+  const fetchData = useCallback(async () => {
+    try {
+      setLoading(true);
+      // Implementation
+    } catch (error) {
+      console.error("Error:", error);
+      toastError("Có lỗi xảy ra!");
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+  
+  // Effects
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
+  
+  // Render
+  return (
+    <div>
+      {/* Component content */}
+    </div>
+  );
+};
+
+export default ${ComponentName};
+```
+
+### 2. Page Component Template
+```typescript
+// Pattern: ${PageName} page component
+const ${PageName} = () => {
+  const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
+  
+  const [data, setData] = useState<DataType | null>(null);
+  const [loading, setLoading] = useState(true);
+  
+  const fetchData = useCallback(async () => {
+    if (!id) return;
+    
+    try {
+      setLoading(true);
+      const response = await service.getById(id);
+      setData(response.result);
+    } catch (error) {
+      console.error("Error:", error);
+      toastError("Không thể tải dữ liệu!");
+    } finally {
+      setLoading(false);
+    }
+  }, [id]);
+  
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
+  
+  if (loading) {
+    return <div>Loading...</div>;
+  }
+  
+  if (!data) {
+    return <div>Không tìm thấy dữ liệu</div>;
+  }
+  
+  return (
+    <div className="container mx-auto p-6">
+      {/* Page content */}
+    </div>
+  );
+};
+
+export default ${PageName};
+```
+
+## Common Patterns to Avoid
+
+### ❌ Don't do this:
+```typescript
+// Don't use inline styles
+<div style={{ color: 'red', fontSize: '16px' }}>
+
+// Don't forget error handling
+const handleSubmit = async (data) => {
+  await service.create(data); // Missing try-catch
+};
+
+// Don't use relative imports
+import { Button } from "../ui/button";
+
+// Don't forget loading states
+const Component = () => {
+  const [data, setData] = useState(null);
+  // Missing loading state
+  return <div>{data?.name}</div>;
+};
+```
+
+### ✅ Do this:
+```typescript
+// Use Tailwind classes
+<div className="text-red-500 text-base">
+
+// Include proper error handling
+const handleSubmit = async (data) => {
+  try {
+    await service.create(data);
+    toastSuccess("Thành công!");
+  } catch (error) {
+    toastError("Có lỗi xảy ra!");
+  }
+};
+
+// Use absolute imports
+import { Button } from "@/components/ui/button";
+
+// Include loading states
+const Component = () => {
+  const [data, setData] = useState(null);
+  const [loading, setLoading] = useState(true);
+  
+  if (loading) return <div>Loading...</div>;
+  
+  return <div>{data?.name}</div>;
+};
+```
+
+## Automatic Refactoring Patterns
+
+When refactoring existing React components, automatically:
+
+1. **Organize imports** according to the established order
+2. **Add proper error handling** with try-catch blocks
+3. **Include loading states** for async operations
+4. **Use absolute imports** instead of relative imports
+5. **Add proper TypeScript types** for all props and state
+6. **Implement proper form handling** with React Hook Form
+7. **Add toast notifications** for user feedback
+8. **Use consistent naming** for functions and variables
+
+alwaysApply: false
+---

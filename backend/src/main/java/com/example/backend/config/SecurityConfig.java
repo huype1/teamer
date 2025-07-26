@@ -27,7 +27,7 @@ import lombok.extern.slf4j.Slf4j;
 public class SecurityConfig {
     private CustomJWTDecoder customJwtDecoder;
 
-    public final String[] PUBLIC_ENDPOINTS = {"/auth/**", "/health", "/api-docs/**", "/swagger-ui/**", "/swagger-ui.html", "/webjars/**", "/actuator/**", "/"};
+    public final String[] PUBLIC_ENDPOINTS = {"/auth/**", "/health", "/api-docs/**", "/swagger-ui/**", "/swagger-ui.html", "/webjars/**", "/actuator/**", "/", "/ws/**"};
 
     public SecurityConfig(CustomJWTDecoder customJwtDecoder) {
         this.customJwtDecoder = customJwtDecoder;
@@ -54,12 +54,14 @@ public class SecurityConfig {
     public CorsFilter corsFilter() {
         CorsConfiguration corsConfiguration = new CorsConfiguration();
 
-        corsConfiguration.addAllowedOrigin("*");
+        corsConfiguration.addAllowedOriginPattern("*");
         corsConfiguration.addAllowedMethod("*");
         corsConfiguration.addAllowedHeader("*");
+        corsConfiguration.setAllowCredentials(true);
 
         UrlBasedCorsConfigurationSource urlBasedCorsConfigurationSource = new UrlBasedCorsConfigurationSource();
         urlBasedCorsConfigurationSource.registerCorsConfiguration("/**", corsConfiguration);
+        urlBasedCorsConfigurationSource.registerCorsConfiguration("/ws/**", corsConfiguration);
 
         return new CorsFilter(urlBasedCorsConfigurationSource);
     }

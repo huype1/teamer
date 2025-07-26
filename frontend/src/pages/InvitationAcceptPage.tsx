@@ -7,13 +7,6 @@ import { useSelector } from "react-redux";
 import type { RootState } from "@/store";
 import { acceptProjectInvitation } from "@/service/projectService";
 
-/**
- * InvitationAcceptPage handles invitation acceptance flow:
- * 1. Extracts token from URL query parameters
- * 2. Saves token to localStorage for later processing
- * 3. Shows appropriate message to user
- * 4. Redirects to login/register when user is ready
- */
 const InvitationAcceptPage: React.FC = () => {
   const [searchParams] = useSearchParams();
   const [status, setStatus] = useState<'loading' | 'success' | 'error'>('loading');

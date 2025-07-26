@@ -46,6 +46,7 @@ interface IssueFormProps {
   sprints?: Sprint[];
   isEdit?: boolean;
   parentOptions?: { id: string; title: string }[];
+  disableIssueType?: boolean;
 }
 
 export const IssueForm: React.FC<IssueFormProps> = ({
@@ -56,6 +57,7 @@ export const IssueForm: React.FC<IssueFormProps> = ({
   sprints,
   isEdit = false,
   parentOptions = [],
+  disableIssueType = false,
 }) => {
   const {
     register,
@@ -114,7 +116,7 @@ export const IssueForm: React.FC<IssueFormProps> = ({
         <Select
           value={watch("issueType")}
           onValueChange={v => setValue("issueType", v as IssueFormValues["issueType"])}
-          disabled={loading || isEdit}
+          disabled={loading || isEdit || disableIssueType}
         >
           <SelectTrigger>
             <SelectValue placeholder="Loại issue" />

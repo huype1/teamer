@@ -183,13 +183,15 @@ const TeamDetailPage: React.FC = () => {
         </div>
         
         <div className="flex gap-2">
-          <Dialog open={editDialogOpen} onOpenChange={handleEditDialogChange}>
-            <DialogTrigger asChild>
-              <Button variant="outline" size="sm" className="gap-2">
-                <Edit className="w-4 h-4" />
-                Chỉnh sửa
-              </Button>
-            </DialogTrigger>
+          {user && getCurrentUserRole(user, teamId!) === "ADMIN" && (
+            <>
+              <Dialog open={editDialogOpen} onOpenChange={handleEditDialogChange}>
+                <DialogTrigger asChild>
+                  <Button variant="outline" size="sm" className="gap-2">
+                    <Edit className="w-4 h-4" />
+                    Chỉnh sửa
+                  </Button>
+                </DialogTrigger>
             <DialogContent>
               <DialogHeader>
                 <DialogTitle>Chỉnh sửa nhóm</DialogTitle>
@@ -249,6 +251,8 @@ const TeamDetailPage: React.FC = () => {
               </DialogFooter>
             </DialogContent>
           </Dialog>
+            </>
+          )}
         </div>
       </div>
 

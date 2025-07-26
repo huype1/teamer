@@ -7,6 +7,11 @@ import { Provider } from "react-redux";
 import { store } from "./store/index.ts";
 import { GoogleOAuthProvider } from '@react-oauth/google';
 
+// Polyfill for sockjs-client
+if (typeof global === 'undefined') {
+  (window as unknown as { global: typeof window }).global = window;
+}
+
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
     <Provider store={store}>

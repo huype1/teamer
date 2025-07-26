@@ -5,13 +5,13 @@ import type { Issue, CreateIssueRequest, UpdateIssueRequest } from "@/types/issu
 const baseUrl = "http://localhost:8080/api/issues";
 
 // Get all issues by project ID
-export const getIssuesByProjectId = async (projectId: string): Promise<{ result: Issue[] }> => {
+export const getIssuesByProjectId = async (projectId: string) => {
   const res = await axios.get(`${baseUrl}/project/${projectId}`, addReqToken(localStorage.getItem("token")));
   return res.data;
 };
 
 // Get issue by ID
-export const getIssueById = async (issueId: string): Promise<{ result: Issue }> => {
+export const getIssueById = async (issueId: string) => {
   const res = await axios.get(`${baseUrl}/${issueId}`, addReqToken(localStorage.getItem("token")));
   return res.data;
 };

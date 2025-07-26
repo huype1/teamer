@@ -1,6 +1,7 @@
 import React from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Bell } from "lucide-react";
 import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
@@ -9,8 +10,8 @@ import type { RootState } from "@/store";
 import { useEffect, useState } from "react";
 import issueService from "@/service/issueService";
 import projectService from "@/service/projectService";
-import type { Issue } from "@/types/issue";
-import type { Project } from "@/types/project";
+import type { Issue as IssueType } from "@/types/issue";
+import type { Project as ProjectType } from "@/types/project";
 
 // Interface chuẩn hóa cho dữ liệu từ API
 interface Project {
@@ -40,6 +41,8 @@ export default function DashboardPage() {
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [displayedIssues, setDisplayedIssues] = useState<Issue[]>([]);
+  const [showAllIssues, setShowAllIssues] = useState(false);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -61,6 +64,7 @@ export default function DashboardPage() {
           project: (issue as any).project || projectsArr.find((p: Project) => p.id === (issue.projectId || (issue as any).project?.id)),
         }));
         setIssues(issuesArr);
+        setDisplayedIssues(issuesArr.slice(0, 10));
         setProjects(projectsArr);
       } catch {
         setError("Lỗi khi tải dữ liệu dashboard");
@@ -188,7 +192,7 @@ export default function DashboardPage() {
                 </tr>
               </thead>
               <tbody>
-                {issues.map(issue => (
+                {displayedIssues.map(issue => (
                   <tr key={issue.id} className="border-b hover:bg-muted/50">
                     <td className="py-2 px-2 font-medium">{issue.title}</td>
                     <td className="py-2 px-2">{projects.find(p => p.id === (issue.projectId || issue.project?.id))?.name || ""}</td>
@@ -199,6 +203,24 @@ export default function DashboardPage() {
                 ))}
               </tbody>
             </table>
+            {issues.length > 10 && (
+              <div className="mt-4 text-center">
+                <Button 
+                  variant="outline" 
+                  onClick={() => {
+                    if (showAllIssues) {
+                      setDisplayedIssues(issues.slice(0, 10));
+                      setShowAllIssues(false);
+                    } else {
+                      setDisplayedIssues(issues);
+                      setShowAllIssues(true);
+                    }
+                  }}
+                >
+                  {showAllIssues ? "Thu gọn" : `Xem thêm ${issues.length - 10} issue`}
+                </Button>
+              </div>
+            )}
           </div>
         </CardContent>
       </Card>

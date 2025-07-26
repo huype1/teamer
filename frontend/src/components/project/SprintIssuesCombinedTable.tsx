@@ -58,6 +58,7 @@ export const SprintIssuesCombinedTable: React.FC<SprintIssuesCombinedTableProps>
   const mapIssue = (issue: any): Issue => {
     return {
       ...issue,
+      sprintId: issue.sprintId ? String(issue.sprintId) : undefined,
       reporter: issue.reporterId ? {
         id: String(issue.reporterId),
         name: String(issue.reporterName),
@@ -86,9 +87,27 @@ export const SprintIssuesCombinedTable: React.FC<SprintIssuesCombinedTableProps>
 
   const handleSprintStatusChange = async (newStatus: string) => {
     if (newStatus === sprint.status) return;
-    if (newStatus === "ACTIVE") await onStartSprint(sprint.id);
-    else if (newStatus === "COMPLETED") await onEndSprint(sprint.id);
-    else if (newStatus === "CANCELLED" && sprint.status !== "CANCELLED" && onCancelSprint) await onCancelSprint(sprint.id);
+    
+    // Sprint status validation logic
+    if (sprint.status === "PLANNING") {
+      // PLANNING can only go to ACTIVE
+      if (newStatus === "ACTIVE") {
+        await onStartSprint(sprint.id);
+      } else if (newStatus === "CANCELLED") {
+        await onCancelSprint(sprint.id);
+      }
+    } else if (sprint.status === "ACTIVE") {
+      // ACTIVE can only go to COMPLETED
+      if (newStatus === "COMPLETED") {
+        await onEndSprint(sprint.id);
+      }
+    } else if (sprint.status === "CANCELLED") {
+      // CANCELLED can only go back to PLANNING
+      if (newStatus === "PLANNING") {
+        // This would need a new API endpoint to reset sprint status
+        console.log("Reset sprint to planning status");
+      }
+    }
   };
 
   const getIssueTypeConfig = (issueType: string) => {
@@ -135,10 +154,18 @@ export const SprintIssuesCombinedTable: React.FC<SprintIssuesCombinedTableProps>
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="PLANNING" disabled={sprint.status !== "PLANNING"}>Lập kế hoạch</SelectItem>
-                <SelectItem value="ACTIVE" disabled={sprint.status !== "ACTIVE" && !!activeSprintId && activeSprintId !== sprint.id}>Đang thực hiện</SelectItem>
-                <SelectItem value="COMPLETED">Hoàn thành</SelectItem>
-                <SelectItem value="CANCELLED">Đã hủy</SelectItem>
+                <SelectItem value="PLANNING" disabled={sprint.status !== "PLANNING" && sprint.status !== "CANCELLED"}>
+                  Lập kế hoạch
+                </SelectItem>
+                <SelectItem value="ACTIVE" disabled={sprint.status !== "PLANNING"}>
+                  Đang thực hiện
+                </SelectItem>
+                <SelectItem value="COMPLETED" disabled={sprint.status !== "ACTIVE"}>
+                  Hoàn thành
+                </SelectItem>
+                <SelectItem value="CANCELLED" disabled={sprint.status !== "PLANNING"}>
+                  Đã hủy
+                </SelectItem>
               </SelectContent>
             </Select>
             {sprint.goal && (

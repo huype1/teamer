@@ -1,0 +1,350 @@
+---
+description: Complete tech stack documentation with versions and best practices for the teamer project
+globs: **/*
+alwaysApply: true
+---
+
+# Tech Stack Documentation
+
+## Overview
+
+The teamer project is a full-stack application using modern technologies with specific version constraints and best practices.
+
+## Backend Stack (Spring Boot)
+
+### Core Framework
+- **Spring Boot**: 3.4.6
+- **Java Version**: 21
+- **Build Tool**: Maven
+
+### Key Dependencies
+
+#### Spring Boot Starters
+```xml
+<!-- Core Spring Boot Starters -->
+<dependency>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-starter-web</artifactId>
+</dependency>
+<dependency>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-starter-security</artifactId>
+</dependency>
+<dependency>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-starter-data-jpa</artifactId>
+</dependency>
+<dependency>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-starter-validation</artifactId>
+</dependency>
+<dependency>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-starter-oauth2-client</artifactId>
+</dependency>
+<dependency>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-starter-oauth2-resource-server</artifactId>
+</dependency>
+<dependency>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-starter-websocket</artifactId>
+</dependency>
+<dependency>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-starter-mail</artifactId>
+    <version>3.4.3</version>
+</dependency>
+```
+
+#### Database & Migration
+- **Database**: PostgreSQL
+- **ORM**: Hibernate (via Spring Data JPA)
+- **Migration Tool**: Flyway
+- **Connection Pool**: HikariCP (default)
+
+#### Security & Authentication
+- **JWT**: Custom implementation with configurable duration
+- **OAuth2**: Google OAuth2 client and resource server
+- **Security**: Spring Security with JWT tokens
+
+#### API Documentation
+- **OpenAPI**: SpringDoc OpenAPI 2.7.0
+- **Swagger UI**: Available at `/api-docs`
+
+#### Cloud Services
+- **AWS S3**: For file attachments
+- **Email**: Gmail SMTP for notifications
+
+#### Development Tools
+- **Lombok**: For reducing boilerplate code
+- **MapStruct**: 1.5.5.Final for object mapping
+- **Spotless**: 2.44.3 for code formatting
+
+### Backend Best Practices
+
+#### Version Management
+- Use Spring Boot 3.4.6 for latest security patches
+- Java 21 for latest LTS features
+- Keep dependencies aligned with Spring Boot version
+
+#### Security Guidelines
+```yaml
+# JWT Configuration
+jwt:
+  signerKey: ${JWT_SIGNER_KEY}
+  valid-duration: 86400 # 24 hours
+  refreshable-duration: 360000 # 100 hours
+```
+
+#### Database Practices
+- Use Flyway for all schema changes
+- Follow naming convention: V{version}__{description}.sql
+- Never modify existing migration files
+
+#### Code Quality
+- Use Spotless for consistent formatting
+- Implement proper DTOs for API requests/responses
+- Use MapStruct for object mapping
+- Follow Spring Boot conventions
+
+## Frontend Stack (React TypeScript)
+
+### Core Framework
+- **React**: 19.1.0
+- **TypeScript**: 5.8.3
+- **Build Tool**: Vite 6.3.5
+- **Package Manager**: npm
+
+### Key Dependencies
+
+#### UI Framework & Components
+```json
+{
+  "@radix-ui/react-*": "^1.x.x - ^2.x.x",
+  "lucide-react": "^0.514.0",
+  "@tabler/icons-react": "^3.34.0",
+  "class-variance-authority": "^0.7.1",
+  "clsx": "^2.1.1",
+  "tailwind-merge": "^3.3.1"
+}
+```
+
+#### State Management
+```json
+{
+  "@reduxjs/toolkit": "^2.8.2",
+  "react-redux": "^9.2.0",
+  "redux": "^5.0.1"
+}
+```
+
+#### Form Handling
+```json
+{
+  "react-hook-form": "^7.58.1",
+  "@hookform/resolvers": "^5.1.1",
+  "zod": "^3.25.67"
+}
+```
+
+#### Routing & Navigation
+```json
+{
+  "react-router-dom": "^7.6.2"
+}
+```
+
+#### Data Fetching & HTTP
+```json
+{
+  "axios": "^1.10.0"
+}
+```
+
+#### Drag & Drop
+```json
+{
+  "@dnd-kit/core": "^6.3.1",
+  "@dnd-kit/sortable": "^10.0.0",
+  "@dnd-kit/modifiers": "^9.0.0",
+  "@dnd-kit/utilities": "^3.2.2"
+}
+```
+
+#### Data Visualization
+```json
+{
+  "recharts": "^3.1.0"
+}
+```
+
+#### Authentication
+```json
+{
+  "@react-oauth/google": "^0.12.2",
+  "jwt-decode": "^4.0.0"
+}
+```
+
+#### Styling
+```json
+{
+  "tailwindcss": "^4.1.10",
+  "@tailwindcss/vite": "^4.1.10",
+  "next-themes": "^0.4.6"
+}
+```
+
+#### Development Tools
+```json
+{
+  "eslint": "^9.25.0",
+  "typescript-eslint": "^8.30.1",
+  "vite": "^6.3.5"
+}
+```
+
+### Frontend Best Practices
+
+#### React 19 Guidelines
+- Use React 19's new features like `use()` hook
+- Implement proper error boundaries
+- Use Suspense for data loading
+- Follow React Server Components patterns where applicable
+
+#### TypeScript Configuration
+```json
+{
+  "compilerOptions": {
+    "target": "ES2020",
+    "lib": ["ES2020", "DOM", "DOM.Iterable"],
+    "module": "ESNext",
+    "skipLibCheck": true,
+    "moduleResolution": "bundler",
+    "allowImportingTsExtensions": true,
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "noEmit": true,
+    "jsx": "react-jsx",
+    "strict": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noFallthroughCasesInSwitch": true
+  }
+}
+```
+
+#### State Management
+- Use Redux Toolkit for global state
+- Implement proper slice patterns
+- Use RTK Query for server state (consider migration)
+
+#### Form Validation
+```typescript
+// Use Zod with React Hook Form
+import { z } from 'zod';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+
+const schema = z.object({
+  email: z.string().email(),
+  password: z.string().min(8)
+});
+
+const form = useForm({
+  resolver: zodResolver(schema)
+});
+```
+
+#### Component Architecture
+- Use Radix UI for accessible components
+- Implement proper TypeScript interfaces
+- Follow composition over inheritance
+- Use proper prop drilling alternatives
+
+#### Styling Guidelines
+- Use Tailwind CSS for utility-first styling
+- Implement dark mode with next-themes
+- Use CSS variables for theming
+- Follow mobile-first responsive design
+
+## Development Environment
+
+### Node.js Requirements
+- **Node.js**: 18+ (for Vite 6.x compatibility)
+- **npm**: 9+ or **yarn**: 1.22+
+
+### IDE Configuration
+- **VS Code/Cursor**: Recommended extensions
+  - TypeScript and JavaScript Language Features
+  - Tailwind CSS IntelliSense
+  - ESLint
+  - Prettier
+  - Spring Boot Extension Pack (for backend)
+
+### Environment Variables
+```bash
+# Backend (.env)
+JWT_SIGNER_KEY=your-secret-key
+MAIL_USERNAME=your-email@gmail.com
+MAIL_PASSWORD=your-app-password
+AWS_BUCKET=your-s3-bucket
+AWS_REGION=us-east-1
+AWS_ACCESS_KEY=your-access-key
+AWS_SECRET_KEY=your-secret-key
+
+# Frontend (.env)
+VITE_API_BASE_URL=http://localhost:8080/api
+VITE_GOOGLE_CLIENT_ID=your-google-client-id
+```
+
+## Version Compatibility Notes
+
+### Critical Dependencies
+- **React 19**: Breaking changes from React 18, review migration guide
+- **Vite 6**: Requires Node.js 18+, check compatibility
+- **TypeScript 5.8**: Latest features, ensure team adoption
+- **Spring Boot 3.4**: Latest LTS, good for production
+
+### Security Considerations
+- Keep all dependencies updated regularly
+- Use `npm audit` and `mvn dependency:check` regularly
+- Monitor security advisories for critical dependencies
+- Implement proper CORS configuration
+- Use environment variables for sensitive data
+
+### Performance Optimizations
+- Use React.memo for expensive components
+- Implement proper code splitting with React.lazy
+- Use Spring Boot's built-in caching
+- Optimize database queries with proper indexing
+- Use CDN for static assets
+
+## Migration Guidelines
+
+### When Updating Major Versions
+1. Check breaking changes in release notes
+2. Update dependencies incrementally
+3. Run comprehensive tests
+4. Update documentation
+5. Train team on new features
+
+### Recommended Update Schedule
+- **Security patches**: Immediately
+- **Minor versions**: Monthly
+- **Major versions**: Quarterly with proper planning
+
+## Monitoring & Observability
+
+### Backend Monitoring
+- Spring Boot Actuator for health checks
+- Application metrics via Micrometer
+- Logging with SLF4J + Logback
+
+### Frontend Monitoring
+- Error boundaries for React error handling
+- Performance monitoring with React DevTools
+- Bundle analysis with Vite's built-in tools
+
+This tech stack provides a modern, scalable foundation for the teamer project with proper separation of concerns and industry best practices.

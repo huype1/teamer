@@ -1,0 +1,499 @@
+# Spring Boot Controller Conventions
+
+## Automatic Application
+
+This rule automatically applies when:
+- Creating new controller classes in `backend/src/main/java/**/controller/`
+- Editing existing Spring Boot controllers
+- Generating controller methods
+- Refactoring controller code
+
+## Class-Level Annotations
+
+### Required Annotations Pattern
+```java
+@RestController
+@RequestMapping("/{resource}")
+@RequiredArgsConstructor
+@FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
+@Slf4j
+public class {Resource}Controller {
+```
+
+### Annotation Purpose
+- `@RestController`: Marks as REST controller with automatic JSON serialization
+- `@RequestMapping("/{resource}")`: Base path for all endpoints in this controller
+- `@RequiredArgsConstructor`: Lombok annotation for constructor injection
+- `@FieldDefaults`: Makes all fields private and final
+- `@Slf4j`: Lombok logging annotation
+
+## Dependency Injection
+
+### Field Declaration Pattern
+```java
+// Services
+{Resource}Service {resource}Service;
+UserService userService;
+
+// Mappers
+{Resource}Mapper {resource}Mapper;
+UserMapper userMapper;
+
+// Other Services
+InvitationService invitationService;
+TeamService teamService;
+```
+
+### Guidelines
+- Use constructor injection via `@RequiredArgsConstructor`
+- Make all fields `private final`
+- Group services, mappers, and utilities logically
+- Use descriptive field names matching service class names
+
+## Method Structure and Patterns
+
+### Standard Method Template
+```java
+@GetMapping("/{id}")
+public ApiResponse<{ResponseType}> get{Resource}ById(
+        @PathVariable("{id}") UUID {id}
+) {
+    UUID userId = JwtUtils.getSubjectFromJwt();
+    log.info("Fetching {resource}: {} for user: {}", {id}, userId);
+
+    // Authorization check
+    if (!{resource}Service.isUser{Resource}Member({id}, userId)) {
+        throw new AppException(ErrorCode.UNAUTHORIZED);
+    }
+
+    // Business logic
+    {Entity} {entity} = {resource}Service.get{Resource}ById({id});
+    {ResponseType} response = {resource}Mapper.toResponse({entity});
+
+    // Response
+    return ApiResponse.<{ResponseType}>builder()
+            .message("{Resource} fetched successfully")
+            .result(response)
+            .build();
+}
+```
+
+### Method Naming Conventions
+- `get{Resource}s()` - List operations
+- `get{Resource}ById()` - Single resource retrieval
+- `create{Resource}()` - Creation operations
+- `update{Resource}()` - Update operations
+- `delete{Resource}()` - Deletion operations
+- `get{Resource}sBy{RelatedResource}()` - Related resource queries
+
+## Request Parameter Handling
+
+### Path Variables Pattern
+```java
+@PathVariable("projectId") UUID projectId
+@PathVariable("userId") UUID userId
+@PathVariable("sprintId") UUID sprintId
+```
+
+### Query Parameters Pattern
+```java
+@RequestParam(required = false) String keyword,
+@RequestParam(required = false, defaultValue = "false") boolean includePublic,
+@RequestParam(required = false) String status,
+@RequestParam(required = false) String priority
+```
+
+### Request Body Pattern
+```java
+@RequestBody {Resource}CreationRequest request
+@RequestBody {Resource}UpdateRequest request
+@RequestBody InvitationRequest request
+```
+
+## HTTP Method Patterns
+
+### GET Operations Pattern
+```java
+@GetMapping
+public ApiResponse<List<{ResponseType}>> get{Resource}s(
+        @RequestParam(required = false) String keyword,
+        @RequestParam(required = false, defaultValue = "false") boolean includePublic
+) {
+    UUID userId = JwtUtils.getSubjectFromJwt();
+    log.info("Fetching {resources} for user: {}", userId);
+
+    List<{Entity}> {entities} = {resource}Service.get{Resource}s(userId, keyword, includePublic);
+    List<{ResponseType}> responses = {entities}.stream()
+            .map({resource}Mapper::toResponse)
+            .collect(Collectors.toList());
+
+    return ApiResponse.<List<{ResponseType}>>builder()
+            .message("{Resources} fetched successfully")
+            .result(responses)
+            .build();
+}
+
+@GetMapping("/{id}")
+public ApiResponse<{ResponseType}> get{Resource}ById(
+        @PathVariable("{id}") UUID {id}
+) {
+    UUID userId = JwtUtils.getSubjectFromJwt();
+    log.info("Fetching {resource}: {} for user: {}", {id}, userId);
+
+    if (!{resource}Service.isUser{Resource}Member({id}, userId)) {
+        throw new AppException(ErrorCode.UNAUTHORIZED);
+    }
+
+    {Entity} {entity} = {resource}Service.get{Resource}ById({id});
+    {ResponseType} response = {resource}Mapper.toResponse({entity});
+
+    return ApiResponse.<{ResponseType}>builder()
+            .message("{Resource} fetched successfully")
+            .result(response)
+            .build();
+}
+```
+
+### POST Operations Pattern
+```java
+@PostMapping
+public ApiResponse<{ResponseType}> create{Resource}(
+        @RequestBody @Valid {Resource}CreationRequest request
+) {
+    UUID userId = JwtUtils.getSubjectFromJwt();
+    log.info("Creating {resource} for user: {}", userId);
+
+    {Entity} {entity} = {resource}Service.create{Resource}(request, userId);
+    {ResponseType} response = {resource}Mapper.toResponse({entity});
+
+    return ApiResponse.<{ResponseType}>builder()
+            .message("{Resource} created successfully")
+            .result(response)
+            .build();
+}
+```
+
+### PUT Operations Pattern
+```java
+@PutMapping("/{id}")
+public ApiResponse<{ResponseType}> update{Resource}(
+        @PathVariable("{id}") UUID {id},
+        @RequestBody @Valid {Resource}UpdateRequest request
+) {
+    UUID userId = JwtUtils.getSubjectFromJwt();
+    log.info("Updating {resource}: {} for user: {}", {id}, userId);
+
+    if (!{resource}Service.isUser{Resource}Member({id}, userId)) {
+        throw new AppException(ErrorCode.UNAUTHORIZED);
+    }
+
+    {Entity} {entity} = {resource}Service.update{Resource}({id}, request);
+    {ResponseType} response = {resource}Mapper.toResponse({entity});
+
+    return ApiResponse.<{ResponseType}>builder()
+            .message("{Resource} updated successfully")
+            .result(response)
+            .build();
+}
+```
+
+### DELETE Operations Pattern
+```java
+@DeleteMapping("/{id}")
+public ApiResponse<Void> delete{Resource}(
+        @PathVariable("{id}") UUID {id}
+) {
+    UUID userId = JwtUtils.getSubjectFromJwt();
+    log.info("Deleting {resource}: {} for user: {}", {id}, userId);
+
+    if (!{resource}Service.isUser{Resource}Member({id}, userId)) {
+        throw new AppException(ErrorCode.UNAUTHORIZED);
+    }
+
+    {resource}Service.delete{Resource}({id});
+
+    return ApiResponse.<Void>builder()
+            .message("{Resource} deleted successfully")
+            .build();
+}
+```
+
+## Authorization Patterns
+
+### User Authentication Pattern
+```java
+UUID userId = JwtUtils.getSubjectFromJwt();
+log.info("Operation for user: {}", userId);
+```
+
+### Authorization Check Pattern
+```java
+if (!{resource}Service.isUser{Resource}Member({id}, userId)) {
+    throw new AppException(ErrorCode.UNAUTHORIZED);
+}
+```
+
+### Role-Based Authorization Pattern
+```java
+if (!{resource}Service.hasUserRole({id}, userId, "ADMIN")) {
+    throw new AppException(ErrorCode.FORBIDDEN);
+}
+```
+
+## Response Handling Patterns
+
+### Success Response Pattern
+```java
+return ApiResponse.<{ResponseType}>builder()
+        .message("{Resource} operation completed successfully")
+        .result(response)
+        .build();
+```
+
+### List Response Pattern
+```java
+List<{ResponseType}> responses = {entities}.stream()
+        .map({resource}Mapper::toResponse)
+        .collect(Collectors.toList());
+
+return ApiResponse.<List<{ResponseType}>>builder()
+        .message("{Resources} fetched successfully")
+        .result(responses)
+        .build();
+```
+
+### Void Response Pattern
+```java
+return ApiResponse.<Void>builder()
+        .message("{Resource} deleted successfully")
+        .build();
+```
+
+## Error Handling Patterns
+
+### Exception Handling Pattern
+```java
+try {
+    // Business logic
+} catch (AppException e) {
+    throw e;
+} catch (Exception e) {
+    log.error("Unexpected error: ", e);
+    throw new AppException(ErrorCode.INTERNAL_SERVER_ERROR);
+}
+```
+
+### Validation Error Pattern
+```java
+@PostMapping
+public ApiResponse<{ResponseType}> create{Resource}(
+        @RequestBody @Valid {Resource}CreationRequest request
+) {
+    // Method implementation
+}
+```
+
+## Logging Patterns
+
+### Method Entry Logging
+```java
+log.info("Creating {resource} for user: {}", userId);
+log.info("Fetching {resource}: {} for user: {}", {id}, userId);
+log.info("Updating {resource}: {} for user: {}", {id}, userId);
+log.info("Deleting {resource}: {} for user: {}", {id}, userId);
+```
+
+### Error Logging
+```java
+log.error("Error creating {resource}: ", e);
+log.error("Error fetching {resource}: ", e);
+log.error("Unexpected error: ", e);
+```
+
+## Automatic Code Generation Patterns
+
+### Controller Class Template
+```java
+// Pattern: ${Resource}Controller class
+@RestController
+@RequestMapping("/${resource}")
+@RequiredArgsConstructor
+@FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
+@Slf4j
+public class ${Resource}Controller {
+
+    ${Resource}Service ${resource}Service;
+    ${Resource}Mapper ${resource}Mapper;
+    UserService userService;
+
+    @GetMapping
+    public ApiResponse<List<${Resource}Response>> get${Resources}(
+            @RequestParam(required = false) String keyword
+    ) {
+        UUID userId = JwtUtils.getSubjectFromJwt();
+        log.info("Fetching ${resources} for user: {}", userId);
+
+        List<${Resource}> ${resources} = ${resource}Service.get${Resources}(userId, keyword);
+        List<${Resource}Response> responses = ${resources}.stream()
+                .map(${resource}Mapper::toResponse)
+                .collect(Collectors.toList());
+
+        return ApiResponse.<List<${Resource}Response>>builder()
+                .message("${Resources} fetched successfully")
+                .result(responses)
+                .build();
+    }
+
+    @GetMapping("/{id}")
+    public ApiResponse<${Resource}Response> get${Resource}ById(
+            @PathVariable("id") UUID id
+    ) {
+        UUID userId = JwtUtils.getSubjectFromJwt();
+        log.info("Fetching ${resource}: {} for user: {}", id, userId);
+
+        if (!${resource}Service.isUser${Resource}Member(id, userId)) {
+            throw new AppException(ErrorCode.UNAUTHORIZED);
+        }
+
+        ${Resource} ${resource} = ${resource}Service.get${Resource}ById(id);
+        ${Resource}Response response = ${resource}Mapper.toResponse(${resource});
+
+        return ApiResponse.<${Resource}Response>builder()
+                .message("${Resource} fetched successfully")
+                .result(response)
+                .build();
+    }
+
+    @PostMapping
+    public ApiResponse<${Resource}Response> create${Resource}(
+            @RequestBody @Valid ${Resource}CreationRequest request
+    ) {
+        UUID userId = JwtUtils.getSubjectFromJwt();
+        log.info("Creating ${resource} for user: {}", userId);
+
+        ${Resource} ${resource} = ${resource}Service.create${Resource}(request, userId);
+        ${Resource}Response response = ${resource}Mapper.toResponse(${resource});
+
+        return ApiResponse.<${Resource}Response>builder()
+                .message("${Resource} created successfully")
+                .result(response)
+                .build();
+    }
+
+    @PutMapping("/{id}")
+    public ApiResponse<${Resource}Response> update${Resource}(
+            @PathVariable("id") UUID id,
+            @RequestBody @Valid ${Resource}UpdateRequest request
+    ) {
+        UUID userId = JwtUtils.getSubjectFromJwt();
+        log.info("Updating ${resource}: {} for user: {}", id, userId);
+
+        if (!${resource}Service.isUser${Resource}Member(id, userId)) {
+            throw new AppException(ErrorCode.UNAUTHORIZED);
+        }
+
+        ${Resource} ${resource} = ${resource}Service.update${Resource}(id, request);
+        ${Resource}Response response = ${resource}Mapper.toResponse(${resource});
+
+        return ApiResponse.<${Resource}Response>builder()
+                .message("${Resource} updated successfully")
+                .result(response)
+                .build();
+    }
+
+    @DeleteMapping("/{id}")
+    public ApiResponse<Void> delete${Resource}(
+            @PathVariable("id") UUID id
+    ) {
+        UUID userId = JwtUtils.getSubjectFromJwt();
+        log.info("Deleting ${resource}: {} for user: {}", id, userId);
+
+        if (!${resource}Service.isUser${Resource}Member(id, userId)) {
+            throw new AppException(ErrorCode.UNAUTHORIZED);
+        }
+
+        ${resource}Service.delete${Resource}(id);
+
+        return ApiResponse.<Void>builder()
+                .message("${Resource} deleted successfully")
+                .build();
+    }
+}
+```
+
+## Common Patterns to Avoid
+
+### ❌ Don't do this:
+```java
+// Don't forget authorization checks
+@GetMapping("/{id}")
+public ApiResponse<ResponseType> getResourceById(@PathVariable("id") UUID id) {
+    // Missing authorization check
+    return service.getById(id);
+}
+
+// Don't forget logging
+public ApiResponse<ResponseType> createResource(@RequestBody Request request) {
+    // Missing log statements
+    return service.create(request);
+}
+
+// Don't forget validation
+@PostMapping
+public ApiResponse<ResponseType> createResource(@RequestBody Request request) {
+    // Missing @Valid annotation
+    return service.create(request);
+}
+
+// Don't use inconsistent naming
+@GetMapping("/{id}")
+public ApiResponse<ResponseType> fetchResourceById(@PathVariable("id") UUID id) {
+    // Should be getResourceById
+}
+```
+
+### ✅ Do this:
+```java
+// Include authorization checks
+@GetMapping("/{id}")
+public ApiResponse<ResponseType> getResourceById(@PathVariable("id") UUID id) {
+    UUID userId = JwtUtils.getSubjectFromJwt();
+    log.info("Fetching resource: {} for user: {}", id, userId);
+    
+    if (!service.isUserResourceMember(id, userId)) {
+        throw new AppException(ErrorCode.UNAUTHORIZED);
+    }
+    
+    return service.getById(id);
+}
+
+// Include proper logging
+public ApiResponse<ResponseType> createResource(@RequestBody @Valid Request request) {
+    UUID userId = JwtUtils.getSubjectFromJwt();
+    log.info("Creating resource for user: {}", userId);
+    
+    return service.create(request);
+}
+
+// Use consistent naming
+@GetMapping("/{id}")
+public ApiResponse<ResponseType> getResourceById(@PathVariable("id") UUID id) {
+    // Consistent naming convention
+}
+```
+
+## Automatic Refactoring Patterns
+
+When refactoring existing controller code, automatically:
+
+1. **Add missing authorization checks** for protected endpoints
+2. **Add proper logging** for method entry and errors
+3. **Add validation annotations** (@Valid) for request bodies
+4. **Use consistent naming** for methods and parameters
+5. **Add proper error handling** with try-catch blocks
+6. **Use ApiResponse wrapper** for all responses
+7. **Add proper documentation** with @ApiOperation annotations
+8. **Use consistent parameter naming** for path variables
+
+alwaysApply: false
+---

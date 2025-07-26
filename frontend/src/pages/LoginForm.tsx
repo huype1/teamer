@@ -138,7 +138,7 @@ export function LoginForm({
 
               <div className="text-center text-sm">
                 Chưa có tài khoản?{" "}
-                <a href="/register" className="underline underline-offset-4">
+                <a href="/register" className="text-primary hover:underline">
                   Đăng ký
                 </a>
               </div>

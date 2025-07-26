@@ -21,6 +21,7 @@ const mapIssue = (issue: unknown): Issue => {
   return {
     ...i,
     issueType: (i.issueType as string) || "TASK",
+    sprintId: i.sprintId ? String(i.sprintId) : undefined,
     reporter: i.reporterId
       ? {
           id: i.reporterId as string,
@@ -158,6 +159,7 @@ const ProjectReportsPage: React.FC = () => {
   const fetchIssues = async () => {
     try {
       const response = await issueService.getIssuesByProjectId(projectId!);
+      console.log(response);
       setIssues(response.result.map(mapIssue));
     } catch {
       toastError("Không thể tải danh sách issues!");

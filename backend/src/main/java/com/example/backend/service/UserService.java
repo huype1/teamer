@@ -126,31 +126,7 @@ public class UserService {
         return response;
     }
     
-    private User getUserWithMemberships(String email) {
-        long startTime = System.currentTimeMillis();
-        
-        // Fetch user cơ bản
-        User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
-        log.info("Fetch user took: {}ms", System.currentTimeMillis() - startTime);
-        
-        long teamStart = System.currentTimeMillis();
-        // Fetch team memberships tối ưu
-        var teamMemberships = teamMemberRepository.findByUserIdWithTeam(user.getId());
-        log.info("Fetch team memberships took: {}ms", System.currentTimeMillis() - teamStart);
-        
-        long projectStart = System.currentTimeMillis();
-        // Fetch project members tối ưu  
-        var projectMembers = projectMemberRepository.findByUserIdWithProject(user.getId());
-        log.info("Fetch project members took: {}ms", System.currentTimeMillis() - projectStart);
-        
-        user.setTeamMemberships(teamMemberships);
-        user.setProjectMembers(projectMembers);
-        
-        log.info("Total getUserWithMemberships took: {}ms", System.currentTimeMillis() - startTime);
-        return user;
-    }
-    
+
     private User getUserWithMemberships(UUID userId) {
         // Fetch user cơ bản
         User user = userRepository.findById(userId)

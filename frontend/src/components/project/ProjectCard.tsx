@@ -4,13 +4,25 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Separator } from "@/components/ui/separator";
+import { useSelector } from "react-redux";
+import type { RootState } from "@/store";
 import type { Project } from "@/types/project";
+import ProjectActions from "./ProjectActions";
+import { getCurrentUserRole } from "@/utils/projectHelpers";
 
 interface ProjectCardProps {
   project: Project;
+  onEdit?: (project: Project) => void;
+  onDelete?: (projectId: string) => void;
+  onManageMembers?: (project: Project) => void;
 }
 
-const ProjectCard: React.FC<ProjectCardProps> = ({ project }) => {
+const ProjectCard: React.FC<ProjectCardProps> = ({ project, onEdit, onDelete, onManageMembers }) => {
+  const { user } = useSelector((state: RootState) => state.auth);
+  
+  const canEdit = user && getCurrentUserRole(user, project.id, project.teamId) === "ADMIN";
+  const canDelete = user && getCurrentUserRole(user, project.id, project.teamId) === "ADMIN";
+  const canManageMembers = user && getCurrentUserRole(user, project.id, project.teamId) === "ADMIN";
   const getInitials = (name: string) => {
     return name
       .split(' ')
@@ -26,6 +38,17 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project }) => {
 
   return (
     <Card className="hover:shadow-lg transition-shadow group cursor-pointer relative h-full overflow-hidden">
+      <div className="absolute top-2 right-2 z-10">
+        <ProjectActions
+          project={project}
+          onEdit={onEdit}
+          onDelete={onDelete}
+          onManageMembers={onManageMembers}
+          canEdit={canEdit}
+          canDelete={canDelete}
+          canManageMembers={canManageMembers}
+        />
+      </div>
       <Link to={`/projects/${project.id}`} className="block h-full">
         <CardHeader className="pb-3">
           <div className="flex items-start gap-2">

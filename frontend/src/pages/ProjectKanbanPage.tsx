@@ -27,6 +27,7 @@ const mapIssue = (issue: unknown): Issue => {
   return {
     ...i,
     issueType: (i.issueType as string) || "TASK",
+    sprintId: i.sprintId ? String(i.sprintId) : undefined,
     reporter: i.reporterId
       ? {
           id: i.reporterId as string,

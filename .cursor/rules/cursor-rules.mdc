@@ -1,0 +1,214 @@
+# Cursor Rules Location and Structure
+
+How to add new cursor rules to the project with intelligent automatic application.
+
+## Rule File Structure
+
+### Required Header Format
+```yaml
+---
+description: Short description of the rule's purpose
+globs: 
+  - "frontend/src/**/*.ts"
+  - "frontend/src/**/*.tsx"
+  - "backend/src/**/*.java"
+alwaysApply: true
+---
+```
+
+### Glob Pattern Guidelines
+Use specific glob patterns to target relevant files:
+
+- **Frontend TypeScript**: `frontend/src/**/*.ts`, `frontend/src/**/*.tsx`
+- **Backend Java**: `backend/src/**/*.java`
+- **Service files**: `frontend/src/service/**/*.ts`
+- **Components**: `frontend/src/components/**/*.tsx`
+- **Controllers**: `backend/src/main/java/**/controller/**/*.java`
+- **Services**: `backend/src/main/java/**/service/**/*.java`
+- **Entities**: `backend/src/main/java/**/entity/**/*.java`
+
+## Rule Categories
+
+### 1. File-Specific Rules
+Rules that apply to specific file types or locations:
+
+```yaml
+---
+description: React component patterns
+globs: 
+  - "frontend/src/components/**/*.tsx"
+  - "frontend/src/pages/**/*.tsx"
+alwaysApply: true
+---
+```
+
+### 2. Language-Specific Rules
+Rules that apply to specific programming languages:
+
+```yaml
+---
+description: TypeScript conventions
+globs: 
+  - "frontend/src/**/*.ts"
+  - "frontend/src/**/*.tsx"
+alwaysApply: true
+---
+```
+
+### 3. Architecture-Specific Rules
+Rules that apply to specific architectural layers:
+
+```yaml
+---
+description: Service layer patterns
+globs: 
+  - "frontend/src/service/**/*.ts"
+  - "backend/src/main/java/**/service/**/*.java"
+alwaysApply: true
+---
+```
+
+## Rule Content Structure
+
+### 1. Import Organization
+```typescript
+// 1. React and routing imports
+import React, { useState, useEffect } from "react";
+import { useParams } from "react-router-dom";
+
+// 2. UI components (shadcn/ui)
+import { Button } from "@/components/ui/button";
+
+// 3. Custom components
+import { ProjectHeader } from "@/components/project";
+
+// 4. Services
+import projectService from "@/service/projectService";
+
+// 5. Utilities and types
+import type { Project } from "@/types/project";
+```
+
+### 2. Code Examples
+Always include both good and bad examples:
+
+```typescript
+// ✅ Good example
+export const getProjects = async () => {
+  const res = await axios.get(baseUrl, addReqToken(localStorage.getItem("token")));
+  return res.data;
+};
+
+// ❌ Bad example
+export const fetchProjects = async () => {
+  const token = localStorage.getItem("token");
+  const headers = { Authorization: `Bearer ${token}` };
+  const res = await axios.get(baseUrl, { headers });
+  return res.data;
+};
+```
+
+### 3. Pattern Recognition
+Include patterns that Cursor can automatically apply:
+
+```typescript
+// Pattern: Service function with authentication
+export const ${functionName} = async (${parameters}) => {
+  const res = await axios.${method}(${url}, ${body}, addReqToken(localStorage.getItem("token")));
+  return res.data;
+};
+```
+
+## Automatic Application Triggers
+
+### File Creation
+When creating new files, Cursor should automatically apply relevant rules:
+
+- New `.tsx` file in `components/` → Apply React component patterns
+- New `.ts` file in `service/` → Apply service file conventions
+- New `.java` file in `controller/` → Apply Spring controller patterns
+
+### Code Generation
+When generating code, Cursor should follow established patterns:
+
+- Service functions → Use `addReqToken` pattern
+- React components → Follow import organization
+- Spring controllers → Use standard annotations and structure
+
+### Refactoring
+When refactoring existing code, Cursor should:
+
+- Maintain consistent patterns
+- Update imports to follow organization rules
+- Apply naming conventions
+- Use established error handling patterns
+
+## Rule Maintenance
+
+### Adding New Rules
+1. Create new `.mdc` file in `.cursor/rules/`
+2. Use descriptive filename in kebab-case
+3. Include proper glob patterns
+4. Set `alwaysApply: true` for automatic application
+5. Include comprehensive examples
+
+### Updating Existing Rules
+1. Modify glob patterns to target correct files
+2. Update examples to reflect current codebase
+3. Add new patterns as they emerge
+4. Remove deprecated patterns
+
+### Rule Validation
+- Test rules on actual codebase files
+- Ensure glob patterns match intended files
+- Verify examples are current and accurate
+- Check that `alwaysApply: true` is appropriate
+
+## Directory Structure
+
+```
+PROJECT_ROOT/
+├── .cursor/
+│   └── rules/
+│       ├── cursor-rules.mdc          # This file - rule management
+│       ├── react-component-patterns.mdc
+│       ├── service-files.mdc
+│       ├── spring-controller-conventions.mdc
+│       ├── spring-service-rules.mdc
+│       ├── frontend-rules.mdc
+│       ├── project-structure.mdc
+│       ├── tech-stack.mdc
+│       └── self-improvement.mdc
+└── ...
+```
+
+## Best Practices
+
+### Rule Specificity
+- Use specific glob patterns to avoid over-application
+- Target files that actually need the rules
+- Avoid overly broad patterns like `**/*`
+
+### Rule Completeness
+- Include all necessary imports and dependencies
+- Provide complete working examples
+- Show both good and bad patterns
+- Include context about when to apply rules
+
+### Rule Consistency
+- Follow established naming conventions
+- Use consistent formatting across rules
+- Maintain similar structure for related rules
+- Cross-reference related rules when appropriate
+
+### Rule Testing
+- Test rules on actual project files
+- Verify automatic application works correctly
+- Check that examples compile and run
+- Ensure rules don't conflict with each other
+
+
+  // Implementation not following guidelines
+}
+```
+

@@ -1,0 +1,338 @@
+# Service Files Conventions
+
+Service files handle API communication between the frontend and backend. Follow these conventions for consistency and maintainability.
+
+## Automatic Application
+
+This rule automatically applies when:
+- Creating new files in `frontend/src/service/`
+- Editing existing service files
+- Generating API service functions
+- Refactoring service code
+
+## File Structure
+
+### Required Imports Pattern
+```typescript
+// 1. HTTP client
+import axios from "axios";
+
+// 2. Authentication utility
+import addReqToken from "@/utils/addReqToken";
+
+// 3. TypeScript types (use absolute imports)
+import type { ProjectCreationRequest, ProjectUpdateRequest } from "@/types/project";
+import type { TeamCreationRequest, TeamUpdateRequest } from "@/types/team";
+```
+
+### Base URL Configuration
+```typescript
+// Define base URL at the top of the file
+const baseUrl = "http://localhost:8080/api/projects";
+```
+
+## Function Naming and Structure
+
+### CRUD Operations Pattern
+Use consistent naming patterns for CRUD operations:
+
+```typescript
+// GET operations - use 'get' prefix
+export const getProjects = async () => {
+  const res = await axios.get(baseUrl, addReqToken(localStorage.getItem("token")));
+  return res.data;
+};
+
+export const getProjectById = async (id: string) => {
+  const res = await axios.get(`${baseUrl}/${id}`, addReqToken(localStorage.getItem("token")));
+  return res.data;
+};
+
+// POST operations - use 'create' prefix
+export const createProject = async (body: ProjectCreationRequest) => {
+  const res = await axios.post(baseUrl, body, addReqToken(localStorage.getItem("token")));
+  return res.data;
+};
+
+// PUT operations - use 'update' prefix
+export const updateProject = async (id: string, body: ProjectUpdateRequest) => {
+  const res = await axios.put(`${baseUrl}/${id}`, body, addReqToken(localStorage.getItem("token")));
+  return res.data;
+};
+
+// DELETE operations - use 'delete' prefix
+export const deleteProject = async (id: string) => {
+  const res = await axios.delete(`${baseUrl}/${id}`, addReqToken(localStorage.getItem("token")));
+  return res.data;
+};
+```
+
+### Specialized Operations Pattern
+For operations that don't fit CRUD patterns:
+
+```typescript
+// Member management - use descriptive names
+export const inviteToProject = async (body: { email: string; projectId: string; role: string }) => {
+  const res = await axios.post(`${baseUrl}/invite`, body, addReqToken(localStorage.getItem("token")));
+  return res.data;
+};
+
+// Query parameters - use 'getBy' pattern
+export const getProjectsByUserId = async (userId: string) => {
+  const res = await axios.get(`${baseUrl}/user/${userId}`, addReqToken(localStorage.getItem("token")));
+  return res.data;
+};
+
+// URL parameters with query strings
+export const updateMemberRole = async (projectId: string, userId: string, newRole: string) => {
+  const res = await axios.put(`${baseUrl}/${projectId}/members/${userId}/role?newRole=${newRole}`, {}, addReqToken(localStorage.getItem("token")));
+  return res.data;
+};
+```
+
+## Authentication Pattern
+
+### Standard Token Handling
+Always use `addReqToken` utility for authenticated requests:
+
+```typescript
+// ✅ Correct - Use addReqToken utility
+const res = await axios.get(baseUrl, addReqToken(localStorage.getItem("token")));
+
+// ❌ Incorrect - Don't manually construct headers
+const res = await axios.get(baseUrl, { headers: { Authorization: `Bearer ${token}` } });
+```
+
+### Auth Service Exception
+The auth service is the only exception - it doesn't use `addReqToken` for login/register operations:
+
+```typescript
+// Auth service doesn't use addReqToken for login/register
+const login = async (body: LoginRequest) => {
+  const response = await axios.post(`${baseUrl}/login`, body);
+  return response.data;
+};
+```
+
+## Response Handling
+
+### Standard Pattern
+Always return `res.data` from axios responses:
+
+```typescript
+export const getProjects = async () => {
+  const res = await axios.get(baseUrl, addReqToken(localStorage.getItem("token")));
+  return res.data; // Always return res.data
+};
+```
+
+### Error Handling Pattern
+For services that need custom error handling (like auth service):
+
+```typescript
+const logout = async () => {
+    const token = localStorage.getItem("token");
+    
+    try {
+        const response = await axios.post(`${baseUrl}/logout`, {token});
+        return response.data;
+    } catch (error: unknown) {
+        const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+        console.warn("Backend logout failed, but cleaning up frontend state:", errorMessage);
+        return { success: true, message: "Frontend logout completed" };
+    }
+}
+```
+
+## Default Export Pattern
+
+Always include a default export with all exported functions:
+
+```typescript
+export default { 
+  getProjects, 
+  getProjectById, 
+  createProject, 
+  updateProject, 
+  deleteProject,
+  inviteToProject,
+  getProjectMembers,
+  removeProjectMember,
+  updateMemberRole,
+  acceptProjectInvitation,
+  getProjectsByTeam,
+  getProjectUsers
+}; 
+```
+
+## TypeScript Conventions
+
+### Type Imports Pattern
+Import types from the `@/types` directory using absolute imports:
+
+```typescript
+import type { ProjectCreationRequest, ProjectUpdateRequest } from "@/types/project";
+import type { TeamCreationRequest, TeamUpdateRequest } from "@/types/team";
+```
+
+### Function Parameters Pattern
+Use descriptive parameter names and proper typing:
+
+```typescript
+// ✅ Good - Clear parameter names and types
+export const updateMemberRole = async (projectId: string, userId: string, newRole: string) => {
+  // Implementation
+};
+
+// ✅ Good - Object parameter for complex data
+export const inviteToProject = async (body: { email: string; projectId: string; role: string }) => {
+  // Implementation
+};
+```
+
+## URL Construction Patterns
+
+### RESTful Patterns
+Follow RESTful URL patterns:
+
+```typescript
+// Resource endpoints
+`${baseUrl}`                    // GET, POST
+`${baseUrl}/${id}`              // GET, PUT, DELETE
+`${baseUrl}/${id}/members`      // Nested resources
+`${baseUrl}/${id}/members/${userId}` // Nested resource with ID
+```
+
+### Query Parameters Pattern
+Use query parameters for filtering and options:
+
+```typescript
+// URL query parameters
+`${baseUrl}?name=${name}`
+`${baseUrl}/${id}/members/${userId}/role?newRole=${newRole}`
+```
+
+## Comments and Organization
+
+### Section Comments Pattern
+Use comments to organize related functions:
+
+```typescript
+// Member management methods
+export const inviteToProject = async (body: { email: string; projectId: string; role: string }) => {
+  // Implementation
+};
+```
+
+### Function Grouping Pattern
+Group related functions together:
+1. CRUD operations first
+2. Specialized operations second
+3. Member/relationship management third
+4. Utility functions last
+
+## Automatic Code Generation Patterns
+
+### Service Function Template
+When generating new service functions, use this pattern:
+
+```typescript
+// Pattern: ${method} ${resource} with authentication
+export const ${method}${Resource} = async (${parameters}) => {
+  const res = await axios.${httpMethod}(${url}, ${body}, addReqToken(localStorage.getItem("token")));
+  return res.data;
+};
+```
+
+### CRUD Function Templates
+```typescript
+// GET all
+export const get${Resources} = async () => {
+  const res = await axios.get(baseUrl, addReqToken(localStorage.getItem("token")));
+  return res.data;
+};
+
+// GET by ID
+export const get${Resource}ById = async (id: string) => {
+  const res = await axios.get(`${baseUrl}/${id}`, addReqToken(localStorage.getItem("token")));
+  return res.data;
+};
+
+// CREATE
+export const create${Resource} = async (body: ${Resource}CreationRequest) => {
+  const res = await axios.post(baseUrl, body, addReqToken(localStorage.getItem("token")));
+  return res.data;
+};
+
+// UPDATE
+export const update${Resource} = async (id: string, body: ${Resource}UpdateRequest) => {
+  const res = await axios.put(`${baseUrl}/${id}`, body, addReqToken(localStorage.getItem("token")));
+  return res.data;
+};
+
+// DELETE
+export const delete${Resource} = async (id: string) => {
+  const res = await axios.delete(`${baseUrl}/${id}`, addReqToken(localStorage.getItem("token")));
+  return res.data;
+};
+```
+
+## Common Patterns to Avoid
+
+### ❌ Don't do this:
+```typescript
+// Don't manually construct auth headers
+const headers = { Authorization: `Bearer ${token}` };
+
+// Don't use relative imports for types
+import { ProjectType } from "../types/project";
+
+// Don't skip the default export
+export { getProjects, createProject }; // Missing default export
+
+// Don't use inconsistent naming
+export const fetchProjects = async () => { // Should be getProjects
+
+// Don't forget addReqToken
+const res = await axios.get(baseUrl); // Missing authentication
+```
+
+### ✅ Do this:
+```typescript
+// Use addReqToken utility
+const res = await axios.get(baseUrl, addReqToken(localStorage.getItem("token")));
+
+// Use absolute imports for types
+import type { ProjectCreationRequest } from "@/types/project";
+
+// Include default export
+export default { getProjects, createProject };
+
+// Use consistent naming
+export const getProjects = async () => {
+  const res = await axios.get(baseUrl, addReqToken(localStorage.getItem("token")));
+  return res.data;
+};
+```
+
+## File Naming Convention
+
+Service files should be named in camelCase with "Service" suffix:
+- `projectService.ts`
+- `teamService.ts`
+- `authService.ts`
+- `userService.ts`
+
+## Automatic Refactoring Patterns
+
+When refactoring existing service code, automatically:
+
+1. **Replace manual auth headers** with `addReqToken`
+2. **Update import paths** to use absolute imports
+3. **Add missing default exports**
+4. **Standardize function naming** to follow CRUD patterns
+5. **Organize imports** according to the established order
+
+globs: frontend/src/service/**/*.ts
+alwaysApply: true
+---

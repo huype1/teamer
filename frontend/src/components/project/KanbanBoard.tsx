@@ -49,7 +49,7 @@ const STATUS_COLUMNS = [
   },
   { 
     key: "IN_REVIEW", 
-    label: "👀 Chờ review",
+    label: "👀 Đang review",
     gradient: "from-purple-500/20 to-pink-500/20",
     borderColor: "border-purple-500/30",
     iconBg: "bg-purple-500",
@@ -58,7 +58,7 @@ const STATUS_COLUMNS = [
   },
   { 
     key: "DONE", 
-    label: "✨ Hoàn thành",
+    label: "✨ Đã hoàn thành",
     gradient: "from-green-500/20 to-emerald-500/20",
     borderColor: "border-green-500/30",
     iconBg: "bg-green-500",
@@ -246,8 +246,8 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({ issues, onOpenCreateIssue, ca
                   
                   return (
                     <DraggableIssue key={issue.id} issue={issue}>
-                      <Card className="group p-4 cursor-pointer hover:shadow-xl transition-all duration-300 border-0 bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm hover:scale-105 hover:bg-white dark:hover:bg-gray-800">
-                        <div className="flex items-start gap-3 mb-3">
+                      <Card className="group p-3 cursor-pointer hover:shadow-xl transition-all duration-300 border-0 bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm hover:scale-105 hover:bg-white dark:hover:bg-gray-800">
+                        <div className="flex items-start gap-3 mb-2">
                           <Badge className={`bg-gradient-to-r ${typeConfig.gradient} ${typeConfig.textColor} text-xs flex items-center gap-1.5 px-2 py-1 font-semibold shadow-lg`}>
                             <TypeIcon className="h-3 w-3" />
                             {typeConfig.label}
@@ -275,13 +275,13 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({ issues, onOpenCreateIssue, ca
                         
                         <Link 
                           to={`/issues/${issue.id}`}
-                          className="font-bold text-lg mb-2 hover:text-primary transition-colors cursor-pointer group-hover:underline text-gray-800 dark:text-gray-200 line-clamp-2"
+                          className="font-bold text-base mb-2 hover:text-primary transition-colors cursor-pointer group-hover:underline text-gray-800 dark:text-gray-200 line-clamp-2"
                         >
                           {issue.title}
                         </Link>
                         
                         {issue.description && (
-                          <div className="text-sm text-gray-600 dark:text-gray-400 mb-3 line-clamp-3 leading-relaxed">
+                          <div className="text-sm text-gray-600 dark:text-gray-400 mb-2 line-clamp-2 leading-relaxed">
                             {issue.description}
                           </div>
                         )}

@@ -101,6 +101,21 @@ Authorization: Bearer {{authToken}}
 
 ###
 
+### WebSocket APIs
+
+# WebSocket connection endpoint (for testing with WebSocket client)
+# ws://localhost:8080/ws
+
+# Test WebSocket subscription to issue comments
+# Subscribe to: /topic/issue/{issueId}/comments
+
+# Test WebSocket message sending
+# Send to: /app/comment/join
+# Body: {"issueId": "{{issueId}}"}
+
+###
+###
+
 ### Project APIs
 
 POST http://localhost:8080/api/projects

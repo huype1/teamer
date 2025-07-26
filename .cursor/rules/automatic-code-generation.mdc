@@ -1,0 +1,668 @@
+# Automatic Code Generation Patterns
+
+## Overview
+
+This rule provides intelligent code generation patterns that automatically apply when creating new files, generating code, or refactoring existing code.
+
+## Frontend TypeScript Patterns
+
+### 1. Service File Generation
+
+When creating a new service file, automatically generate:
+
+```typescript
+// Pattern: ${Resource}Service
+import axios from "axios";
+import addReqToken from "@/utils/addReqToken";
+import type { ${Resource}CreationRequest, ${Resource}UpdateRequest } from "@/types/${resource}";
+
+const baseUrl = "http://localhost:8080/api/${resources}";
+
+// CRUD operations
+export const get${Resources} = async () => {
+  const res = await axios.get(baseUrl, addReqToken(localStorage.getItem("token")));
+  return res.data;
+};
+
+export const get${Resource}ById = async (id: string) => {
+  const res = await axios.get(`${baseUrl}/${id}`, addReqToken(localStorage.getItem("token")));
+  return res.data;
+};
+
+export const create${Resource} = async (body: ${Resource}CreationRequest) => {
+  const res = await axios.post(baseUrl, body, addReqToken(localStorage.getItem("token")));
+  return res.data;
+};
+
+export const update${Resource} = async (id: string, body: ${Resource}UpdateRequest) => {
+  const res = await axios.put(`${baseUrl}/${id}`, body, addReqToken(localStorage.getItem("token")));
+  return res.data;
+};
+
+export const delete${Resource} = async (id: string) => {
+  const res = await axios.delete(`${baseUrl}/${id}`, addReqToken(localStorage.getItem("token")));
+  return res.data;
+};
+
+export default { 
+  get${Resources}, 
+  get${Resource}ById, 
+  create${Resource}, 
+  update${Resource}, 
+  delete${Resource}
+};
+```
+
+### 2. React Component Generation
+
+When creating a new React component, automatically generate:
+
+```typescript
+// Pattern: ${ComponentName} component
+import React, { useState, useEffect, useCallback } from "react";
+import { useParams, useNavigate } from "react-router-dom";
+
+import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+
+import { ${ComponentName} } from "@/components/${component}";
+
+import ${resource}Service from "@/service/${resource}Service";
+
+import { toastError, toastSuccess } from "@/utils/toast";
+import type { ${Resource} } from "@/types/${resource}";
+
+import { useForm } from "react-hook-form";
+import { Plus, Edit, Trash2 } from "lucide-react";
+
+const ${ComponentName} = () => {
+  const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
+  
+  const [data, setData] = useState<${Resource} | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  
+  const { register, handleSubmit, reset, formState: { errors } } = useForm({
+    defaultValues: {
+      name: "",
+      description: "",
+    },
+  });
+  
+  const fetchData = useCallback(async () => {
+    if (!id) return;
+    
+    try {
+      setLoading(true);
+      const response = await ${resource}Service.get${Resource}ById(id);
+      setData(response.result);
+    } catch (error) {
+      console.error("Error:", error);
+      toastError("Không thể tải dữ liệu!");
+    } finally {
+      setLoading(false);
+    }
+  }, [id]);
+  
+  const handleSubmit = async (formData: any) => {
+    try {
+      setLoading(true);
+      await ${resource}Service.create${Resource}(formData);
+      toastSuccess("Tạo thành công!");
+      reset();
+      setIsDialogOpen(false);
+      fetchData();
+    } catch (error) {
+      console.error("Error:", error);
+      toastError("Có lỗi xảy ra!");
+    } finally {
+      setLoading(false);
+    }
+  };
+  
+  const handleDelete = async (id: string) => {
+    if (window.confirm("Bạn có chắc chắn muốn xóa?")) {
+      try {
+        await ${resource}Service.delete${Resource}(id);
+        toastSuccess("Xóa thành công!");
+        fetchData();
+      } catch (error) {
+        toastError("Không thể xóa!");
+      }
+    }
+  };
+  
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
+  
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center p-8">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
+        <span className="ml-2">Đang tải...</span>
+      </div>
+    );
+  }
+  
+  return (
+    <div className="container mx-auto p-6">
+      <div className="flex items-center justify-between mb-6">
+        <h1 className="text-2xl font-bold">${Resource}</h1>
+        <Button onClick={() => setIsDialogOpen(true)}>
+          <Plus className="h-4 w-4 mr-2" />
+          Tạo ${Resource}
+        </Button>
+      </div>
+      
+      {/* Content */}
+      
+      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Tạo ${Resource} mới</DialogTitle>
+          </DialogHeader>
+          
+          <form onSubmit={handleSubmit(handleSubmit)} className="space-y-4">
+            <div>
+              <Label htmlFor="name">Tên</Label>
+              <Input
+                id="name"
+                {...register("name", { required: "Tên là bắt buộc" })}
+                placeholder="Nhập tên"
+              />
+              {errors.name && (
+                <p className="text-sm text-red-500">{errors.name.message}</p>
+              )}
+            </div>
+            
+            <div>
+              <Label htmlFor="description">Mô tả</Label>
+              <Input
+                id="description"
+                {...register("description")}
+                placeholder="Nhập mô tả"
+              />
+            </div>
+            
+            <DialogFooter>
+              <Button type="submit" disabled={loading}>
+                {loading ? "Đang tạo..." : "Tạo"}
+              </Button>
+              <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)}>
+                Hủy
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+};
+
+export default ${ComponentName};
+```
+
+### 3. Type Definition Generation
+
+When creating new TypeScript types, automatically generate:
+
+```typescript
+// Pattern: ${Resource} types
+export interface ${Resource} {
+  id: string;
+  name: string;
+  description?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ${Resource}CreationRequest {
+  name: string;
+  description?: string;
+}
+
+export interface ${Resource}UpdateRequest {
+  name?: string;
+  description?: string;
+}
+
+export interface ${Resource}Response {
+  message: string;
+  result: ${Resource};
+}
+
+export interface ${Resource}ListResponse {
+  message: string;
+  result: ${Resource}[];
+}
+```
+
+## Backend Java Patterns
+
+### 1. Controller Generation
+
+When creating a new controller, automatically generate:
+
+```java
+// Pattern: ${Resource}Controller
+@RestController
+@RequestMapping("/${resources}")
+@RequiredArgsConstructor
+@FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
+@Slf4j
+public class ${Resource}Controller {
+
+    ${Resource}Service ${resource}Service;
+    ${Resource}Mapper ${resource}Mapper;
+    UserService userService;
+
+    @GetMapping
+    public ApiResponse<List<${Resource}Response>> get${Resources}(
+            @RequestParam(required = false) String keyword
+    ) {
+        UUID userId = JwtUtils.getSubjectFromJwt();
+        log.info("Fetching ${resources} for user: {}", userId);
+
+        List<${Resource}> ${resources} = ${resource}Service.get${Resources}(userId, keyword);
+        List<${Resource}Response> responses = ${resources}.stream()
+                .map(${resource}Mapper::toResponse)
+                .collect(Collectors.toList());
+
+        return ApiResponse.<List<${Resource}Response>>builder()
+                .message("${Resources} fetched successfully")
+                .result(responses)
+                .build();
+    }
+
+    @GetMapping("/{id}")
+    public ApiResponse<${Resource}Response> get${Resource}ById(
+            @PathVariable("id") UUID id
+    ) {
+        UUID userId = JwtUtils.getSubjectFromJwt();
+        log.info("Fetching ${resource}: {} for user: {}", id, userId);
+
+        if (!${resource}Service.isUser${Resource}Member(id, userId)) {
+            throw new AppException(ErrorCode.UNAUTHORIZED);
+        }
+
+        ${Resource} ${resource} = ${resource}Service.get${Resource}ById(id);
+        ${Resource}Response response = ${resource}Mapper.toResponse(${resource});
+
+        return ApiResponse.<${Resource}Response>builder()
+                .message("${Resource} fetched successfully")
+                .result(response)
+                .build();
+    }
+
+    @PostMapping
+    public ApiResponse<${Resource}Response> create${Resource}(
+            @RequestBody @Valid ${Resource}CreationRequest request
+    ) {
+        UUID userId = JwtUtils.getSubjectFromJwt();
+        log.info("Creating ${resource} for user: {}", userId);
+
+        ${Resource} ${resource} = ${resource}Service.create${Resource}(request, userId);
+        ${Resource}Response response = ${resource}Mapper.toResponse(${resource});
+
+        return ApiResponse.<${Resource}Response>builder()
+                .message("${Resource} created successfully")
+                .result(response)
+                .build();
+    }
+
+    @PutMapping("/{id}")
+    public ApiResponse<${Resource}Response> update${Resource}(
+            @PathVariable("id") UUID id,
+            @RequestBody @Valid ${Resource}UpdateRequest request
+    ) {
+        UUID userId = JwtUtils.getSubjectFromJwt();
+        log.info("Updating ${resource}: {} for user: {}", id, userId);
+
+        if (!${resource}Service.isUser${Resource}Member(id, userId)) {
+            throw new AppException(ErrorCode.UNAUTHORIZED);
+        }
+
+        ${Resource} ${resource} = ${resource}Service.update${Resource}(id, request);
+        ${Resource}Response response = ${resource}Mapper.toResponse(${resource});
+
+        return ApiResponse.<${Resource}Response>builder()
+                .message("${Resource} updated successfully")
+                .result(response)
+                .build();
+    }
+
+    @DeleteMapping("/{id}")
+    public ApiResponse<Void> delete${Resource}(
+            @PathVariable("id") UUID id
+    ) {
+        UUID userId = JwtUtils.getSubjectFromJwt();
+        log.info("Deleting ${resource}: {} for user: {}", id, userId);
+
+        if (!${resource}Service.isUser${Resource}Member(id, userId)) {
+            throw new AppException(ErrorCode.UNAUTHORIZED);
+        }
+
+        ${resource}Service.delete${Resource}(id);
+
+        return ApiResponse.<Void>builder()
+                .message("${Resource} deleted successfully")
+                .build();
+    }
+}
+```
+
+### 2. Service Generation
+
+When creating a new service, automatically generate:
+
+```java
+// Pattern: ${Resource}Service
+@Service
+@RequiredArgsConstructor
+@FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
+@Slf4j
+public class ${Resource}Service {
+
+    ${Resource}Repository ${resource}Repository;
+    UserService userService;
+    TeamService teamService;
+
+    public List<${Resource}> get${Resources}(UUID userId, String keyword) {
+        User user = userService.getUserById(userId);
+        if (user == null) {
+            throw new AppException(ErrorCode.USER_NOT_FOUND);
+        }
+
+        if (keyword != null && !keyword.trim().isEmpty()) {
+            return ${resource}Repository.findByNameContainingIgnoreCase(keyword);
+        }
+
+        return ${resource}Repository.findAll();
+    }
+
+    public ${Resource} get${Resource}ById(UUID id) {
+        return ${resource}Repository.findById(id)
+                .orElseThrow(() -> new AppException(ErrorCode.${RESOURCE}_NOT_FOUND));
+    }
+
+    public ${Resource} create${Resource}(${Resource}CreationRequest request, UUID userId) {
+        User user = userService.getUserById(userId);
+        if (user == null) {
+            throw new AppException(ErrorCode.USER_NOT_FOUND);
+        }
+
+        ${Resource} ${resource} = ${Resource}.builder()
+                .name(request.getName())
+                .description(request.getDescription())
+                .createdBy(user)
+                .build();
+
+        return ${resource}Repository.save(${resource});
+    }
+
+    public ${Resource} update${Resource}(UUID id, ${Resource}UpdateRequest request) {
+        ${Resource} ${resource} = get${Resource}ById(id);
+
+        if (request.getName() != null) {
+            ${resource}.setName(request.getName());
+        }
+
+        if (request.getDescription() != null) {
+            ${resource}.setDescription(request.getDescription());
+        }
+
+        return ${resource}Repository.save(${resource});
+    }
+
+    public void delete${Resource}(UUID id) {
+        ${Resource} ${resource} = get${Resource}ById(id);
+        ${resource}Repository.delete(${resource});
+    }
+
+    public boolean isUser${Resource}Member(UUID ${resource}Id, UUID userId) {
+        // Implementation depends on your authorization logic
+        return true; // Placeholder
+    }
+}
+```
+
+### 3. Entity Generation
+
+When creating a new entity, automatically generate:
+
+```java
+// Pattern: ${Resource} entity
+@Entity
+@Table(name = "${resources}")
+@Data
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
+@EqualsAndHashCode(callSuper = true)
+public class ${Resource} extends BaseEntity {
+
+    @Column(name = "name", nullable = false)
+    private String name;
+
+    @Column(name = "description", columnDefinition = "TEXT")
+    private String description;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "created_by", nullable = false)
+    private User createdBy;
+
+    @Column(name = "status", nullable = false)
+    @Enumerated(EnumType.STRING)
+    private ${Resource}Status status = ${Resource}Status.ACTIVE;
+
+    @PrePersist
+    protected void onCreate() {
+        super.onCreate();
+        if (status == null) {
+            status = ${Resource}Status.ACTIVE;
+        }
+    }
+}
+```
+
+### 4. Repository Generation
+
+When creating a new repository, automatically generate:
+
+```java
+// Pattern: ${Resource}Repository
+@Repository
+public interface ${Resource}Repository extends JpaRepository<${Resource}, UUID> {
+
+    List<${Resource}> findByNameContainingIgnoreCase(String name);
+
+    List<${Resource}> findByCreatedBy(User createdBy);
+
+    List<${Resource}> findByStatus(${Resource}Status status);
+
+    @Query("SELECT r FROM ${Resource} r WHERE r.createdBy = :user AND r.status = :status")
+    List<${Resource}> findByUserAndStatus(@Param("user") User user, @Param("status") ${Resource}Status status);
+}
+```
+
+### 5. DTO Generation
+
+When creating new DTOs, automatically generate:
+
+```java
+// Pattern: ${Resource} DTOs
+@Data
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
+public class ${Resource}CreationRequest {
+    
+    @NotBlank(message = "Name is required")
+    @Size(max = 255, message = "Name must not exceed 255 characters")
+    private String name;
+    
+    @Size(max = 1000, message = "Description must not exceed 1000 characters")
+    private String description;
+}
+
+@Data
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
+public class ${Resource}UpdateRequest {
+    
+    @Size(max = 255, message = "Name must not exceed 255 characters")
+    private String name;
+    
+    @Size(max = 1000, message = "Description must not exceed 1000 characters")
+    private String description;
+}
+
+@Data
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
+public class ${Resource}Response {
+    
+    private UUID id;
+    private String name;
+    private String description;
+    private String status;
+    private UserResponse createdBy;
+    private LocalDateTime createdAt;
+    private LocalDateTime updatedAt;
+}
+```
+
+## Automatic Refactoring Patterns
+
+### 1. Import Organization
+
+When refactoring, automatically organize imports:
+
+```typescript
+// Frontend imports order
+// 1. React and routing
+import React, { useState, useEffect, useCallback } from "react";
+import { useParams, useNavigate } from "react-router-dom";
+
+// 2. UI components
+import { Button } from "@/components/ui/button";
+
+// 3. Custom components
+import { ComponentName } from "@/components/component";
+
+// 4. Services
+import serviceName from "@/service/serviceName";
+
+// 5. Utilities and types
+import { toastError, toastSuccess } from "@/utils/toast";
+import type { TypeName } from "@/types/type";
+
+// 6. Third-party libraries
+import { useForm } from "react-hook-form";
+import { Plus } from "lucide-react";
+```
+
+### 2. Error Handling
+
+When refactoring, automatically add error handling:
+
+```typescript
+// Pattern: Add try-catch to async functions
+const handleAction = async () => {
+  try {
+    setLoading(true);
+    await service.performAction();
+    toastSuccess("Thành công!");
+  } catch (error) {
+    console.error("Error:", error);
+    toastError("Có lỗi xảy ra!");
+  } finally {
+    setLoading(false);
+  }
+};
+```
+
+### 3. Loading States
+
+When refactoring, automatically add loading states:
+
+```typescript
+// Pattern: Add loading state
+const [loading, setLoading] = useState(false);
+
+// In async functions
+setLoading(true);
+try {
+  // async operation
+} finally {
+  setLoading(false);
+}
+
+// In JSX
+{loading ? (
+  <div>Loading...</div>
+) : (
+  <div>Content</div>
+)}
+```
+
+## Code Generation Triggers
+
+### 1. File Creation Triggers
+
+- New `.ts` file in `service/` → Generate service file
+- New `.tsx` file in `components/` → Generate React component
+- New `.java` file in `controller/` → Generate controller
+- New `.java` file in `service/` → Generate service
+- New `.java` file in `entity/` → Generate entity
+
+### 2. Code Generation Triggers
+
+- Type "service" → Generate service file template
+- Type "component" → Generate React component template
+- Type "controller" → Generate controller template
+- Type "entity" → Generate entity template
+
+### 3. Refactoring Triggers
+
+- Missing error handling → Add try-catch blocks
+- Missing loading states → Add loading state management
+- Unorganized imports → Reorganize imports
+- Missing validation → Add validation annotations
+- Missing authorization → Add authorization checks
+
+## Best Practices
+
+### 1. Consistency
+- Always use the same patterns across similar files
+- Follow established naming conventions
+- Use consistent error handling patterns
+- Maintain consistent import organization
+
+### 2. Completeness
+- Include all necessary imports and dependencies
+- Add proper error handling for all async operations
+- Include loading states for user feedback
+- Add proper TypeScript types
+
+### 3. Maintainability
+- Use descriptive variable and function names
+- Add proper comments for complex logic
+- Follow single responsibility principle
+- Keep functions focused and concise
+
+### 4. Performance
+- Use `useCallback` for expensive operations
+- Implement proper memoization where needed
+- Avoid unnecessary re-renders
+- Use efficient data fetching patterns
+description:
+globs:
+alwaysApply: false
+---

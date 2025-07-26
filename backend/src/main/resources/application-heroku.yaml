@@ -35,3 +35,11 @@ springdoc:
   api-docs:
     enabled: true
     path: /api-docs
+
+aws:
+  s3:
+    bucket: ${AWS_BUCKET}
+    region: ${AWS_REGION}
+    access-key: ${AWS_ACCESS_KEY}
+    secret-key: ${AWS_SECRET_KEY}
+    prefix: attachments/
