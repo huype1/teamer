@@ -11,7 +11,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import CreateTeamDialog from "@/components/team/CreateTeamDialog";
-
+import { LoadingSpinner } from "@/components/ui/loading-spinner";
 
 
 const teamSchema = z.object({
@@ -76,7 +76,7 @@ const TeamManagementPage: React.FC = () => {
   if (loading && teams.length === 0) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#8B5CF6]"></div>
+        <LoadingSpinner />
       </div>
     );
   }

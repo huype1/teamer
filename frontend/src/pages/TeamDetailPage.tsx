@@ -27,6 +27,7 @@ import { z } from "zod";
 import { useSelector } from "react-redux";
 import type { RootState } from "@/store";
 import { getCurrentUserRole } from "@/utils/projectHelpers";
+import { LoadingSpinner } from "@/components/ui/loading-spinner";
 
 const teamEditSchema = z.object({
   name: z.string().min(1, "Tên nhóm không được để trống"),
@@ -144,7 +145,7 @@ const TeamDetailPage: React.FC = () => {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#8B5CF6]"></div>
+        <LoadingSpinner />
       </div>
     );
   }

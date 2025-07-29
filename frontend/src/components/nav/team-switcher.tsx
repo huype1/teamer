@@ -22,6 +22,7 @@ import {
   SidebarMenuSubButton,
   SidebarMenuSubItem,
 } from "@/components/ui/sidebar"
+import { LoadingSpinner } from "@/components/ui/loading-spinner"
 
 export function TeamSwitcher() {
   const navigate = useNavigate()
@@ -81,7 +82,7 @@ export function TeamSwitcher() {
                 {loading ? (
                   <SidebarMenuSubItem>
                     <SidebarMenuSubButton>
-                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-[#8B5CF6]"></div>
+                      <LoadingSpinner size="sm" />
                       <span>Đang tải nhóm...</span>
                     </SidebarMenuSubButton>
                   </SidebarMenuSubItem>

@@ -12,6 +12,7 @@ import issueService from "@/service/issueService";
 import projectService from "@/service/projectService";
 import type { Issue as IssueType } from "@/types/issue";
 import type { Project as ProjectType } from "@/types/project";
+import { LoadingSpinner } from "@/components/ui/loading-spinner";
 
 // Interface chuẩn hóa cho dữ liệu từ API
 interface Project {
@@ -150,7 +151,13 @@ export default function DashboardPage() {
   }
 
   if (loading) {
-    return <div className="text-center py-10">Đang tải dữ liệu...</div>;
+    return (
+      <div className="p-6">
+        <div className="flex items-center justify-center h-64">
+          <LoadingSpinner />
+        </div>
+      </div>
+    );
   }
 
   if (error) {

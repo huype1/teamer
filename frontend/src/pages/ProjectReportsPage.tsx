@@ -15,6 +15,7 @@ import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from '@
 import sprintService from '@/service/sprintService';
 import type { Sprint } from '@/types/sprint';
 import { format, addDays, differenceInCalendarDays } from 'date-fns';
+import { LoadingSpinner } from "@/components/ui/loading-spinner";
 
 const mapIssue = (issue: unknown): Issue => {
   const i = issue as Record<string, unknown>;
@@ -219,7 +220,7 @@ const ProjectReportsPage: React.FC = () => {
     return (
       <div className="p-6">
         <div className="flex items-center justify-center h-64">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#8B5CF6]"></div>
+          <LoadingSpinner />
         </div>
       </div>
     );

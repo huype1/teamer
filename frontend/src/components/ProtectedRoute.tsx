@@ -3,6 +3,7 @@ import { Navigate, useLocation } from "react-router-dom";
 import { useSelector } from "react-redux";
 import type { TypedUseSelectorHook } from "react-redux";
 import type { RootState } from "@/store";
+import { LoadingSpinner } from "@/components/ui/loading-spinner";
 
 const useAppSelector: TypedUseSelectorHook<RootState> = useSelector;
 
@@ -22,7 +23,7 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
   if (loading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+        <LoadingSpinner size="lg" />
       </div>
     );
   }

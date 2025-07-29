@@ -6,9 +6,10 @@ import "quill/dist/quill.snow.css";
 import "highlight.js/styles/github.css";
 
 import { Button } from "@/components/ui/button";
-import { toastError, toastSuccess } from "@/utils/toast";
+import { toastError } from "@/utils/toast";
 import documentService from "@/service/documentService";
 import type { Document } from "@/types/document";
+import { LoadingSpinner } from "@/components/ui/loading-spinner";
 
 const SAVE_INTERVAL_MS = 3000;
 const TOOLBAR_OPTIONS = [
@@ -137,8 +138,7 @@ const DocumentEditorPage = () => {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-screen">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
-        <span className="ml-2">Đang tải tài liệu...</span>
+        <LoadingSpinner text="Đang tải tài liệu..." />
       </div>
     );
   }

@@ -35,7 +35,7 @@ const LandingPage = () => {
                 </div>
                 <div className="flex flex-col gap-2 min-[400px]:flex-row">
                   <Button size="lg" onClick={() => navigate("/register")}>
-                    Bắt đầu miễn phí <ArrowRight className="ml-2 h-4 w-4" />
+                    Bắt đầu ngay <ArrowRight className="ml-2 h-4 w-4" />
                   </Button>
                 </div>
               </div>
@@ -48,7 +48,7 @@ const LandingPage = () => {
           </div>
         </section>
 
-        <section id="features" className="w-full py-12 md:py-24 lg:py-32">
+        <section id="features">
           <div className="container px-4 md:px-6">
             <div className="flex flex-col items-center justify-center space-y-4 text-center">
               <div className="space-y-2">
@@ -95,7 +95,7 @@ const LandingPage = () => {
           </div>
         </section>
 
-        <section className="w-full py-12 md:py-24 lg:py-32 bg-muted">
+        <section>
           <div className="container px-4 md:px-6">
             <div className="flex flex-col items-center justify-center space-y-4 text-center">
               <h2 className="text-3xl font-bold tracking-tighter sm:text-5xl">
@@ -143,7 +143,7 @@ const LandingPage = () => {
           </div>
         </section>
 
-        <section className="w-full py-12 md:py-24 lg:py-32">
+        <section className="mb-6">
           <div className="container px-4 md:px-6 flex flex-col items-center justify-center space-y-4 text-center">
             <h2 className="text-3xl font-bold tracking-tighter sm:text-5xl">
               Sẵn sàng bắt đầu?
@@ -152,13 +152,13 @@ const LandingPage = () => {
               Tham gia cùng hàng ngàn đội ngũ đang tối ưu hóa quy trình làm việc của họ với Teamer. Đăng ký ngay hôm nay để trải nghiệm sự khác biệt!
             </p>
             <Button size="lg" onClick={() => navigate("/register")}>
-              Bắt đầu miễn phí <ArrowRight className="ml-2 h-4 w-4" />
+              Bắt đầu ngay <ArrowRight className="ml-2 h-4 w-4" />
             </Button>
           </div>
         </section>
       </main>
 
-      <footer className="flex flex-col gap-2 sm:flex-row py-6 w-full shrink-0 items-center px-4 md:px-6 border-t">
+      <footer className="flex flex-col gap-2 sm:flex-row p-6 w-full shrink-0 items-center px-4 md:px-6 border-t">
         <p className="text-xs text-gray-500">
           © {new Date().getFullYear()} Teamer. All rights reserved.
         </p>

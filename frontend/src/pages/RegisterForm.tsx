@@ -14,7 +14,7 @@ import { GoogleLogin } from '@react-oauth/google';
 import { jwtDecode } from 'jwt-decode';
 import { useDispatch, useSelector } from "react-redux";
 import {googleLogin, login} from "@/store/authReducer.ts";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { registerSchema, type RegisterFormValues, type GoogleUser } from "@/types/auth";
@@ -36,10 +36,18 @@ export function RegisterForm({
   } = useForm<RegisterFormValues>({
     resolver: zodResolver(registerSchema),
   });
+  
+  const [searchParams] = useSearchParams();
 
   useEffect(() => {
     if (isAuthenticated) {
-      navigate('/');
+      // Redirect to return URL if provided, otherwise to dashboard
+      const returnUrl = searchParams.get('returnUrl');
+      if (returnUrl) {
+        navigate(decodeURIComponent(returnUrl));
+      } else {
+        navigate('/dashboard');
+      }
     }
   }, [isAuthenticated, navigate]);
 

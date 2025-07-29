@@ -47,6 +47,7 @@ import { IssuesTable } from "@/components/project/IssuesTable";
 // import { useWebSocket } from "@/hooks/useWebSocket";
 import type { CommentMessage } from "@/service/websocketService";
 import websocketService from "@/service/websocketService";
+import { LoadingSpinner } from "@/components/ui/loading-spinner";
 
 const commentSchema = z.object({
   content: z.string().min(1, "Nội dung comment không được để trống"),
@@ -524,7 +525,7 @@ const IssueDetailPage: React.FC = () => {
     return (
       <Layout>
         <div className="flex items-center justify-center h-64">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+          <LoadingSpinner />
         </div>
       </Layout>
     );

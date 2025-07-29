@@ -23,6 +23,7 @@ import ProjectService from "@/service/projectService";
 import { isCurrentUserManager } from "@/utils/projectHelpers";
 import { IssueForm } from "@/components/project/IssueForm";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { LoadingSpinner } from "@/components/ui/loading-spinner";
 
 const ProjectIssuesTablePage: React.FC = () => {
   const { projectId } = useParams<{ projectId: string }>();
@@ -414,7 +415,7 @@ const ProjectIssuesTablePage: React.FC = () => {
     return (
       <div className="p-6">
         <div className="flex items-center justify-center h-64">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#8B5CF6]"></div>
+          <LoadingSpinner />
         </div>
       </div>
     );

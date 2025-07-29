@@ -22,6 +22,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import websocketService from "@/service/websocketService";
+import { LoadingSpinner } from "@/components/ui/loading-spinner";
 
 const messageSchema = z.object({
   content: z.string().min(1, "Nội dung tin nhắn không được để trống"),
@@ -180,7 +181,7 @@ const ChatModal: React.FC<ChatModalProps> = ({ isOpen, onClose, chatId, chatName
           >
             {loading ? (
               <div className="flex items-center justify-center h-32">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                <LoadingSpinner />
               </div>
             ) : messages.length === 0 ? (
               <p className="text-muted-foreground text-center py-8">Chưa có tin nhắn nào</p>

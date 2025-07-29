@@ -18,9 +18,12 @@ import {
   SidebarRail,
   // SidebarSeparator, // No longer used
   SidebarTrigger,
+  useSidebar,
 } from "@/components/ui/sidebar";
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
+  const { state } = useSidebar();
+  
   // This is sample data for navigation
   const data = {
     navMain: [
@@ -65,9 +68,12 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       <SidebarContent>
         
         <NavMain items={data.navMain} />
-        <TeamSwitcher />
-
-        <NavProjects />
+        {state === "expanded" && (
+          <>
+            <TeamSwitcher />
+            <NavProjects />
+          </>
+        )}
       </SidebarContent>
       <SidebarTrigger />
       <SidebarFooter></SidebarFooter>

@@ -1,17 +1,16 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-
+import { Textarea } from "@/components/ui/textarea";
 import documentService from "@/service/documentService";
 import { toastError, toastSuccess } from "@/utils/toast";
 import type { DocumentListItem } from "@/types/document";
-import { useForm } from "react-hook-form";
-import { Plus, Edit, Trash2, FileText } from "lucide-react";
+import { Plus, Edit, FileText } from "lucide-react";
+import { LoadingSpinner } from "@/components/ui/loading-spinner";
 
 const ProjectDocumentsPage = () => {
   const { projectId } = useParams<{ projectId: string }>();
@@ -20,40 +19,35 @@ const ProjectDocumentsPage = () => {
   const [documents, setDocuments] = useState<DocumentListItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  
-  const { register, handleSubmit, reset, formState: { errors } } = useForm({
-    defaultValues: {
-      title: "",
-    },
-  });
+  const [formData, setFormData] = useState({ name: "", description: "" });
   
   const fetchDocuments = useCallback(async () => {
     if (!projectId) return;
     
     try {
       setLoading(true);
-      const response = await documentService.getDocumentsByProject(projectId);
+      const response = await documentService.getDocumentsByProjectId(projectId);
       setDocuments(response.result);
     } catch (error) {
       console.error("Error:", error);
-      toastError("Không thể tải danh sách tài liệu!");
+      toastError("Không thể tải tài liệu!");
     } finally {
       setLoading(false);
     }
   }, [projectId]);
   
-  const handleCreateDocument = async (formData: { title: string }) => {
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
     if (!projectId) return;
     
     try {
       setLoading(true);
       await documentService.createDocument({
-        title: formData.title,
-        projectId: projectId,
-        content: ""
+        ...formData,
+        projectId
       });
       toastSuccess("Tạo tài liệu thành công!");
-      reset();
+      setFormData({ name: "", description: "" });
       setIsDialogOpen(false);
       fetchDocuments();
     } catch (error) {
@@ -61,18 +55,6 @@ const ProjectDocumentsPage = () => {
       toastError("Có lỗi xảy ra!");
     } finally {
       setLoading(false);
-    }
-  };
-  
-  const handleDeleteDocument = async (documentId: string) => {
-    if (window.confirm("Bạn có chắc chắn muốn xóa tài liệu này?")) {
-      try {
-        await documentService.deleteDocument(documentId);
-        toastSuccess("Xóa tài liệu thành công!");
-        fetchDocuments();
-      } catch (error) {
-        toastError("Không thể xóa tài liệu!");
-      }
     }
   };
   
@@ -87,8 +69,7 @@ const ProjectDocumentsPage = () => {
   if (loading) {
     return (
       <div className="flex items-center justify-center p-8">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
-        <span className="ml-2">Đang tải...</span>
+        <LoadingSpinner text="Đang tải..." />
       </div>
     );
   }
@@ -117,36 +98,31 @@ const ProjectDocumentsPage = () => {
         </Card>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {documents.map((doc) => (
-            <Card key={doc.id} className="hover:shadow-md transition-shadow">
-              <CardHeader>
-                <CardTitle onClick={() => handleEditDocument(doc.id)} className="text-lg truncate hover:cursor-pointer">{doc.title}</CardTitle>
-                <div className="flex items-center justify-between">
-                  <Badge variant="secondary">
-                    {doc.creator.name || doc.creator.email}
-                  </Badge>
-                  <span className="text-sm text-gray-500">
-                    {new Date(doc.updatedAt).toLocaleDateString('vi-VN')}
-                  </span>
+          {documents.map((document) => (
+            <Card key={document.id} className="hover:shadow-md transition-shadow">
+              <CardContent className="p-6">
+                <div className="flex items-start justify-between">
+                  <div className="flex-1">
+                    <h3 className="font-semibold text-lg mb-2">{document.name}</h3>
+                    <p className="text-gray-600 text-sm mb-4 line-clamp-2">
+                      {document.description || "Không có mô tả"}
+                    </p>
+                    <div className="flex items-center text-xs text-gray-500">
+                      <span>Tạo bởi: {document.creator.name}</span>
+                      <span className="mx-2">•</span>
+                      <span>{new Date(document.createdAt).toLocaleDateString()}</span>
+                    </div>
+                  </div>
                 </div>
-              </CardHeader>
-              <CardContent>
-                <div className="flex justify-end space-x-2">
+                <div className="flex gap-2 mt-4">
                   <Button
-                    size="sm"
                     variant="outline"
-                    onClick={() => handleEditDocument(doc.id)}
+                    size="sm"
+                    onClick={() => handleEditDocument(document.id)}
+                    className="flex-1"
                   >
-                    <Edit className="h-4 w-4 mr-1" />
+                    <Edit className="h-4 w-4 mr-2" />
                     Chỉnh sửa
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => handleDeleteDocument(doc.id)}
-                  >
-                    <Trash2 className="h-4 w-4 mr-1" />
-                    Xóa
                   </Button>
                 </div>
               </CardContent>
@@ -161,17 +137,27 @@ const ProjectDocumentsPage = () => {
             <DialogTitle>Tạo tài liệu mới</DialogTitle>
           </DialogHeader>
           
-          <form onSubmit={handleSubmit(handleCreateDocument)} className="space-y-4">
+          <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <Label htmlFor="title">Tên tài liệu</Label>
+              <Label htmlFor="name">Tên tài liệu</Label>
               <Input
-                id="title"
-                {...register("title", { required: "Tên tài liệu là bắt buộc" })}
+                id="name"
+                value={formData.name}
+                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                 placeholder="Nhập tên tài liệu"
+                required
               />
-              {errors.title && (
-                <p className="text-sm text-red-500">{errors.title.message}</p>
-              )}
+            </div>
+            
+            <div>
+              <Label htmlFor="description">Mô tả</Label>
+              <Textarea
+                id="description"
+                value={formData.description}
+                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                placeholder="Nhập mô tả tài liệu"
+                rows={3}
+              />
             </div>
             
             <DialogFooter>
