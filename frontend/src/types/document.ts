@@ -35,7 +35,12 @@ export interface DocumentResponse {
   result: Document;
 }
 
+// Backend trả về DocumentListResponse trực tiếp trong ApiResponse.result
 export interface DocumentListResponse {
-  message: string;
-  result: DocumentListItem[];
+  id: string;
+  title: string;
+  creator: User;
+  projectId: string;
+  createdAt: string;
+  updatedAt: string;
 }

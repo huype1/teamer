@@ -10,6 +10,9 @@ import { toastError } from "@/utils/toast";
 import documentService from "@/service/documentService";
 import type { Document } from "@/types/document";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
+import { useSelector } from "react-redux";
+import type { RootState } from "@/store";
+import { canEditItem } from "@/utils/permissionHelpers";
 
 const SAVE_INTERVAL_MS = 3000;
 const TOOLBAR_OPTIONS = [
@@ -40,6 +43,10 @@ const DocumentEditorPage = () => {
   const [saving, setSaving] = useState(false);
   const { documentId } = useParams<{ documentId: string }>();
   const navigate = useNavigate();
+  const { user } = useSelector((state: RootState) => state.auth);
+
+  // Kiểm tra quyền edit
+  const canEdit = documentData ? canEditItem(user, documentData.creator.id) : false;
 
   // Load document
   useEffect(() => {
@@ -62,9 +69,9 @@ const DocumentEditorPage = () => {
     loadDocument();
   }, [documentId, navigate]);
 
-  // Auto-save functionality
+  // Auto-save functionality - chỉ khi có quyền edit
   useEffect(() => {
-    if (!quill || !documentId) return;
+    if (!quill || !documentId || !canEdit) return;
 
     const interval = setInterval(async () => {
       try {
@@ -82,7 +89,7 @@ const DocumentEditorPage = () => {
     }, SAVE_INTERVAL_MS);
 
     return () => clearInterval(interval);
-  }, [quill, documentId]);
+  }, [quill, documentId, canEdit]);
 
   // Initialize Quill editor
   const wrapperRef = useCallback((wrapper: HTMLDivElement | null) => {
@@ -95,13 +102,14 @@ const DocumentEditorPage = () => {
     const q = new Quill(editor, {
       theme: "snow",
       modules: { 
-        toolbar: TOOLBAR_OPTIONS, 
+        toolbar: canEdit ? TOOLBAR_OPTIONS : false, // Disable toolbar nếu không có quyền edit
         syntax: { hljs } 
       },
+      readOnly: !canEdit, // Chỉ đọc nếu không có quyền edit
     });
 
     setQuill(q);
-  }, []);
+  }, [canEdit]);
 
   // Set document content when both quill and document are ready
   useEffect(() => {
@@ -117,9 +125,9 @@ const DocumentEditorPage = () => {
     }
   }, [quill, documentData]);
 
-  // Manual save function
+  // Manual save function - chỉ khi có quyền edit
   const handleSave = async () => {
-    if (!quill || !documentId) return;
+    if (!quill || !documentId || !canEdit) return;
 
     try {
       setSaving(true);
@@ -152,20 +160,29 @@ const DocumentEditorPage = () => {
             <h1 className="text-lg font-medium text-gray-900 dark:text-gray-100">
               {documentData?.title || "Untitled"}
             </h1>
-            <span className="text-sm text-gray-500 dark:text-gray-400">
-              {saving ? "Đang lưu..." : "Đã lưu thay đổi"}
-            </span>
+            {canEdit && (
+              <span className="text-sm text-gray-500 dark:text-gray-400">
+                {saving ? "Đang lưu..." : "Đã lưu thay đổi"}
+              </span>
+            )}
+            {!canEdit && (
+              <span className="text-sm text-gray-500 dark:text-gray-400">
+                Chế độ xem
+              </span>
+            )}
           </div>
           <div className="flex items-center space-x-2">
-            <Button 
-              onClick={handleSave} 
-              disabled={saving}
-              variant="ghost"
-              size="sm"
-              className="hover:cursor-pointer bg-primary text-white"
-            >
-              {saving ? "Đang lưu..." : "Lưu"}
-            </Button>
+            {canEdit && (
+              <Button 
+                onClick={handleSave} 
+                disabled={saving}
+                variant="ghost"
+                size="sm"
+                className="hover:cursor-pointer bg-primary text-white"
+              >
+                {saving ? "Đang lưu..." : "Lưu"}
+              </Button>
+            )}
             <Button 
               onClick={() => navigate(-1)}
               variant="ghost"
