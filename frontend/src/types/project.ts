@@ -1,3 +1,5 @@
+import type { Chat } from "./chat";
+
 export interface Project {
   id: string;
   name: string;
@@ -9,6 +11,7 @@ export interface Project {
   updatedAt: string;
   teamId: string;
   chatId: string;
+  chat?: Chat;
   creator: {
     id: string;
     email: string;

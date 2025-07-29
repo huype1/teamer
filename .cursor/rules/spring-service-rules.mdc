@@ -1,5 +1,6 @@
 ---
 alwaysApply: false
+description: Spring Boot Service Layer Conventions
 ---
 # Spring Boot Service Layer Conventions
 

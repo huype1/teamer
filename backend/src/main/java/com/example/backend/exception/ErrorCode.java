@@ -29,7 +29,9 @@ public enum ErrorCode {
     CREATION_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, 12, "Data creation failed"),
     EXPIRED(HttpStatus.INTERNAL_SERVER_ERROR, 12, "Request expired"),
     ALREADY_EXISTS(HttpStatus.BAD_REQUEST, 13, "Resource already exists"),
-    PROJECT_KEY_EXISTS(HttpStatus.BAD_REQUEST, 13, "Project key already exists");
+    PROJECT_KEY_EXISTS(HttpStatus.BAD_REQUEST, 13, "Project key already exists"),
+    DOCUMENT_NOT_FOUND(HttpStatus.NOT_FOUND, 14, "Cannot find document information"),
+    FORBIDDEN(HttpStatus.FORBIDDEN, 15, "Access forbidden");
 
     HttpStatusCode httpStatusCode;
     int code;

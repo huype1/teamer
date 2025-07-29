@@ -1,18 +1,5 @@
-# Cursor Rules Location and Structure
-
-How to add new cursor rules to the project with intelligent automatic application.
-
-## Rule File Structure
-
-### Required Header Format
-```yaml
 ---
-description: Short description of the rule's purpose
-globs: 
-  - "frontend/src/**/*.ts"
-  - "frontend/src/**/*.tsx"
-  - "backend/src/**/*.java"
-alwaysApply: true
+alwaysApply: false
 ---
 ```
 

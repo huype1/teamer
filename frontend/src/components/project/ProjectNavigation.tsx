@@ -6,7 +6,8 @@ import {
   ListTodo,
   Kanban,
   BarChart3,
-  Users
+  Users,
+  FileText
 } from "lucide-react";
 
 interface ProjectNavigationProps {
@@ -35,6 +36,13 @@ const navigationItems = [
     label: "Kanban",
     icon: Kanban,
     match: (pathname: string, id: string) => pathname === `/projects/${id}/kanban`
+  },
+  {
+    key: "documents",
+    href: (id: string) => `/projects/${id}/documents`,
+    label: "Tài liệu",
+    icon: FileText,
+    match: (pathname: string, id: string) => pathname === `/projects/${id}/documents`
   },
   {
     key: "reports",

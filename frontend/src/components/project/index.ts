@@ -7,6 +7,7 @@ export { default as ProjectHeader } from './ProjectHeader';
 export { default as ProjectActions } from './ProjectActions';
 export { default as MemberManagement } from './MemberManagement';
 export { default as ProjectNavigation } from './ProjectNavigation';
+export { default as ChatModal } from './ChatModal';
 export { type ProjectTab, ProjectTabs } from './ProjectTabs';
 export { IssuesTable } from './IssuesTable';
 export { SprintIssuesTable } from './SprintIssuesTable';

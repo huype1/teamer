@@ -398,3 +398,92 @@ PUT {{presignedUrl}}
 Content-Type: text/csv
 
 < ./teamer-uploader_accessKeys.csv
+
+### Chat API Tests ###
+
+# Get all chats
+GET http://localhost:8080/api/chats
+Authorization: Bearer {{token}}
+
+###
+
+# Get chat by ID
+GET http://localhost:8080/api/chats/{{chatId}}
+Authorization: Bearer {{token}}
+
+###
+
+# Get all messages for a chat
+GET http://localhost:8080/api/chats/{{chatId}}/messages/all
+Authorization: Bearer {{token}}
+
+###
+
+# Create a new message
+POST http://localhost:8080/api/chats/messages
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "content": "Xin chào! Đây là tin nhắn test.",
+  "chatId": "{{chatId}}"
+}
+
+###
+
+# Delete a message
+DELETE http://localhost:8080/api/chats/messages/{{messageId}}
+Authorization: Bearer {{token}}
+
+###
+
+# Get messages with pagination (for future use)
+GET http://localhost:8080/api/chats/{{chatId}}/messages?page=0&size=20
+Authorization: Bearer {{token}}
+
+###
+
+### Document API Tests ###
+
+# Get all documents for a project (without content for performance)
+GET http://localhost:8080/api/documents/project/{{projectId}}
+Authorization: Bearer {{authToken}}
+
+###
+
+# Get specific document with content
+GET http://localhost:8080/api/documents/{{documentId}}
+Authorization: Bearer {{authToken}}
+
+###
+
+# Create a new document
+POST http://localhost:8080/api/documents
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+  "title": "API Documentation",
+  "content": "{\"ops\":[{\"insert\":\"This is a test document created via API.\"}]}",
+  "projectId": "{{projectId}}"
+}
+
+###
+
+# Update a document
+PUT http://localhost:8080/api/documents/{{documentId}}
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+  "title": "Updated API Documentation",
+  "content": "{\"ops\":[{\"insert\":\"This document has been updated via API.\"}]}"
+}
+
+###
+
+# Delete a document
+DELETE http://localhost:8080/api/documents/{{documentId}}
+Authorization: Bearer {{authToken}}
+
+###

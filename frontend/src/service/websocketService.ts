@@ -15,9 +15,22 @@ export interface CommentMessage {
   updatedAt?: string;
 }
 
+export interface ChatMessage {
+  type: 'CREATE' | 'UPDATE' | 'DELETE';
+  messageId: string;
+  chatId: string;
+  content?: string;
+  senderId?: string;
+  senderName?: string;
+  senderEmail?: string;
+  senderAvatarUrl?: string;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
 class WebSocketService {
   private stompClient: Client | null = null;
-  private subscriptions: Map<string, (message: CommentMessage) => void> = new Map();
+  private subscriptions: Map<string, (message: CommentMessage | ChatMessage) => void> = new Map();
   private stompSubscriptions: Map<string, StompSubscription> = new Map(); // Store STOMP subscription objects
   private processedMessages: Set<string> = new Set(); // Track processed message IDs
   private isConnected = false;
@@ -88,6 +101,23 @@ class WebSocketService {
     }
   }
 
+  disconnect(): void {
+    if (this.stompClient) {
+      // Unsubscribe all STOMP subscriptions
+      this.stompSubscriptions.forEach((subscription) => {
+        subscription.unsubscribe();
+      });
+      
+      this.stompClient.deactivate();
+      this.stompClient = null;
+      this.isConnected = false;
+      this.subscriptions.clear();
+      this.stompSubscriptions.clear();
+      this.processedMessages.clear();
+    }
+  }
+
+  // Comment subscription methods
   subscribeToIssueComments(issueId: string, callback: (message: CommentMessage) => void): void {
     if (!this.stompClient || !this.isConnected) {
       console.error('WebSocket not connected, cannot subscribe');
@@ -129,12 +159,72 @@ class WebSocketService {
     });
     
     // Store both the callback and the STOMP subscription object
-    this.subscriptions.set(topic, callback);
+    this.subscriptions.set(topic, callback as (message: CommentMessage | ChatMessage) => void);
     this.stompSubscriptions.set(topic, subscription);
   }
 
   unsubscribeFromIssueComments(issueId: string): void {
     const topic = `/topic/issue/${issueId}/comments`;
+    
+    // Remove the callback
+    this.subscriptions.delete(topic);
+    
+    // Unsubscribe from STOMP
+    const stompSubscription = this.stompSubscriptions.get(topic);
+    if (stompSubscription) {
+      stompSubscription.unsubscribe();
+      this.stompSubscriptions.delete(topic);
+    }
+  }
+
+  // Chat subscription methods
+  subscribeToChatMessages(chatId: string, callback: (message: ChatMessage) => void): void {
+    if (!this.stompClient || !this.isConnected) {
+      console.error('WebSocket not connected, cannot subscribe');
+      return;
+    }
+
+    const topic = `/topic/chat/${chatId}/messages`;
+    
+    // If subscription already exists, remove it first
+    if (this.subscriptions.has(topic)) {
+      this.unsubscribeFromChatMessages(chatId);
+    }
+    
+    const subscription = this.stompClient.subscribe(topic, (message) => {
+      try {
+        const data = JSON.parse(message.body);
+        
+        // Prevent duplicate message processing
+        const messageId = `${data.messageId || 'unknown'}-${data.type || 'unknown'}`;
+        if (this.processedMessages.has(messageId)) {
+          return;
+        }
+        
+        // Mark message as processed
+        this.processedMessages.add(messageId);
+        
+        // Clean up old processed messages (keep only last 100)
+        if (this.processedMessages.size > 100) {
+          const firstKey = this.processedMessages.values().next().value;
+          if (firstKey) {
+            this.processedMessages.delete(firstKey);
+          }
+        }
+        
+        callback(data as ChatMessage);
+      } catch (error) {
+        console.error('Error parsing WebSocket message:', error);
+      }
+    });
+    
+    // Store both the callback and the STOMP subscription object
+    this.subscriptions.set(topic, callback as (message: CommentMessage | ChatMessage) => void);
+    this.stompSubscriptions.set(topic, subscription);
+  }
+
+  unsubscribeFromChatMessages(chatId: string): void {
+    const topic = `/topic/chat/${chatId}/messages`;
     
     // Remove the callback
     this.subscriptions.delete(topic);
@@ -166,22 +256,6 @@ class WebSocketService {
         destination: '/app/comment/leave',
         body: JSON.stringify({ issueId })
       });
-    }
-  }
-
-  disconnect(): void {
-    if (this.stompClient) {
-      // Unsubscribe all STOMP subscriptions
-      this.stompSubscriptions.forEach((subscription) => {
-        subscription.unsubscribe();
-      });
-      
-      this.stompClient.deactivate();
-      this.stompClient = null;
-      this.isConnected = false;
-      this.subscriptions.clear();
-      this.stompSubscriptions.clear();
-      this.processedMessages.clear();
     }
   }
 }

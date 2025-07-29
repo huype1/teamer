@@ -12,6 +12,8 @@ import { useSelector } from "react-redux";
 import type { RootState } from "@/store";
 import { isCurrentUserManager } from "@/utils/projectHelpers";
 import { toastSuccess } from "@/utils/toast";
+import ChatModal from "@/components/project/ChatModal";
+import { MessageSquare, FileText } from "lucide-react";
 
 const ProjectOverviewPage: React.FC = () => {
   const { projectId } = useParams<{ projectId: string }>();
@@ -20,6 +22,9 @@ const ProjectOverviewPage: React.FC = () => {
   const { user } = useSelector((state: RootState) => state.auth);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [isChatModalOpen, setIsChatModalOpen] = useState(false);
+  const [chatId, setChatId] = useState<string>("");
+  const [chatName, setChatName] = useState<string>("");
   const [formData, setFormData] = useState({ name: "", description: "" });
 
   useEffect(() => {
@@ -46,6 +51,20 @@ const ProjectOverviewPage: React.FC = () => {
     }
   };
 
+  const handleOpenChat = async () => {
+    if (!projectId) return;
+    
+    try {
+      const chatResponse = await ProjectService.getProjectChat(projectId);
+      setChatId(chatResponse.result.id);
+      setChatName(chatResponse.result.name);
+      setIsChatModalOpen(true);
+    } catch (error) {
+      console.error("Error fetching chat:", error);
+      toastError("Không thể tải thông tin chat!");
+    }
+  };
+
   const handleUpdateProject = async () => {
     if (!project) return;
     try {
@@ -57,6 +76,7 @@ const ProjectOverviewPage: React.FC = () => {
       setIsEditDialogOpen(false);
       fetchProject();
     } catch (error) {
+      console.error("Error updating project:", error);
       toastError("Cập nhật dự án thất bại!");
     }
   };
@@ -67,6 +87,7 @@ const ProjectOverviewPage: React.FC = () => {
       toastSuccess("Xóa dự án thành công!");
       window.location.href = "/projects";
     } catch (error) {
+      console.error("Error deleting project:", error);
       toastError("Xóa dự án thất bại!");
     }
   };
@@ -146,9 +167,23 @@ const ProjectOverviewPage: React.FC = () => {
               </Link>
             </Button>
             <Button asChild variant="outline" className="w-full">
+              <Link to={`/projects/${projectId}/documents`}>
+                <FileText className="w-4 h-4 mr-2" />
+                Quản lý tài liệu
+              </Link>
+            </Button>
+            <Button asChild variant="outline" className="w-full">
               <Link to={`/projects/${projectId}/members`}>
                 Quản lý thành viên
               </Link>
+            </Button>
+            <Button 
+              variant="outline" 
+              className="w-full"
+              onClick={handleOpenChat}
+            >
+              <MessageSquare className="w-4 h-4 mr-2" />
+              Chat dự án
             </Button>
           </div>
         </div>
@@ -203,6 +238,16 @@ const ProjectOverviewPage: React.FC = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+      
+      {/* Chat Modal */}
+      {chatId && (
+        <ChatModal
+          isOpen={isChatModalOpen}
+          onClose={() => setIsChatModalOpen(false)}
+          chatId={chatId}
+          chatName={chatName}
+        />
+      )}
     </div>
   );
 };

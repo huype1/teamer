@@ -74,6 +74,14 @@ export const getProjectUsers = async (projectId: string) => {
     return res.data;
 };
 
+export const getProjectChat = async (projectId: string) => {
+    const res = await axios.get(
+        `${baseUrl}/${projectId}/chat`,
+        addReqToken(localStorage.getItem("token")),
+    );
+    return res.data;
+};
+
 export default { 
   getProjects, 
   getProjectById, 
@@ -86,5 +94,6 @@ export default {
   updateMemberRole,
   acceptProjectInvitation,
   getProjectsByTeam,
-  getProjectUsers
+  getProjectUsers,
+  getProjectChat
 }; 

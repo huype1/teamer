@@ -16,9 +16,11 @@ import ProjectIssuesTablePage from "@/pages/ProjectIssuesTablePage";
 import ProjectKanbanPage from "@/pages/ProjectKanbanPage";
 import ProjectReportsPage from "@/pages/ProjectReportsPage";
 import ProjectMembersPage from "@/pages/ProjectMembersPage";
+import ProjectDocumentsPage from "@/pages/ProjectDocumentsPage";
 import UserDetailPage from "@/pages/UserDetailPage";
 import DashboardPage from "@/pages/DashboardPage";
 import LandingPage from "@/pages/LandingPage.tsx";
+import DocumentEditorPage from "@/pages/DocumentEditorPage";
 import { isTokenExpired } from "@/utils/jwt";
 import { ThemeProvider } from "@/components/ui/theme-provider";
 import { Layout } from "@/components/layout";
@@ -163,6 +165,16 @@ function App() {
             </ProtectedRoute>
           }
         />
+        <Route
+          path='/projects/:projectId/documents'
+          element={
+            <ProtectedRoute>
+              <Layout>
+                <ProjectDocumentsPage />
+              </Layout>
+            </ProtectedRoute>
+          }
+        />
 
         <Route
           path='/profile'
@@ -175,6 +187,16 @@ function App() {
           }
         />
         <Route path="/issues/:issueId" element={<IssueDetailPage />} />
+        <Route
+          path="/documents/:documentId/edit"
+          element={
+            <ProtectedRoute>
+              <Layout>
+                <DocumentEditorPage />
+              </Layout>
+            </ProtectedRoute>
+          }
+        />
         <Route path='*' element={<NotFoundPage />} />
       </Routes>
       <Toaster position="top-right" richColors closeButton />

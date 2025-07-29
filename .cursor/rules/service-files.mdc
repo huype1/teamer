@@ -1,3 +1,8 @@
+---
+alwaysApply: false
+description: Service Files Conventions
+---
+
 # Service Files Conventions
 
 Service files handle API communication between the frontend and backend. Follow these conventions for consistency and maintainability.
