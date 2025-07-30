@@ -16,6 +16,10 @@ import software.amazon.awssdk.services.s3.presigner.model.PutObjectPresignReques
 import software.amazon.awssdk.services.s3.presigner.model.GetObjectPresignRequest;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 import software.amazon.awssdk.services.s3.model.GetObjectRequest;
+import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.core.sync.RequestBody;
+import org.springframework.web.multipart.MultipartFile;
+import java.io.IOException;
 import java.time.Duration;
 import java.util.HashMap;
 import java.util.Map;
@@ -130,5 +134,35 @@ public class AttachmentService {
 
     public void deleteAttachment(UUID attachmentId) {
         attachmentRepository.deleteById(attachmentId);
+    }
+
+    public AttachmentMeta uploadFileToS3(MultipartFile file) {
+        try {
+            AwsBasicCredentials awsCreds = AwsBasicCredentials.create(accessKey, secretKey);
+            S3Client s3Client = S3Client.builder()
+                    .region(Region.of(region))
+                    .credentialsProvider(StaticCredentialsProvider.create(awsCreds))
+                    .build();
+
+            String key = (prefix != null ? prefix : "") + "avatars/" + System.currentTimeMillis() + "_" + file.getOriginalFilename();
+
+            PutObjectRequest putObjectRequest = PutObjectRequest.builder()
+                    .bucket(bucketName)
+                    .key(key)
+                    .contentType(file.getContentType())
+                    .build();
+
+            s3Client.putObject(putObjectRequest, RequestBody.fromInputStream(file.getInputStream(), file.getSize()));
+
+            return AttachmentMeta.builder()
+                    .fileName(file.getOriginalFilename())
+                    .fileType(file.getContentType())
+                    .fileSize(file.getSize())
+                    .filePath(key)
+                    .build();
+
+        } catch (IOException e) {
+            throw new RuntimeException("Failed to upload file to S3", e);
+        }
     }
 } 

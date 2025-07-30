@@ -4,7 +4,6 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { User, Lock } from "lucide-react";
@@ -17,6 +16,7 @@ import { logout, fetchUserInfo } from "@/store/authReducer";
 import type { AppDispatch } from "@/store";
 import { PasswordUpdateModal } from "@/components/ui/password-update-modal";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
+import { AvatarUpload } from "@/components/ui/avatar-upload";
 
 interface UserFormData {
   email: string;
@@ -31,6 +31,7 @@ const UserDetailPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState(false);
   const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
+  const [avatarUrl, setAvatarUrl] = useState<string>("");
 
   const {
     register,
@@ -52,6 +53,7 @@ const UserDetailPage: React.FC = () => {
       setValue("email", response.result.email);
       setValue("name", response.result.name);
       setValue("avatarUrl", response.result.avatarUrl || "");
+      setAvatarUrl(response.result.avatarUrl || "");
     } finally {
       setLoading(false);
     }
@@ -62,11 +64,24 @@ const UserDetailPage: React.FC = () => {
       setUpdating(true);
       const response = await updateMyInfo(data);
       setUserInfo(response.result);
+      setAvatarUrl(response.result.avatarUrl || "");
       // Refetch user info in auth reducer
       await dispatch(fetchUserInfo()).unwrap();
       toastSuccess("Cập nhật thông tin thành công!");
     } finally {
       setUpdating(false);
+    }
+  };
+
+  const handleAvatarChange = (newAvatarUrl: string) => {
+    setAvatarUrl(newAvatarUrl);
+    setValue("avatarUrl", newAvatarUrl);
+    // Update userInfo state
+    if (userInfo) {
+      setUserInfo({
+        ...userInfo,
+        avatarUrl: newAvatarUrl
+      });
     }
   };
 
@@ -118,10 +133,13 @@ const UserDetailPage: React.FC = () => {
     <div className="p-6 max-w-xl mx-auto">
       <Card>
         <CardHeader className="flex flex-col items-center">
-          <Avatar className="w-20 h-20 mb-2">
-            <AvatarImage src={userInfo.avatarUrl} alt={userInfo.name} />
-            <AvatarFallback>{userInfo.name?.charAt(0) || "U"}</AvatarFallback>
-          </Avatar>
+          <AvatarUpload
+            currentAvatarUrl={avatarUrl}
+            userName={userInfo.name}
+            onAvatarChange={handleAvatarChange}
+            size="lg"
+            className="mb-4"
+          />
           <CardTitle className="text-xl font-bold mt-2">Thông tin cá nhân</CardTitle>
         </CardHeader>
         <Separator />
@@ -151,17 +169,7 @@ const UserDetailPage: React.FC = () => {
                 <p className="text-red-500 text-sm mt-1">{errors.name.message}</p>
               )}
             </div>
-            <div>
-              <Label htmlFor="avatarUrl">Ảnh đại diện (URL)</Label>
-              <Input
-                id="avatarUrl"
-                type="text"
-                placeholder="Dán link ảnh đại diện"
-                {...register("avatarUrl")}
-                className="mt-1"
-                disabled={updating}
-              />
-            </div>
+
             <div className="flex gap-2 mt-6">
               <Button type="submit" disabled={updating} className="bg-primary text-white">
                 Lưu thay đổi

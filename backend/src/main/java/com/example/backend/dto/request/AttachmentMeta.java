@@ -6,6 +6,7 @@ import lombok.*;
 @Data
 @Getter
 @Setter
+@Builder
 public class AttachmentMeta {
     String fileName;
     String fileType;

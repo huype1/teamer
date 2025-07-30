@@ -569,3 +569,20 @@ DELETE http://localhost:8080/api/documents/{{documentId}}
 Authorization: Bearer {{authToken}}
 
 ###
+
+### Avatar API Tests ###
+
+# Upload avatar
+POST http://localhost:8080/api/avatars/upload
+Authorization: Bearer {{token}}
+Content-Type: multipart/form-data
+
+< ./test-avatar.jpg
+
+###
+
+# Delete avatar
+DELETE http://localhost:8080/api/avatars/delete
+Authorization: Bearer {{token}}
+
+###

@@ -32,7 +32,10 @@ public enum ErrorCode {
     PROJECT_KEY_EXISTS(HttpStatus.BAD_REQUEST, 13, "Project key already exists"),
     DOCUMENT_NOT_FOUND(HttpStatus.NOT_FOUND, 14, "Cannot find document information"),
     NOTIFICATION_NOT_FOUND(HttpStatus.NOT_FOUND, 16, "Cannot find notification information"),
-    FORBIDDEN(HttpStatus.FORBIDDEN, 15, "Access forbidden");
+    FORBIDDEN(HttpStatus.FORBIDDEN, 15, "Access forbidden"),
+    INVALID_FILE_TYPE(HttpStatus.BAD_REQUEST, 17, "Invalid file type"),
+    FILE_TOO_LARGE(HttpStatus.BAD_REQUEST, 18, "File size too large"),
+    UPLOAD_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, 19, "File upload failed");
 
     HttpStatusCode httpStatusCode;
     int code;
