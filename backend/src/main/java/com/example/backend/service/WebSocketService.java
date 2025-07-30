@@ -1,8 +1,10 @@
 package com.example.backend.service;
 
+import com.example.backend.dto.websocket.ChatMessage;
 import com.example.backend.dto.websocket.CommentMessage;
 import com.example.backend.dto.websocket.NotificationMessage;
 import com.example.backend.entity.Comment;
+import com.example.backend.entity.Message;
 import com.example.backend.entity.Notification;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -61,6 +63,58 @@ public class WebSocketService {
 
         messagingTemplate.convertAndSend("/topic/issue/" + issueId + "/comments", message);
         log.info("Broadcasted comment deleted: {}", commentId);
+    }
+
+    // Chat message broadcasting methods
+    public void broadcastChatMessageCreated(Message message) {
+        log.info("Broadcasting chat message created for messageId: {}, chatId: {}", message.getId(), message.getChat().getId());
+        
+        ChatMessage chatMessage = ChatMessage.builder()
+                .type("CREATE")
+                .messageId(message.getId())
+                .chatId(message.getChat().getId())
+                .content(message.getContent())
+                .senderId(message.getSender().getId())
+                .senderName(message.getSender().getName())
+                .senderEmail(message.getSender().getEmail())
+                .senderAvatarUrl(message.getSender().getAvatarUrl())
+                .createdAt(message.getCreatedAt())
+                .updatedAt(message.getUpdatedAt())
+                .build();
+
+        String topic = "/topic/chat/" + message.getChat().getId() + "/messages";
+        log.info("Sending chat message to topic: {}", topic);
+        messagingTemplate.convertAndSend(topic, chatMessage);
+        log.info("Broadcasted chat message created: {}", message.getId());
+    }
+
+    public void broadcastChatMessageUpdated(Message message) {
+        ChatMessage chatMessage = ChatMessage.builder()
+                .type("UPDATE")
+                .messageId(message.getId())
+                .chatId(message.getChat().getId())
+                .content(message.getContent())
+                .senderId(message.getSender().getId())
+                .senderName(message.getSender().getName())
+                .senderEmail(message.getSender().getEmail())
+                .senderAvatarUrl(message.getSender().getAvatarUrl())
+                .createdAt(message.getCreatedAt())
+                .updatedAt(message.getUpdatedAt())
+                .build();
+
+        messagingTemplate.convertAndSend("/topic/chat/" + message.getChat().getId() + "/messages", chatMessage);
+        log.info("Broadcasted chat message updated: {}", message.getId());
+    }
+
+    public void broadcastChatMessageDeleted(UUID messageId, UUID chatId) {
+        ChatMessage chatMessage = ChatMessage.builder()
+                .type("DELETE")
+                .messageId(messageId)
+                .chatId(chatId)
+                .build();
+
+        messagingTemplate.convertAndSend("/topic/chat/" + chatId + "/messages", chatMessage);
+        log.info("Broadcasted chat message deleted: {}", messageId);
     }
 
     // Notification broadcasting methods

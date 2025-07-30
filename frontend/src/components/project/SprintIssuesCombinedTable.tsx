@@ -27,6 +27,8 @@ interface SprintIssuesCombinedTableProps {
   canManageSprint?: boolean;
   onOpenCreateIssue?: () => void;
   canCreateIssue?: boolean;
+  onEditIssue?: (issue: Issue) => void;
+  onDeleteIssue?: (issue: Issue) => void;
 }
 
 export const SprintIssuesCombinedTable: React.FC<SprintIssuesCombinedTableProps> = ({
@@ -46,6 +48,8 @@ export const SprintIssuesCombinedTable: React.FC<SprintIssuesCombinedTableProps>
   canManageSprint,
   onOpenCreateIssue,
   canCreateIssue,
+  onEditIssue,
+  onDeleteIssue,
 }) => {
   const [issues, setIssues] = useState<Issue[]>([]);
   const [loading, setLoading] = useState(true);
@@ -209,6 +213,8 @@ export const SprintIssuesCombinedTable: React.FC<SprintIssuesCombinedTableProps>
             onAssigneeChange={onAssigneeChange}
             onOpenCreateIssue={onOpenCreateIssue}
             canCreateIssue={canCreateIssue}
+            onEditIssue={onEditIssue}
+            onDeleteIssue={onDeleteIssue}
             title=""
             emptyMessage="Không có issue nào trong sprint này."
             containerClassName="border-0 shadow-none"

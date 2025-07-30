@@ -1,31 +1,22 @@
 import React, { useState, useEffect, useRef } from "react";
-import { Button } from "@/components/ui/button";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Textarea } from "@/components/ui/textarea";
-import { 
-  Dialog, 
-  DialogContent, 
-  DialogHeader, 
-  DialogTitle 
-} from "@/components/ui/dialog";
-import { 
-  MessageSquare, 
-  Trash2, 
-  Send
-} from "lucide-react";
-import { useSelector } from "react-redux";
-import type { RootState } from "@/store";
-import chatService from "@/service/chatService";
-import type { ChatMessage } from "@/service/chatService";
-import { toastError } from "@/utils/toast";
 import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useSelector } from "react-redux";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Trash2, Send, MessageSquare } from "lucide-react";
+import { toastError } from "@/utils/toast";
+import chatService, { type ChatMessage } from "@/service/chatService";
 import websocketService from "@/service/websocketService";
-import { LoadingSpinner } from "@/components/ui/loading-spinner";
+import { useWebSocketContext } from "@/components/WebSocketProvider";
+import type { RootState } from "@/store";
+import { LoadingSpinner } from "../ui/loading-spinner";
 
 const messageSchema = z.object({
-  content: z.string().min(1, "Nội dung tin nhắn không được để trống"),
+  content: z.string().min(1, "Tin nhắn không được để trống"),
 });
 
 type MessageFormData = z.infer<typeof messageSchema>;
@@ -39,6 +30,7 @@ interface ChatModalProps {
 
 const ChatModal: React.FC<ChatModalProps> = ({ isOpen, onClose, chatId, chatName }) => {
   const { user } = useSelector((state: RootState) => state.auth);
+  const { isConnected } = useWebSocketContext();
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [loading, setLoading] = useState(true);
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -68,7 +60,7 @@ const ChatModal: React.FC<ChatModalProps> = ({ isOpen, onClose, chatId, chatName
 
   // WebSocket chat message handling
   useEffect(() => {
-    if (chatId && isOpen) {
+    if (chatId && isOpen && isConnected) {
       const handleChatMessage = async (message: { type: string; messageId?: string; content?: string; chatId?: string; senderId?: string; senderName?: string; senderEmail?: string; senderAvatarUrl?: string; createdAt?: string; updatedAt?: string }) => {
         if (message.type === 'CREATE') {
           const newMessage: ChatMessage = {
@@ -96,16 +88,14 @@ const ChatModal: React.FC<ChatModalProps> = ({ isOpen, onClose, chatId, chatName
         }
       };
       
-      websocketService.onConnect(() => {
-        websocketService.subscribeToChatMessages(chatId, handleChatMessage);
-      });
+      websocketService.subscribeToChatMessages(chatId, handleChatMessage);
       
       // Cleanup function
       return () => {
         websocketService.unsubscribeFromChatMessages(chatId);
       };
     }
-  }, [chatId, isOpen]);
+  }, [chatId, isOpen, isConnected]);
 
   useEffect(() => {
     if (chatId && isOpen) {

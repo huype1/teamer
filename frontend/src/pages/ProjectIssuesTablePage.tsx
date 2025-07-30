@@ -14,8 +14,9 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useForm } from "react-hook-form";
-import { useSelector } from "react-redux";
+import { useSelector, useDispatch } from "react-redux";
 import type { RootState } from "@/store";
+import { fetchUserInfo } from "@/store/authReducer";
 import { Plus } from "lucide-react";
 import { formatDateForAPI, formatEndDateForAPI } from "@/utils/dateUtils";
 import { ProjectHeader, ProjectNavigation } from "@/components/project";
@@ -27,7 +28,11 @@ import { LoadingSpinner } from "@/components/ui/loading-spinner";
 
 const ProjectIssuesTablePage: React.FC = () => {
   const { projectId } = useParams<{ projectId: string }>();
+  const dispatch = useDispatch();
   const { user } = useSelector((state: RootState) => state.auth);
+  
+  // Debug user data
+  console.log('Current user from auth:', user);
   const [project, setProject] = useState<Project | null>(null);
   const [sprints, setSprints] = useState<Sprint[]>([]);
   const [backlogIssues, setBacklogIssues] = useState<Issue[]>([]);
@@ -130,6 +135,11 @@ const ProjectIssuesTablePage: React.FC = () => {
     if (projectId) {
       const fetchData = async () => {
         try {
+          // Ensure user data is loaded first
+          if (!user?.projectMembers) {
+            await dispatch(fetchUserInfo());
+          }
+          
           await Promise.all([
             fetchProject(),
             fetchSprints(),
@@ -144,12 +154,24 @@ const ProjectIssuesTablePage: React.FC = () => {
       };
       fetchData();
     }
-  }, [projectId, fetchProject, fetchSprints, fetchBacklogIssues, fetchProjectMembers]);
+  }, [projectId, user?.projectMembers, dispatch, fetchProject, fetchSprints, fetchBacklogIssues, fetchProjectMembers]);
 
   // Lấy thông tin user hiện tại trong project này
   const getCurrentUserProjectMember = () => {
     if (!user || !projectId) return null;
-    return user.projectMembers?.find(m => m.projectId === projectId) || null;
+    const member = user.projectMembers?.find(m => m.projectId === projectId) || null;
+    console.log('getCurrentUserProjectMember:', { 
+      userId: user.id, 
+      projectId, 
+      projectIdType: typeof projectId,
+      userProjectMembers: user.projectMembers?.map(pm => ({ 
+        projectId: pm.projectId, 
+        projectIdType: typeof pm.projectId,
+        role: pm.role 
+      })),
+      foundMember: member 
+    });
+    return member;
   };
 
   const onCreateSprint = async (data: { name: string; goal: string; startDate: string; endDate: string }) => {
@@ -293,7 +315,22 @@ const ProjectIssuesTablePage: React.FC = () => {
   const canEditIssue = (issue: Issue) => {
     if (!user) return false;
     const currentUserMember = getCurrentUserProjectMember();
-    return issue.reporter?.id === user.id || currentUserMember?.role === "ADMIN" || currentUserMember?.role === "PM";
+    const isReporter = String(issue.reporter?.id) === String(user.id);
+    const isAdmin = currentUserMember?.role === "ADMIN";
+    const isPM = currentUserMember?.role === "PM";
+    const result = isReporter || isAdmin || isPM;
+    
+    console.log('canEditIssue check:', { 
+      userId: user.id, 
+      issueReporterId: issue.reporter?.id, 
+      isReporter,
+      currentUserMember, 
+      isAdmin,
+      isPM,
+      result,
+      issueTitle: issue.title 
+    });
+    return result;
   };
 
   const canChangeStatus = (issue: Issue) => {
@@ -473,6 +510,8 @@ const ProjectIssuesTablePage: React.FC = () => {
                     canManageSprint={canManageSprint()}
                     onOpenCreateIssue={() => setIsCreateIssueDialogOpen(true)}
                     canCreateIssue={canCreateIssue()}
+                    onEditIssue={openEditIssueDialog}
+                    onDeleteIssue={openDeleteIssueDialog}
                   />
                 ))}
               </div>

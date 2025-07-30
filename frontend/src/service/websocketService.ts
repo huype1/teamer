@@ -185,22 +185,30 @@ class WebSocketService {
 
   // Chat subscription methods
   subscribeToChatMessages(chatId: string, callback: (message: ChatMessage) => void): void {
+    console.log('Attempting to subscribe to chat messages for chatId:', chatId);
+    console.log('WebSocket connected:', this.isConnected);
+    console.log('STOMP client exists:', !!this.stompClient);
+    
     if (!this.stompClient || !this.isConnected) {
       console.error('WebSocket not connected, cannot subscribe');
       return;
     }
 
     const topic = `/topic/chat/${chatId}/messages`;
+    console.log('Subscribing to topic:', topic);
     
     if (this.chatSubscriptions.has(topic)) {
+      console.log('Unsubscribing from existing chat subscription');
       this.unsubscribeFromChatMessages(chatId);
     }
     
     const subscription = this.stompClient.subscribe(topic, (message) => {
+      console.log('Received chat message:', message.body);
       try {
         const data = JSON.parse(message.body);
         const messageId = `${data.messageId || 'unknown'}-${data.type || 'unknown'}`;
         if (this.processedMessages.has(messageId)) {
+          console.log('Message already processed, skipping:', messageId);
           return;
         }
         
@@ -213,6 +221,7 @@ class WebSocketService {
           }
         }
         
+        console.log('Calling chat message callback with data:', data);
         callback(data as ChatMessage);
       } catch (error) {
         console.error('Error parsing WebSocket message:', error);
@@ -221,6 +230,7 @@ class WebSocketService {
     
     this.chatSubscriptions.set(topic, callback);
     this.stompSubscriptions.set(topic, subscription);
+    console.log('Successfully subscribed to chat messages for chatId:', chatId);
   }
 
   unsubscribeFromChatMessages(chatId: string): void {
