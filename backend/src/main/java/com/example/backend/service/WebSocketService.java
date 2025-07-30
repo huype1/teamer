@@ -11,6 +11,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
 import java.util.UUID;
 
 @Service
@@ -69,6 +70,19 @@ public class WebSocketService {
     public void broadcastChatMessageCreated(Message message) {
         log.info("Broadcasting chat message created for messageId: {}, chatId: {}", message.getId(), message.getChat().getId());
         
+        // Get attachments for this message
+        List<ChatMessage.AttachmentInfo> attachments = message.getAttachments() != null ? 
+                message.getAttachments().stream()
+                        .map(att -> ChatMessage.AttachmentInfo.builder()
+                                .id(att.getId())
+                                .fileName(att.getFileName())
+                                .fileType(att.getFileType())
+                                .fileSize(att.getFileSize())
+                                .filePath(att.getFilePath())
+                                .build())
+                        .toList() : 
+                List.of();
+        
         ChatMessage chatMessage = ChatMessage.builder()
                 .type("CREATE")
                 .messageId(message.getId())
@@ -80,6 +94,7 @@ public class WebSocketService {
                 .senderAvatarUrl(message.getSender().getAvatarUrl())
                 .createdAt(message.getCreatedAt())
                 .updatedAt(message.getUpdatedAt())
+                .attachments(attachments)
                 .build();
 
         String topic = "/topic/chat/" + message.getChat().getId() + "/messages";
@@ -89,6 +104,19 @@ public class WebSocketService {
     }
 
     public void broadcastChatMessageUpdated(Message message) {
+        // Get attachments for this message
+        List<ChatMessage.AttachmentInfo> attachments = message.getAttachments() != null ? 
+                message.getAttachments().stream()
+                        .map(att -> ChatMessage.AttachmentInfo.builder()
+                                .id(att.getId())
+                                .fileName(att.getFileName())
+                                .fileType(att.getFileType())
+                                .fileSize(att.getFileSize())
+                                .filePath(att.getFilePath())
+                                .build())
+                        .toList() : 
+                List.of();
+        
         ChatMessage chatMessage = ChatMessage.builder()
                 .type("UPDATE")
                 .messageId(message.getId())
@@ -100,6 +128,7 @@ public class WebSocketService {
                 .senderAvatarUrl(message.getSender().getAvatarUrl())
                 .createdAt(message.getCreatedAt())
                 .updatedAt(message.getUpdatedAt())
+                .attachments(attachments)
                 .build();
 
         messagingTemplate.convertAndSend("/topic/chat/" + message.getChat().getId() + "/messages", chatMessage);

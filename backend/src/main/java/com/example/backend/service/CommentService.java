@@ -53,20 +53,21 @@ public class CommentService {
 
       try {
           Comment savedComment = commentRepository.save(comment);
-          // Comment out attachment logic for now
-          // if (attachments != null) {
-          //     for (AttachmentMeta meta : attachments) {
-          //         Attachment att = Attachment.builder()
-          //                 .comment(savedComment)
-          //                 .fileName(meta.getFileName())
-          //                 .fileType(meta.getFileType())
-          //                 .fileSize(meta.getFileSize())
-          //                 .filePath(meta.getFilePath())
-          //                 .uploader(user.get())
-          //                 .build();
-          //         attachmentRepository.save(att);
-          //     }
-          // }
+          
+          // Save attachments if provided
+          if (attachments != null && !attachments.isEmpty()) {
+              for (AttachmentMeta meta : attachments) {
+                  Attachment att = Attachment.builder()
+                          .comment(savedComment)
+                          .fileName(meta.getFileName())
+                          .fileType(meta.getFileType())
+                          .fileSize(meta.getFileSize())
+                          .filePath(meta.getFilePath())
+                          .uploader(user.get())
+                          .build();
+                  attachmentRepository.save(att);
+              }
+          }
           
           // Broadcast comment creation via WebSocket
           webSocketService.broadcastCommentCreated(savedComment);

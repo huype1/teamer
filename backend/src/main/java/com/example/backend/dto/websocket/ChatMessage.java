@@ -6,6 +6,7 @@ import lombok.Getter;
 import lombok.experimental.FieldDefaults;
 
 import java.time.OffsetDateTime;
+import java.util.List;
 import java.util.UUID;
 
 @Builder
@@ -22,4 +23,16 @@ public class ChatMessage {
     String senderAvatarUrl;
     OffsetDateTime createdAt;
     OffsetDateTime updatedAt;
+    List<AttachmentInfo> attachments;
+    
+    @Builder
+    @Getter
+    @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
+    public static class AttachmentInfo {
+        UUID id;
+        String fileName;
+        String fileType;
+        Long fileSize;
+        String filePath;
+    }
 } 

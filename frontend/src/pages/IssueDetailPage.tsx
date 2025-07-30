@@ -42,12 +42,13 @@ import sprintService from "@/service/sprintService";
 import type { User } from "@/types/user";
 import { getCurrentUserRole, isCurrentUserManager } from "@/utils/projectHelpers";
 import {IssueForm} from "@/components/project/IssueForm";
-// import attachmentService from "@/service/attachmentService";
+import attachmentService from "@/service/attachmentService";
 import { IssuesTable } from "@/components/project/IssuesTable";
 // import { useWebSocket } from "@/hooks/useWebSocket";
 import type { CommentMessage } from "@/service/websocketService";
 import websocketService from "@/service/websocketService";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
+import { AttachmentList } from "@/components/ui/attachment-list";
 
 const commentSchema = z.object({
   content: z.string().min(1, "Nội dung comment không được để trống"),
@@ -99,8 +100,8 @@ const IssueDetailPage: React.FC = () => {
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [uploading, setUploading] = useState(false);
 
-  // Comment out attachment state for now
-  // const [commentAttachments, setCommentAttachments] = useState<Record<string, unknown[]>>({});
+  // State for comment attachments
+  const [commentAttachments, setCommentAttachments] = useState<Record<string, any[]>>({});
 
   // State for create subtask dialog
   const [isCreateSubtaskOpen, setIsCreateSubtaskOpen] = useState(false);
@@ -318,26 +319,13 @@ const IssueDetailPage: React.FC = () => {
     setUploading(true);
     const uploaded: unknown[] = [];
     for (const file of files) {
-      // 1. Lấy presigned URL
-      const presignedRes = await fetch('/api/attachments/presigned-url', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${localStorage.getItem('token')}` },
-        body: JSON.stringify({ fileName: file.name, fileType: file.type }),
-      });
-      const { url, filePath } = await presignedRes.json();
-      // 2. Upload file lên S3
-      await fetch(url, {
-        method: 'PUT',
-        headers: { 'Content-Type': file.type },
-        body: file,
-      });
-      // 3. Lưu metadata
-      uploaded.push({
-        fileName: file.name,
-        fileType: file.type,
-        fileSize: file.size,
-        filePath,
-      });
+      try {
+        const attachmentMeta = await attachmentService.uploadFile(file);
+        uploaded.push(attachmentMeta);
+      } catch (error) {
+        console.error("Lỗi khi upload file:", error);
+        toastError(`Không thể upload file ${file.name}`);
+      }
     }
     setUploading(false);
     return uploaded;
@@ -345,23 +333,25 @@ const IssueDetailPage: React.FC = () => {
 
   const onSubmitComment = async (data: CommentFormData) => {
     if (!issue || !user) return;
-    // Comment out S3 logic for now
-    // let attachments = [];
-    // if (selectedFiles.length > 0) {
-    //   attachments = await uploadFilesToS3(selectedFiles);
-    // }
+    
+    let attachments: any[] = [];
+    if (selectedFiles.length > 0) {
+      attachments = await uploadFilesToS3(selectedFiles);
+    }
+    
     try {
       await commentService.createComment({
         content: data.content,
         issueId: issue.id,
         userId: user.id,
-        attachments: [], // Empty array for now
+        attachments: attachments,
       });
       reset();
       setSelectedFiles([]);
       // Don't call fetchIssueData() - let WebSocket handle the update
     } catch (error) {
       console.error("Error creating comment:", error);
+      toastError("Không thể tạo comment!");
     }
   };
 
@@ -444,26 +434,26 @@ const IssueDetailPage: React.FC = () => {
     }
   };
 
-  // Comment out attachment fetching for now
-  // const fetchAttachmentsForComments = async (comments: Comment[]) => {
-  //   const result: Record<string, unknown[]> = {};
-  //   for (const c of comments) {
-  //     try {
-  //       const res = await attachmentService.getByCommentId(c.id);
-  //       result[c.id] = res;
-  //     } catch {
-  //       result[c.id] = [];
-  //     }
-  //   }
-  //   setCommentAttachments(result);
-  // };
+  // Fetch attachments for comments
+  const fetchAttachmentsForComments = async (comments: Comment[]) => {
+    const result: Record<string, any[]> = {};
+    for (const c of comments) {
+      try {
+        const res = await attachmentService.getByCommentId(c.id);
+        result[c.id] = res;
+      } catch {
+        result[c.id] = [];
+      }
+    }
+    setCommentAttachments(result);
+  };
 
-  // Gọi khi fetch comment xong
-  // useEffect(() => {
-  //   if (comments.length > 0) {
-  //     fetchAttachmentsForComments(comments);
-  //   }
-  // }, [comments]);
+  // Fetch attachments when comments change
+  useEffect(() => {
+    if (comments.length > 0) {
+      fetchAttachmentsForComments(comments);
+    }
+  }, [comments]);
 
 
 
@@ -629,43 +619,29 @@ const IssueDetailPage: React.FC = () => {
                           <AvatarImage src={comment.user.avatarUrl} />
                           <AvatarFallback>{comment.user.name.charAt(0)}</AvatarFallback>
                         </Avatar>
-                        <div className="flex-1">
-                          <div className="flex items-center justify-between mb-1">
-                            <div className="flex items-center gap-2">
-                              <span className="font-medium text-sm">{comment.user.name}</span>
-                              <span className="text-xs text-muted-foreground">
-                                {new Date(comment.createdAt).toLocaleDateString('vi-VN')}
-                              </span>
-                            </div>
-                            {user && comment.user.id === user.id && (
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => handleDeleteComment(comment.id)}
-                                className="h-6 w-6 p-0 text-muted-foreground hover:text-destructive"
-                              >
-                                <Trash2 className="h-3 w-3" />
-                              </Button>
-                            )}
-                          </div>
-                          <div className="whitespace-pre-wrap text-sm">{comment.content}</div>
-                        </div>
-                        {/* Comment out attachment display for now */}
-                        {/* {commentAttachments[comment.id] && commentAttachments[comment.id].length > 0 && (
-                          <div className="mt-2">
-                            <div className="text-xs font-semibold mb-1">File đính kèm:</div>
-                            <ul className="list-disc ml-4">
-                              {commentAttachments[comment.id].map((file) => (
-                                <li key={file.id}>
-                                  <a href={`https://${bucketName}.s3.${region}.amazonaws.com/${file.filePath}`} target="_blank" rel="noopener noreferrer" className="text-blue-600 underline">
-                                    {file.fileName}
-                                  </a>
-                                  <span className="ml-2 text-xs text-muted-foreground">({Math.round(file.fileSize/1024)} KB)</span>
-                                </li>
-                              ))}
-                            </ul>
-                          </div>
-                        )} */}
+                                                 <div className="flex-1">
+                           <div className="flex items-center justify-between mb-1">
+                             <div className="flex items-center gap-2">
+                               <span className="font-medium text-sm">{comment.user.name}</span>
+                               <span className="text-xs text-muted-foreground">
+                                 {new Date(comment.createdAt).toLocaleDateString('vi-VN')}
+                               </span>
+                             </div>
+                             {user && comment.user.id === user.id && (
+                               <Button
+                                 variant="ghost"
+                                 size="sm"
+                                 onClick={() => handleDeleteComment(comment.id)}
+                                 className="h-6 w-6 p-0 text-muted-foreground hover:text-destructive"
+                               >
+                                 <Trash2 className="h-3 w-3" />
+                               </Button>
+                             )}
+                           </div>
+                           <div className="whitespace-pre-wrap text-sm">{comment.content}</div>
+                           {/* Display attachments */}
+                           <AttachmentList attachments={commentAttachments[comment.id] || []} />
+                         </div>
                       </div>
                     ))}
                   </div>

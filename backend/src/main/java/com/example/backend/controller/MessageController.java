@@ -32,7 +32,7 @@ public class MessageController {
     @PostMapping("/send")
     public ApiResponse<Message> sendMessage(@RequestBody MessageCreationRequest request) {
         UUID senderId = JwtUtils.getSubjectFromJwt();
-        Message message = messageService.sendMessage(senderId, request.getChatId(), request.getContent());
+        Message message = messageService.sendMessage(senderId, request.getChatId(), request.getContent(), request.getAttachments());
         return ApiResponse.<Message>builder()
                 .message("Message sent successfully")
                 .result(message)

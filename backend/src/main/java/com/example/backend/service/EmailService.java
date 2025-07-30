@@ -91,13 +91,14 @@ public class EmailService {
                 <h2>%s</h2>
                 <p>%s</p>
                 <p><a href="%s">Xem chi tiết</a></p>
-                <p>Đây là email tự động từ Teamer. Vui lòng không trả lời email này.</p>
+                <p>Đây là email tự động từ Teamer. Gửi vào %s.</p>
             </body>
             </html>
             """,
             notification.getTitle(),
             notification.getContent(),
-            notification.getLink()
+            notification.getLink(),
+            notification.getCreatedAt().toString()
         );
     }
 

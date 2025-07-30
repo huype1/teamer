@@ -1,6 +1,7 @@
 package com.example.backend.service;
 
 import com.example.backend.dto.request.ChatMessageRequest;
+import com.example.backend.dto.request.AttachmentMeta;
 import com.example.backend.dto.response.ChatMessageResponse;
 import com.example.backend.entity.Chat;
 import com.example.backend.entity.Message;
@@ -35,6 +36,7 @@ public class ChatService {
     UserRepository userRepository;
     ChatMessageMapper chatMessageMapper;
     WebSocketService webSocketService;
+    MessageService messageService;
     
     /**
      * Create a new chat with name
@@ -89,14 +91,8 @@ public class ChatService {
             throw new AppException(ErrorCode.NOT_FOUND);
         }
         
-        // Create message
-        Message message = Message.builder()
-                .content(request.getContent())
-                .chat(chat)
-                .sender(user.get())
-                .build();
-        
-        Message savedMessage = messageRepository.save(message);
+        // Create message using MessageService (which handles attachments)
+        Message savedMessage = messageService.sendMessage(userId, request.getChatId(), request.getContent(), request.getAttachments());
         log.info("Created message with id: {} in chat: {}", savedMessage.getId(), chat.getId());
         
         // Broadcast message via WebSocket

@@ -7,6 +7,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.util.List;
 import java.util.UUID;
 
 @Data
@@ -20,4 +21,6 @@ public class ChatMessageRequest {
     
     @NotNull(message = "Chat ID is required")
     private UUID chatId;
+    
+    private List<AttachmentMeta> attachments;
 } 

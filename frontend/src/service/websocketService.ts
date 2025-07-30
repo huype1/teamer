@@ -26,6 +26,15 @@ export interface ChatMessage {
   senderAvatarUrl?: string;
   createdAt?: string;
   updatedAt?: string;
+  attachments?: AttachmentInfo[];
+}
+
+export interface AttachmentInfo {
+  id: string;
+  fileName: string;
+  fileType: string;
+  fileSize: number;
+  filePath: string;
 }
 
 export interface NotificationMessage {

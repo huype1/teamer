@@ -7,9 +7,9 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.UUID;
-import com.example.backend.dto.request.PresignedUrlRequest;
-
 import java.util.Map;
+import java.util.HashMap;
+import com.example.backend.dto.request.PresignedUrlRequest;
 
 @RestController
 @RequestMapping("/attachments")
@@ -35,5 +35,15 @@ public class AttachmentController {
     @PostMapping("/presigned-url")
     public Map<String, String> getPresignedUrl(@RequestBody PresignedUrlRequest request) {
         return attachmentService.generatePresignedUrl(request);
+    }
+
+    @PostMapping("/download-url")
+    public Map<String, String> getDownloadUrl(@RequestBody Map<String, String> request) {
+        String filePath = request.get("filePath");
+        String downloadUrl = attachmentService.generateDownloadUrl(filePath);
+        
+        Map<String, String> result = new HashMap<>();
+        result.put("downloadUrl", downloadUrl);
+        return result;
     }
 } 

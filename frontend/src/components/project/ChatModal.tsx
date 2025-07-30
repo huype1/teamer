@@ -7,10 +7,12 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Trash2, Send, MessageSquare } from "lucide-react";
+import { Trash2, Send, MessageSquare, Paperclip } from "lucide-react";
 import { toastError } from "@/utils/toast";
 import chatService, { type ChatMessage } from "@/service/chatService";
-import websocketService from "@/service/websocketService";
+import attachmentService, { type Attachment, type AttachmentMeta } from "@/service/attachmentService";
+import { AttachmentList } from "@/components/ui/attachment-list";
+import websocketService, { type AttachmentInfo } from "@/service/websocketService";
 import { useWebSocketContext } from "@/components/WebSocketProvider";
 import type { RootState } from "@/store";
 import { LoadingSpinner } from "../ui/loading-spinner";
@@ -33,6 +35,9 @@ const ChatModal: React.FC<ChatModalProps> = ({ isOpen, onClose, chatId, chatName
   const { isConnected } = useWebSocketContext();
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [loading, setLoading] = useState(true);
+  const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
+  const [uploading, setUploading] = useState(false);
+  const [messageAttachments, setMessageAttachments] = useState<Record<string, Attachment[]>>({});
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
 
@@ -61,7 +66,7 @@ const ChatModal: React.FC<ChatModalProps> = ({ isOpen, onClose, chatId, chatName
   // WebSocket chat message handling
   useEffect(() => {
     if (chatId && isOpen && isConnected) {
-      const handleChatMessage = async (message: { type: string; messageId?: string; content?: string; chatId?: string; senderId?: string; senderName?: string; senderEmail?: string; senderAvatarUrl?: string; createdAt?: string; updatedAt?: string }) => {
+      const handleChatMessage = async (message: { type: string; messageId?: string; content?: string; chatId?: string; senderId?: string; senderName?: string; senderEmail?: string; senderAvatarUrl?: string; createdAt?: string; updatedAt?: string; attachments?: AttachmentInfo[] }) => {
         if (message.type === 'CREATE') {
           const newMessage: ChatMessage = {
             id: message.messageId || '',
@@ -77,14 +82,62 @@ const ChatModal: React.FC<ChatModalProps> = ({ isOpen, onClose, chatId, chatName
             },
           };
           setMessages(prev => [...prev, newMessage]);
+          
+          // Handle attachments from WebSocket
+          if (message.attachments && message.attachments.length > 0) {
+            const attachmentList = message.attachments.map((att: AttachmentInfo) => ({
+              id: att.id,
+              fileName: att.fileName,
+              fileType: att.fileType,
+              fileSize: att.fileSize,
+              filePath: att.filePath,
+              uploadedAt: new Date().toISOString(),
+              uploader: {
+                id: message.senderId || '',
+                name: message.senderName || '',
+                email: message.senderEmail || '',
+              },
+            }));
+            setMessageAttachments(prev => ({
+              ...prev,
+              [message.messageId || '']: attachmentList
+            }));
+          }
         } else if (message.type === 'UPDATE') {
           setMessages(prev => prev.map(msg => 
             msg.id === message.messageId 
               ? { ...msg, content: message.content || '', updatedAt: message.updatedAt || new Date().toISOString() }
               : msg
           ));
+          
+          // Update attachments if provided
+          if (message.attachments) {
+            const attachmentList = message.attachments.map((att: AttachmentInfo) => ({
+              id: att.id,
+              fileName: att.fileName,
+              fileType: att.fileType,
+              fileSize: att.fileSize,
+              filePath: att.filePath,
+              uploadedAt: new Date().toISOString(),
+              uploader: {
+                id: message.senderId || '',
+                name: message.senderName || '',
+                email: message.senderEmail || '',
+              },
+            }));
+            setMessageAttachments(prev => ({
+              ...prev,
+              [message.messageId || '']: attachmentList
+            }));
+          }
         } else if (message.type === 'DELETE') {
           setMessages(prev => prev.filter(msg => msg.id !== message.messageId));
+          // Remove attachments for deleted message
+          setMessageAttachments(prev => {
+            const newAttachments = { ...prev };
+            delete newAttachments[message.messageId || ''];
+            return newAttachments;
+          });
         }
       };
       
@@ -116,15 +169,60 @@ const ChatModal: React.FC<ChatModalProps> = ({ isOpen, onClose, chatId, chatName
     }
   };
 
+  // Upload files to S3 and get metadata
+  const uploadFilesToS3 = async (files: File[]) => {
+    setUploading(true);
+    const uploaded: AttachmentMeta[] = [];
+    for (const file of files) {
+      try {
+        const attachmentMeta = await attachmentService.uploadFile(file);
+        uploaded.push(attachmentMeta);
+      } catch (error) {
+        console.error("Lỗi khi upload file:", error);
+        toastError(`Không thể upload file ${file.name}`);
+      }
+    }
+    setUploading(false);
+    return uploaded;
+  };
+
+  // Fetch attachments for messages
+  const fetchAttachmentsForMessages = async (messages: ChatMessage[]) => {
+    const result: Record<string, Attachment[]> = {};
+    for (const msg of messages) {
+      try {
+        const res = await attachmentService.getByMessageId(msg.id);
+        result[msg.id] = res;
+      } catch {
+        result[msg.id] = [];
+      }
+    }
+    setMessageAttachments(result);
+  };
+
+  // Fetch attachments when messages change
+  useEffect(() => {
+    if (messages.length > 0) {
+      fetchAttachmentsForMessages(messages);
+    }
+  }, [messages]);
+
   const onSubmitMessage = async (data: MessageFormData) => {
     if (!user) return;
+    
+    let attachments: AttachmentMeta[] = [];
+    if (selectedFiles.length > 0) {
+      attachments = await uploadFilesToS3(selectedFiles);
+    }
     
     try {
       await chatService.createChatMessage({
         content: data.content,
         chatId: chatId,
+        attachments: attachments,
       });
       reset();
+      setSelectedFiles([]);
     } catch (error) {
       toastError("Gửi tin nhắn thất bại!");
       console.error("Error sending message:", error);
@@ -153,9 +251,65 @@ const ChatModal: React.FC<ChatModalProps> = ({ isOpen, onClose, chatId, chatName
     }
   };
 
+  // File upload component
+  function FileUploadInput({
+    selectedFiles,
+    setSelectedFiles,
+    uploading
+  }: {
+    selectedFiles: File[];
+    setSelectedFiles: (files: File[]) => void;
+    uploading: boolean;
+  }) {
+    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+      setSelectedFiles(Array.from(e.target.files || []));
+    };
+
+    const removeFile = (index: number) => {
+      setSelectedFiles(selectedFiles.filter((_, i) => i !== index));
+    };
+
+    return (
+      <div className="mt-2">
+        <label className="flex items-center gap-2 cursor-pointer">
+          <Paperclip className="w-4 h-4" />
+          <span className="text-sm text-muted-foreground">Đính kèm file</span>
+          <input
+            type="file"
+            multiple
+            className="hidden"
+            onChange={handleFileChange}
+            disabled={uploading}
+          />
+        </label>
+        {selectedFiles.length > 0 && (
+          <ul className="mt-2 space-y-1">
+            {selectedFiles.map((file, idx) => (
+              <li key={idx} className="flex items-center gap-2 text-sm bg-muted rounded px-2 py-1">
+                <span className="truncate max-w-xs">{file.name}</span>
+                <span className="text-xs text-muted-foreground">({Math.round(file.size / 1024)} KB)</span>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  className="h-5 w-5"
+                  onClick={() => removeFile(idx)}
+                  disabled={uploading}
+                >
+                  <Trash2 className="w-4 h-4 text-destructive" />
+                </Button>
+              </li>
+            ))}
+          </ul>
+        )}
+        {uploading && <div className="text-xs text-blue-500 mt-1">Đang upload file...</div>}
+      </div>
+    );
+  }
+
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-2xl max-h-[80vh] flex flex-col">
+      <DialogContent className="max-w-4xl h-[80vh] flex flex-col">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <MessageSquare className="w-5 h-5" />
@@ -203,6 +357,8 @@ const ChatModal: React.FC<ChatModalProps> = ({ isOpen, onClose, chatId, chatName
                         )}
                       </div>
                       <div className="whitespace-pre-wrap text-sm break-words">{message.content}</div>
+                      {/* Display attachments */}
+                      <AttachmentList attachments={messageAttachments[message.id] || []} />
                     </div>
                   </div>
                 ))}
@@ -220,24 +376,19 @@ const ChatModal: React.FC<ChatModalProps> = ({ isOpen, onClose, chatId, chatName
                 {...register("content")}
                 rows={3}
                 className="resize-none"
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter' && !e.shiftKey) {
-                    e.preventDefault();
-                    handleSubmit(onSubmitMessage)();
-                  }
-                }}
+              />
+              <FileUploadInput
+                selectedFiles={selectedFiles}
+                setSelectedFiles={setSelectedFiles}
+                uploading={uploading}
               />
               {errors.content && (
                 <span className="text-xs text-red-500">{errors.content.message}</span>
               )}
               <div className="flex justify-end">
-                <Button type="submit" size="sm" disabled={isSubmitting}>
-                  {isSubmitting ? "Đang gửi..." : (
-                    <>
-                      <Send className="w-4 h-4 mr-2" />
-                      Gửi tin nhắn
-                    </>
-                  )}
+                <Button type="submit" size="sm" disabled={isSubmitting || uploading}>
+                  <Send className="w-4 h-4 mr-2" />
+                  {isSubmitting || uploading ? "Đang gửi..." : "Gửi"}
                 </Button>
               </div>
             </form>
