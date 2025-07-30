@@ -16,9 +16,11 @@ import sprintService from '@/service/sprintService';
 import type { Sprint } from '@/types/sprint';
 import { format, addDays, differenceInCalendarDays } from 'date-fns';
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
+import { Progress } from "@/components/ui/progress";
 
 const mapIssue = (issue: unknown): Issue => {
   const i = issue as Record<string, unknown>;
+  
   return {
     ...i,
     issueType: (i.issueType as string) || "TASK",
@@ -29,14 +31,14 @@ const mapIssue = (issue: unknown): Issue => {
           name: i.reporterName as string,
           email: i.reporterEmail as string,
         }
-      : null,
+      : undefined,
     assignee: i.assigneeId
       ? {
           id: i.assigneeId as string,
           name: i.assigneeName as string,
           email: i.assigneeEmail as string,
         }
-      : null,
+      : undefined,
   } as Issue;
 };
 
@@ -111,6 +113,315 @@ function calculateAllVelocities(sprints, allIssues) {
   }).filter(item => item.velocity > 0); // Chỉ hiển thị sprint có velocity > 0
 }
 
+// Hàm tính tỷ lệ hoàn thành mới dựa trên status và subtask status
+function calculateCompletionPercentage(issues: Issue[]): number {
+  if (issues.length === 0) return 0;
+  
+  let totalWeight = 0;
+  let completedWeight = 0;
+  
+  issues.forEach(issue => {
+    // Tính weight cho issue chính
+    const issueWeight = issue.storyPoints || 1; // Nếu không có story points thì weight = 1
+    totalWeight += issueWeight;
+    
+    // Nếu issue đã hoàn thành
+    if (issue.status === 'DONE') {
+      completedWeight += issueWeight;
+    }
+    
+    // Tính weight cho subtasks nếu có
+    if (issue.subtasks && issue.subtasks.length > 0) {
+      let subtaskTotalWeight = 0;
+      let subtaskCompletedWeight = 0;
+      
+      issue.subtasks.forEach(subtask => {
+        const subtaskWeight = subtask.storyPoints || 1;
+        subtaskTotalWeight += subtaskWeight;
+        
+        if (subtask.status === 'DONE') {
+          subtaskCompletedWeight += subtaskWeight;
+        }
+      });
+      
+      // Nếu có subtasks, tính completion dựa trên subtasks
+      if (subtaskTotalWeight > 0) {
+        const subtaskCompletion = subtaskCompletedWeight / subtaskTotalWeight;
+        completedWeight += issueWeight * subtaskCompletion;
+      }
+    }
+  });
+  
+  return totalWeight > 0 ? (completedWeight / totalWeight) * 100 : 0;
+}
+
+// Component biểu đồ tỷ lệ hoàn thành
+const CompletionProgressChart: React.FC<{ issues: Issue[] }> = ({ issues }) => {
+  const completionPercentage = calculateCompletionPercentage(issues);
+  const completedIssues = issues.filter(i => i.status === 'DONE').length;
+  const totalIssues = issues.length;
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center justify-between">
+          <span>Tỷ lệ hoàn thành</span>
+          <span className="text-2xl font-bold text-green-600">
+            {Math.round(completionPercentage)}%
+          </span>
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="space-y-2">
+          <div className="flex justify-between text-sm">
+            <span>Tiến độ dự án</span>
+            <span>{Math.round(completionPercentage)}%</span>
+          </div>
+          <Progress 
+            value={completionPercentage} 
+            className="h-3"
+          />
+          <div className="flex justify-between text-xs text-muted-foreground">
+            <span>Hoàn thành: {completedIssues} / {totalIssues} issues</span>
+            <span>Story Points: {issues.reduce((sum, issue) => sum + (issue.storyPoints || 0), 0)}</span>
+          </div>
+        </div>
+        
+        {/* Chi tiết theo status */}
+        <div className="grid grid-cols-2 gap-4 pt-4 border-t">
+          <div className="text-center">
+            <div className="text-2xl font-bold text-green-600">
+              {issues.filter(i => i.status === 'DONE').length}
+            </div>
+            <div className="text-xs text-muted-foreground">Đã hoàn thành</div>
+          </div>
+          <div className="text-center">
+            <div className="text-2xl font-bold text-blue-600">
+              {issues.filter(i => i.status === 'IN_PROGRESS').length}
+            </div>
+            <div className="text-xs text-muted-foreground">Đang làm</div>
+          </div>
+          <div className="text-center">
+            <div className="text-2xl font-bold text-yellow-600">
+              {issues.filter(i => i.status === 'IN_REVIEW').length}
+            </div>
+            <div className="text-xs text-muted-foreground">Đang review</div>
+          </div>
+          <div className="text-center">
+            <div className="text-2xl font-bold text-gray-600">
+              {issues.filter(i => i.status === 'TO_DO').length}
+            </div>
+            <div className="text-xs text-muted-foreground">Cần làm</div>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
+};
+
+
+
+// Component biểu đồ tỷ lệ hoàn thành theo loại issue
+const CompletionByIssueTypeChart: React.FC<{ issues: Issue[] }> = ({ issues }) => {
+  const issueTypes = ['STORY', 'TASK', 'BUG', 'SUBTASK'];
+  
+  const createIssueTypeData = () => {
+    return issueTypes.map(type => {
+      const typeIssues = issues.filter(issue => issue.issueType === type);
+      const completionPercentage = calculateCompletionPercentage(typeIssues);
+      
+      return {
+        type: type,
+        completion: Math.round(completionPercentage),
+        total: typeIssues.length,
+        completed: typeIssues.filter(i => i.status === 'DONE').length,
+        color: type === 'STORY' ? '#3b82f6' : 
+               type === 'TASK' ? '#22c55e' : 
+               type === 'BUG' ? '#ef4444' : '#f59e0b'
+      };
+    }).filter(item => item.total > 0); // Chỉ hiển thị loại có issues
+  };
+
+  const issueTypeData = createIssueTypeData();
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Tỷ lệ hoàn thành theo loại issue</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <ResponsiveContainer width="100%" height={300}>
+          <BarChart data={issueTypeData}>
+            <CartesianGrid strokeDasharray="3 3" />
+            <XAxis dataKey="type" />
+            <YAxis domain={[0, 100]} />
+            <Tooltip 
+              formatter={(value, name) => [
+                `${value}%`, 
+                name === 'completion' ? 'Tỷ lệ hoàn thành' : name
+              ]}
+              labelFormatter={label => `Loại: ${label}`}
+            />
+            <Legend />
+            <Bar dataKey="completion" name="Tỷ lệ hoàn thành">
+              {issueTypeData.map((entry, index) => (
+                <Cell key={`cell-${index}`} fill={entry.color} />
+              ))}
+            </Bar>
+          </BarChart>
+        </ResponsiveContainer>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-4">
+          {issueTypeData.map(item => (
+            <div key={item.type} className="text-center">
+              <div className="text-lg font-bold" style={{ color: item.color }}>
+                {item.completion}%
+              </div>
+              <div className="text-xs text-muted-foreground">
+                {item.type} ({item.completed}/{item.total})
+              </div>
+            </div>
+          ))}
+        </div>
+      </CardContent>
+    </Card>
+  );
+};
+
+// Component biểu đồ phân bổ công việc
+const WorkDistributionChart: React.FC<{ issues: Issue[] }> = ({ issues }) => {
+  // Phân bổ theo priority
+  const getPriorityDistribution = () => {
+    const priorityMap = new Map();
+    
+    issues.forEach(issue => {
+      const priority = issue.priority;
+      
+      if (!priorityMap.has(priority)) {
+        priorityMap.set(priority, {
+          priority,
+          total: 0,
+          storyPoints: 0,
+          completed: 0
+        });
+      }
+      
+      const data = priorityMap.get(priority);
+      data.total++;
+      data.storyPoints += issue.storyPoints || 0;
+      if (issue.status === 'DONE') data.completed++;
+    });
+    
+    return Array.from(priorityMap.values())
+      .sort((a, b) => a.priority.localeCompare(b.priority));
+  };
+
+  // Phân bổ theo issue type
+  const getIssueTypeDistribution = () => {
+    const typeMap = new Map();
+    
+    issues.forEach(issue => {
+      const type = issue.issueType;
+      
+      if (!typeMap.has(type)) {
+        typeMap.set(type, {
+          type,
+          total: 0,
+          storyPoints: 0,
+          completed: 0
+        });
+      }
+      
+      const data = typeMap.get(type);
+      data.total++;
+      data.storyPoints += issue.storyPoints || 0;
+      if (issue.status === 'DONE') data.completed++;
+    });
+    
+    return Array.from(typeMap.values())
+      .sort((a, b) => b.total - a.total);
+  };
+
+  const priorityData = getPriorityDistribution();
+  const issueTypeData = getIssueTypeDistribution();
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Phân bổ công việc</CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-6">
+        {/* Phân bổ theo priority */}
+        <div>
+          <h4 className="text-sm font-medium mb-3">Theo độ ưu tiên</h4>
+          <ResponsiveContainer width="100%" height={150}>
+            <BarChart data={priorityData}>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="priority" />
+              <YAxis />
+              <Tooltip 
+                formatter={(value, name) => [
+                  value, 
+                  name === 'total' ? 'Tổng số' :
+                  name === 'completed' ? 'Hoàn thành' :
+                  name === 'storyPoints' ? 'Story Points' : name
+                ]}
+              />
+              <Legend />
+              <Bar dataKey="total" name="Tổng số" fill="#3b82f6" />
+              <Bar dataKey="completed" name="Hoàn thành" fill="#22c55e" />
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+
+        {/* Phân bổ theo issue type */}
+        <div>
+          <h4 className="text-sm font-medium mb-3">Theo loại issue</h4>
+          <ResponsiveContainer width="100%" height={150}>
+            <BarChart data={issueTypeData}>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="type" />
+              <YAxis />
+              <Tooltip 
+                formatter={(value, name) => [
+                  value, 
+                  name === 'total' ? 'Tổng số' :
+                  name === 'completed' ? 'Hoàn thành' :
+                  name === 'storyPoints' ? 'Story Points' : name
+                ]}
+              />
+              <Legend />
+              <Bar dataKey="total" name="Tổng số" fill="#8b5cf6" />
+              <Bar dataKey="completed" name="Hoàn thành" fill="#22c55e" />
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+
+        {/* Summary stats */}
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-4 pt-4 border-t">
+          <div className="text-center">
+            <div className="text-lg font-bold text-green-600">
+              {issues.reduce((sum, issue) => sum + (issue.storyPoints || 0), 0)}
+            </div>
+            <div className="text-xs text-muted-foreground">Tổng Story Points</div>
+          </div>
+          <div className="text-center">
+            <div className="text-lg font-bold text-purple-600">
+              {issueTypeData.length}
+            </div>
+            <div className="text-xs text-muted-foreground">Loại issue</div>
+          </div>
+          <div className="text-center">
+            <div className="text-lg font-bold text-orange-600">
+              {priorityData.length}
+            </div>
+            <div className="text-xs text-muted-foreground">Mức ưu tiên</div>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
+};
+
 const ProjectReportsPage: React.FC = () => {
   const { projectId } = useParams<{ projectId: string }>();
   const [project, setProject] = useState<Project | null>(null);
@@ -160,9 +471,12 @@ const ProjectReportsPage: React.FC = () => {
   const fetchIssues = async () => {
     try {
       const response = await issueService.getIssuesByProjectId(projectId!);
-      console.log(response);
-      setIssues(response.result.map(mapIssue));
-    } catch {
+      const mappedIssues = response.result.map(mapIssue);
+      
+      // Temporarily skip subtasks to debug
+      setIssues(mappedIssues);
+    } catch (error) {
+      console.error('Error fetching issues:', error);
       toastError("Không thể tải danh sách issues!");
     } finally {
       setLoading(false);
@@ -172,8 +486,12 @@ const ProjectReportsPage: React.FC = () => {
   const fetchIssuesBySprint = async (sprintId: string) => {
     try {
       const response = await sprintService.getIssuesBySprint(sprintId);
-      setIssues(response.result.map(mapIssue));
-    } catch {
+      const mappedIssues = response.result.map(mapIssue);
+      
+      // Temporarily skip subtasks to debug
+      setIssues(mappedIssues);
+    } catch (error) {
+      console.error('Error fetching sprint issues:', error);
       toastError("Không thể tải issues của sprint!");
     } finally {
       setLoading(false);
@@ -277,31 +595,13 @@ const ProjectReportsPage: React.FC = () => {
 
       {/* Tổng số issues & Tỷ lệ hoàn thành */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <Card>
-          <CardHeader>
-            <CardTitle>Tổng số issues</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex flex-col items-center justify-center h-32">
-              <span className="text-5xl font-bold text-primary">{issues.length}</span>
-              <span className="text-muted-foreground mt-2">Tổng số issues trong {selectedSprintId ? 'sprint' : 'dự án'}</span>
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader>
-            <CardTitle>Tỷ lệ hoàn thành</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex flex-col items-center justify-center h-32">
-              <span className="text-5xl font-bold text-green-600">
-                {issues.length > 0 ? `${Math.round((statusStats.DONE / issues.length) * 100)}%` : '0%'}
-              </span>
-              <span className="text-muted-foreground mt-2">Số lượng hoàn thành: {statusStats.DONE} / {issues.length}</span>
-            </div>
-          </CardContent>
-        </Card>
+        <WorkDistributionChart issues={issues} />
+        <CompletionProgressChart issues={issues} />
       </div>
+
+
+      {/* Completion by Issue Type Chart */}
+      <CompletionByIssueTypeChart issues={issues} />
 
       {/* Burndown Chart */}
       {selectedSprint ? (

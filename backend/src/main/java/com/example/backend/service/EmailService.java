@@ -1,5 +1,6 @@
 package com.example.backend.service;
 
+import com.example.backend.entity.Notification;
 import com.example.backend.entity.Project;
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
@@ -59,6 +60,44 @@ public class EmailService {
             project.getName(),
             role,
             link
+        );
+    }
+
+    public void sendNotificationEmail(String email, Notification notification) throws MessagingException {
+        MimeMessage mimeMessage = javaMailSender.createMimeMessage();
+        MimeMessageHelper helper = new MimeMessageHelper(mimeMessage, "utf-8");
+
+        String subject = notification.getTitle();
+        String content = createNotificationEmailTemplate(notification);
+        
+        helper.setSubject(subject);
+        helper.setText(content, true);
+        helper.setTo(email);
+
+        try {
+            javaMailSender.send(mimeMessage);
+            log.info("Notification email sent successfully to {}: {}", email, notification.getTitle());
+        } catch (Exception e) {
+            log.error("Failed to send notification email to {}: {}", email, e.getMessage());
+            throw new MailSendException("Failed to send notification email", e);
+        }
+    }
+
+    private String createNotificationEmailTemplate(Notification notification) {
+        return String.format(
+            """
+            <html>
+            <body>
+                <h2>%s</h2>
+                <p>%s</p>
+                <p><a href="%s">Xem chi tiết</a></p>
+                <p>Đây là email tự động từ Teamer. Vui lòng không trả lời email này.</p>
+            </body>
+            </html>
+            """,
+            notification.getTitle(),
+            notification.getContent(),
+            notification.getLink()
         );
     }
 

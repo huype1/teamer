@@ -42,6 +42,7 @@ public class IssueMapper {
                 .assigneeId(issue.getAssignee() != null ? issue.getAssignee().getId() : null)
                 .assigneeName(issue.getAssignee() != null ? issue.getAssignee().getName() : null)
                 .assigneeEmail(issue.getAssignee() != null ? issue.getAssignee().getEmail() : null)
+                .subtasks(issue.getSubtasks() != null ? toResponseList(issue.getSubtasks()) : null)
                 .build();
     }
 

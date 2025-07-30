@@ -31,6 +31,7 @@ public enum ErrorCode {
     ALREADY_EXISTS(HttpStatus.BAD_REQUEST, 13, "Resource already exists"),
     PROJECT_KEY_EXISTS(HttpStatus.BAD_REQUEST, 13, "Project key already exists"),
     DOCUMENT_NOT_FOUND(HttpStatus.NOT_FOUND, 14, "Cannot find document information"),
+    NOTIFICATION_NOT_FOUND(HttpStatus.NOT_FOUND, 16, "Cannot find notification information"),
     FORBIDDEN(HttpStatus.FORBIDDEN, 15, "Access forbidden");
 
     HttpStatusCode httpStatusCode;

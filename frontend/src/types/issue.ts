@@ -25,6 +25,7 @@ export interface Issue {
   updatedAt: string;
   projectId?: string;
   project?: any;
+  subtasks?: Issue[];
 }
 
 export interface CreateIssueRequest {

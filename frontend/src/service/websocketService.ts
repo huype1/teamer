@@ -28,11 +28,24 @@ export interface ChatMessage {
   updatedAt?: string;
 }
 
+export interface NotificationMessage {
+  type: 'CREATE' | 'UPDATE' | 'DELETE';
+  notificationId: string;
+  title: string;
+  content: string;
+  link?: string;
+  notificationType: string;
+  priority: string;
+  createdAt: string;
+}
+
 class WebSocketService {
   private stompClient: Client | null = null;
-  private subscriptions: Map<string, (message: CommentMessage | ChatMessage) => void> = new Map();
-  private stompSubscriptions: Map<string, StompSubscription> = new Map(); // Store STOMP subscription objects
-  private processedMessages: Set<string> = new Set(); // Track processed message IDs
+  private commentSubscriptions: Map<string, (message: CommentMessage) => void> = new Map();
+  private chatSubscriptions: Map<string, (message: ChatMessage) => void> = new Map();
+  private notificationSubscriptions: Map<string, (message: NotificationMessage) => void> = new Map();
+  private stompSubscriptions: Map<string, StompSubscription> = new Map();
+  private processedMessages: Set<string> = new Set();
   private isConnected = false;
   private reconnectAttempts = 0;
   private maxReconnectAttempts = 5;
@@ -95,7 +108,7 @@ class WebSocketService {
         this.connect().catch(() => {
           // Reconnection failed, will try again
         });
-      }, 2000 * this.reconnectAttempts); // Exponential backoff
+      }, 2000 * this.reconnectAttempts);
     } else {
       console.error('Max reconnection attempts reached');
     }
@@ -103,7 +116,6 @@ class WebSocketService {
 
   disconnect(): void {
     if (this.stompClient) {
-      // Unsubscribe all STOMP subscriptions
       this.stompSubscriptions.forEach((subscription) => {
         subscription.unsubscribe();
       });
@@ -111,7 +123,9 @@ class WebSocketService {
       this.stompClient.deactivate();
       this.stompClient = null;
       this.isConnected = false;
-      this.subscriptions.clear();
+      this.commentSubscriptions.clear();
+      this.chatSubscriptions.clear();
+      this.notificationSubscriptions.clear();
       this.stompSubscriptions.clear();
       this.processedMessages.clear();
     }
@@ -126,25 +140,20 @@ class WebSocketService {
 
     const topic = `/topic/issue/${issueId}/comments`;
     
-    // If subscription already exists, remove it first
-    if (this.subscriptions.has(topic)) {
+    if (this.commentSubscriptions.has(topic)) {
       this.unsubscribeFromIssueComments(issueId);
     }
     
     const subscription = this.stompClient.subscribe(topic, (message) => {
       try {
         const data = JSON.parse(message.body);
-        
-        // Prevent duplicate message processing
         const messageId = `${data.commentId || 'unknown'}-${data.type || 'unknown'}`;
         if (this.processedMessages.has(messageId)) {
           return;
         }
         
-        // Mark message as processed
         this.processedMessages.add(messageId);
         
-        // Clean up old processed messages (keep only last 100)
         if (this.processedMessages.size > 100) {
           const firstKey = this.processedMessages.values().next().value;
           if (firstKey) {
@@ -158,18 +167,15 @@ class WebSocketService {
       }
     });
     
-    // Store both the callback and the STOMP subscription object
-    this.subscriptions.set(topic, callback as (message: CommentMessage | ChatMessage) => void);
+    this.commentSubscriptions.set(topic, callback);
     this.stompSubscriptions.set(topic, subscription);
   }
 
   unsubscribeFromIssueComments(issueId: string): void {
     const topic = `/topic/issue/${issueId}/comments`;
     
-    // Remove the callback
-    this.subscriptions.delete(topic);
+    this.commentSubscriptions.delete(topic);
     
-    // Unsubscribe from STOMP
     const stompSubscription = this.stompSubscriptions.get(topic);
     if (stompSubscription) {
       stompSubscription.unsubscribe();
@@ -186,25 +192,20 @@ class WebSocketService {
 
     const topic = `/topic/chat/${chatId}/messages`;
     
-    // If subscription already exists, remove it first
-    if (this.subscriptions.has(topic)) {
+    if (this.chatSubscriptions.has(topic)) {
       this.unsubscribeFromChatMessages(chatId);
     }
     
     const subscription = this.stompClient.subscribe(topic, (message) => {
       try {
         const data = JSON.parse(message.body);
-        
-        // Prevent duplicate message processing
         const messageId = `${data.messageId || 'unknown'}-${data.type || 'unknown'}`;
         if (this.processedMessages.has(messageId)) {
           return;
         }
         
-        // Mark message as processed
         this.processedMessages.add(messageId);
         
-        // Clean up old processed messages (keep only last 100)
         if (this.processedMessages.size > 100) {
           const firstKey = this.processedMessages.values().next().value;
           if (firstKey) {
@@ -218,18 +219,67 @@ class WebSocketService {
       }
     });
     
-    // Store both the callback and the STOMP subscription object
-    this.subscriptions.set(topic, callback as (message: CommentMessage | ChatMessage) => void);
+    this.chatSubscriptions.set(topic, callback);
     this.stompSubscriptions.set(topic, subscription);
   }
 
   unsubscribeFromChatMessages(chatId: string): void {
     const topic = `/topic/chat/${chatId}/messages`;
     
-    // Remove the callback
-    this.subscriptions.delete(topic);
+    this.chatSubscriptions.delete(topic);
     
-    // Unsubscribe from STOMP
+    const stompSubscription = this.stompSubscriptions.get(topic);
+    if (stompSubscription) {
+      stompSubscription.unsubscribe();
+      this.stompSubscriptions.delete(topic);
+    }
+  }
+
+  // Notification subscription methods
+  subscribeToUserNotifications(userId: string, callback: (message: NotificationMessage) => void): void {
+    if (!this.stompClient || !this.isConnected) {
+      console.error('WebSocket not connected, cannot subscribe');
+      return;
+    }
+
+    const topic = `/user/${userId}/notifications`;
+    
+    if (this.notificationSubscriptions.has(topic)) {
+      this.unsubscribeFromUserNotifications(userId);
+    }
+    
+    const subscription = this.stompClient.subscribe(topic, (message) => {
+      try {
+        const data = JSON.parse(message.body);
+        const messageId = `${data.notificationId || 'unknown'}-${data.type || 'unknown'}`;
+        if (this.processedMessages.has(messageId)) {
+          return;
+        }
+        
+        this.processedMessages.add(messageId);
+        
+        if (this.processedMessages.size > 100) {
+          const firstKey = this.processedMessages.values().next().value;
+          if (firstKey) {
+            this.processedMessages.delete(firstKey);
+          }
+        }
+        
+        callback(data as NotificationMessage);
+      } catch (error) {
+        console.error('Error parsing WebSocket notification message:', error);
+      }
+    });
+    
+    this.notificationSubscriptions.set(topic, callback);
+    this.stompSubscriptions.set(topic, subscription);
+  }
+
+  unsubscribeFromUserNotifications(userId: string): void {
+    const topic = `/user/${userId}/notifications`;
+    
+    this.notificationSubscriptions.delete(topic);
+    
     const stompSubscription = this.stompSubscriptions.get(topic);
     if (stompSubscription) {
       stompSubscription.unsubscribe();

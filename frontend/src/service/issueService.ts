@@ -52,6 +52,12 @@ export const getIssuesByAssigneeId = async (userId: string): Promise<{ result: I
   return res.data;
 };
 
+// Get subtasks for an issue
+export const getSubtasksByIssueId = async (issueId: string): Promise<{ result: Issue[] }> => {
+  const res = await axios.get(`${baseUrl}/${issueId}/subtasks`, addReqToken(localStorage.getItem("token")));
+  return res.data;
+};
+
 export default {
   getIssuesByProjectId,
   getIssueById,
@@ -61,4 +67,5 @@ export default {
   setAssignee,
   deleteIssue,
   getIssuesByAssigneeId,
+  getSubtasksByIssueId,
 }; 

@@ -23,11 +23,12 @@ Content-Type: application/json
 
 ###
 
+# Logout - Requires a valid token from login
 POST http://localhost:8080/api/auth/logout
 Content-Type: application/json
 
 {
-  "token": ""
+  "token": "{{authToken}}"
 }
 
 ###
@@ -235,12 +236,32 @@ Content-Type: application/json
 
 ###
 
+POST http://localhost:8080/api/issues
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+  "title": "Test Subtask",
+  "description": "A test subtask",
+  "projectId": "{{projectId}}",
+  "priority": "P3",
+  "issueType": "SUBTASK",
+  "parentId": "{{issueId}}"
+}
+
+###
+
 GET http://localhost:8080/api/issues/project/{{projectId}}
 Authorization: Bearer {{authToken}}
 
 ###
 
 GET http://localhost:8080/api/issues/{{issueId}}
+Authorization: Bearer {{authToken}}
+
+###
+
+GET http://localhost:8080/api/issues/{{issueId}}/subtasks
 Authorization: Bearer {{authToken}}
 
 ###
@@ -254,6 +275,20 @@ Content-Type: application/json
   "description": "Updated description",
   "priority": "P1",
   "issueType": "STORY"
+}
+
+###
+
+PUT http://localhost:8080/api/issues/{{issueId}}
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+  "title": "Updated Subtask",
+  "description": "Updated subtask description",
+  "priority": "P2",
+  "issueType": "SUBTASK",
+  "parentId": "{{parentIssueId}}"
 }
 
 ###

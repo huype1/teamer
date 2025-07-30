@@ -30,6 +30,7 @@ public class MessageService {
     UserRepository userRepository;
     MessageRepository messageRepository;
     ChatRepository chatRepository;
+    NotificationService notificationService;
 
     public Message sendMessage(UUID senderId, UUID chatId, String content) {
         User sender = userRepository.findById(senderId).orElseThrow(() -> new AppException(ErrorCode.NOT_FOUND));
@@ -44,6 +45,21 @@ public class MessageService {
         chat.getMessages().add(savedMessage);
         chatRepository.save(chat);
 
+//        // Gửi notification cho các thành viên khác trong chat (trừ người gửi)
+//        List<User> chatMembers = chat.getProject().getProjectMembers().stream()
+//                .map(projectMember -> projectMember.getUser())
+//                .filter(user -> !user.getId().equals(senderId))
+//                .toList();
+//
+//        for (User member : chatMembers) {
+//            notificationService.notifyNewChatMessage(
+//                member.getId(),
+//                sender.getName(),
+//                chat.getProject().getName(),
+//                chatId
+//            );
+//        }
+//
         return savedMessage;
     }
 

@@ -43,6 +43,20 @@ public class IssueController {
                 .build();
     }
 
+    @GetMapping("/{issueId}/subtasks")
+    public ApiResponse<List<IssueResponse>> getSubtasksByIssueId(@PathVariable UUID issueId) {
+        UUID userId = JwtUtils.getSubjectFromJwt();
+        log.info("Fetching subtasks for issue: {} by user: {}", issueId, userId);
+
+        List<Issue> subtasks = issueService.getSubtasksByIssueId(issueId);
+        List<IssueResponse> responses = issueMapper.toResponseList(subtasks);
+
+        return ApiResponse.<List<IssueResponse>>builder()
+                .message("Subtasks fetched successfully")
+                .result(responses)
+                .build();
+    }
+
     @GetMapping("/project/{projectId}")
     public ApiResponse<List<IssueResponse>> getIssuesByProjectId(@PathVariable UUID projectId) {
         UUID userId = JwtUtils.getSubjectFromJwt();

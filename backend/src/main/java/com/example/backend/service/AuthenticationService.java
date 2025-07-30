@@ -110,7 +110,11 @@ public class AuthenticationService {
             log.info("Invalidating token with JIT: {}", jit);
 
             InvalidatedToken invalidatedToken =
-                    InvalidatedToken.builder().id(jit).expiryTime(expiryTime).build();
+                    InvalidatedToken.builder()
+                            .id(jit)
+                            .token(request.getToken())
+                            .expiryTime(expiryTime)
+                            .build();
 
             invalidatedTokenRepository.save(invalidatedToken);
             log.info("Token invalidated successfully");

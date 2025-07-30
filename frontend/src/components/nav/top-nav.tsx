@@ -1,5 +1,6 @@
 import { useState } from "react"
-import { Search, Settings, Bell, Plus, Moon, Sun, GanttChartSquare, Menu, X } from "lucide-react"
+import { Search, Settings, Plus, Moon, Sun, GanttChartSquare, Menu, X } from "lucide-react"
+import NotificationBell from "@/components/ui/notification-bell"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import {
@@ -122,10 +123,10 @@ export function TopNav({
       <div className="flex h-14 items-center justify-between w-full max-w-screen-2xl mx-auto">
         {/* Logo - Always visible */}
         <div className="flex items-center">
-          <a href="/" className="flex items-center space-x-2 flex-shrink-0">
+          <div onClick={() => navigate("/")} className="flex items-center space-x-2 flex-shrink-0">
             <GanttChartSquare className="h-5 w-5 sm:h-6 sm:w-6" />
             <h1>Teamer</h1>
-          </a>
+          </div>
         </div>
 
         {variant === "full" && (
@@ -174,15 +175,17 @@ export function TopNav({
 
             {/* Desktop Actions */}
             <div className="hidden sm:flex items-center space-x-1 lg:space-x-2">
-              <Button variant="ghost" size="icon" onClick={onSettings} className="h-8 w-8">
+              <NotificationBell />
+              {/* <Button variant="ghost" size="icon" onClick={onSettings} className="h-8 w-8">
                 <Settings className="h-4 w-4" />
-              </Button>
+              </Button> */}
               <UserDropdown />
               <ThemeDropdown />
             </div>
 
             {/* Mobile Actions */}
             <div className="flex sm:hidden items-center space-x-1">
+              <NotificationBell />
               <Button
                 variant="ghost"
                 size="icon"
@@ -205,10 +208,10 @@ export function TopNav({
             {isMobileMenuOpen && (
               <div className="absolute top-14 right-0 w-48 bg-background border border-border rounded-md shadow-lg z-40 sm:hidden">
                 <div className="p-2 space-y-1">
-                  <Button variant="ghost" size="sm" onClick={onSettings} className="w-full justify-start">
+                  {/* <Button variant="ghost" size="sm" onClick={onSettings} className="w-full justify-start">
                     <Settings className="h-4 w-4 mr-2" />
                     Settings
-                  </Button>
+                  </Button> */}
                   <div className="px-2 py-1">
                     <UserDropdown />
                   </div>

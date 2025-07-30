@@ -9,7 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import documentService from "@/service/documentService";
 import { toastError, toastSuccess } from "@/utils/toast";
 import type { DocumentListResponse } from "@/types/document";
-import { Plus, Edit, FileText } from "lucide-react";
+import { Plus, Edit, FileText, Trash2 } from "lucide-react";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { useSelector } from "react-redux";
 import type { RootState } from "@/store";
@@ -71,10 +71,26 @@ const ProjectDocumentsPage = () => {
     navigate(`/documents/${documentId}/edit`);
   };
   
+  // Delete document handler
+  const handleDeleteDocument = async (documentId: string) => {
+    if (!window.confirm("Bạn có chắc chắn muốn xóa tài liệu này?")) return;
+    try {
+      setLoading(true);
+      await documentService.deleteDocument(documentId);
+      toastSuccess("Xóa tài liệu thành công!");
+      fetchDocuments();
+    } catch (error) {
+      console.error("Delete failed:", error);
+      toastError("Xóa tài liệu thất bại!");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
     fetchDocuments();
   }, [fetchDocuments]);
-  
+
   if (loading) {
     return (
       <div className="flex items-center justify-center p-8">
@@ -82,7 +98,7 @@ const ProjectDocumentsPage = () => {
       </div>
     );
   }
-  
+
   return (
     <div className="container mx-auto p-6">
       <div className="flex items-center justify-between mb-6">
@@ -133,15 +149,28 @@ const ProjectDocumentsPage = () => {
                   </div>
                 </div>
                 <div className="flex gap-2 mt-4">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => handleViewDocument(document.id)}
-                    className="flex-1"
-                  >
-                    <FileText className="h-4 w-4 mr-2" />
-                    Xem
-                  </Button>
+                  {/* If user is creator, show Delete button, else show View button */}
+                  {user?.id === document.creator.id ? (
+                    <Button
+                      variant="destructive"
+                      size="sm"
+                      onClick={() => handleDeleteDocument(document.id)}
+                      className="flex-1"
+                    >
+                      <Trash2 className="h-4 w-4 mr-2" />
+                      Xóa
+                    </Button>
+                  ) : (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleViewDocument(document.id)}
+                      className="flex-1"
+                    >
+                      <FileText className="h-4 w-4 mr-2" />
+                      Xem
+                    </Button>
+                  )}
                   {canEditItem(user, document.creator.id) && (
                     <Button
                       variant="outline"
@@ -159,13 +188,13 @@ const ProjectDocumentsPage = () => {
           ))}
         </div>
       )}
-      
+
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Tạo tài liệu mới</DialogTitle>
           </DialogHeader>
-          
+
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
               <Label htmlFor="title">Tiêu đề tài liệu</Label>

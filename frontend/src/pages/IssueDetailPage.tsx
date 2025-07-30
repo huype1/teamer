@@ -81,6 +81,7 @@ const IssueDetailPage: React.FC = () => {
   const { user } = useSelector((state: RootState) => state.auth);
   
   const [issue, setIssue] = useState<Issue | null>(null);
+  const [rawIssueData, setRawIssueData] = useState<any>(null); // Store raw data for subtask creation
   const [project, setProject] = useState<{ id: string; name: string; members: ProjectMember[] } | null>(null);
 
   const [projectUsers, setProjectUsers] = useState<User[]>([]);
@@ -198,6 +199,7 @@ const IssueDetailPage: React.FC = () => {
       console.log(issueRes);
       console.log("Issue response:", issueRes);
       setIssue(mapIssue(issueRes.result));
+      setRawIssueData(issueRes.result); // Store raw data
       
       if (issueRes.result.projectId) {
         try {
@@ -939,6 +941,7 @@ const IssueDetailPage: React.FC = () => {
               onSubmit={handleUpdateIssue}
               loading={updating}
               projectMembers={projectMembers}
+              projectUsers={projectUsers}
               sprints={sprints}
               isEdit={true}
             />
@@ -973,12 +976,19 @@ const IssueDetailPage: React.FC = () => {
               onSubmit={handleCreateSubtask}
               loading={false}
               projectMembers={projectMembers}
+              projectUsers={projectUsers}
               sprints={sprints}
               initialValues={{ parentId: issue.id }}
               isEdit={false}
-              // Disable issueType field
-              // We'll add a prop to IssueForm to disable issueType
               disableIssueType
+              params={{
+                isSubtask: true,
+                parentIssue: {
+                  sprintId: rawIssueData?.sprintId,
+                  storyPoints: rawIssueData?.storyPoints || undefined,
+                  dueDate: rawIssueData?.dueDate || undefined,
+                }
+              }}
             />
           </DialogContent>
         </Dialog>

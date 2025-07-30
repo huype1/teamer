@@ -1,9 +1,9 @@
 package com.example.backend.service;
 
-import com.example.backend.dto.websocket.ChatMessage;
 import com.example.backend.dto.websocket.CommentMessage;
+import com.example.backend.dto.websocket.NotificationMessage;
 import com.example.backend.entity.Comment;
-import com.example.backend.entity.Message;
+import com.example.backend.entity.Notification;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
@@ -18,7 +18,6 @@ public class WebSocketService {
 
     private final SimpMessagingTemplate messagingTemplate;
 
-    // Comment broadcasting methods
     public void broadcastCommentCreated(Comment comment) {
         CommentMessage message = CommentMessage.builder()
                 .type("CREATE")
@@ -28,13 +27,12 @@ public class WebSocketService {
                 .userId(comment.getUser().getId())
                 .userName(comment.getUser().getName())
                 .userEmail(comment.getUser().getEmail())
-                .userAvatarUrl(comment.getUser().getAvatarUrl())
-                .createdAt(comment.getCreatedAt() != null ? comment.getCreatedAt() : null)
-                .updatedAt(comment.getUpdatedAt() != null ? comment.getUpdatedAt() : null)
+                .createdAt(comment.getCreatedAt())
+                .updatedAt(comment.getUpdatedAt())
                 .build();
 
-        String topic = "/topic/issue/" + comment.getIssue().getId() + "/comments";
-        messagingTemplate.convertAndSend(topic, message);
+        messagingTemplate.convertAndSend("/topic/issue/" + comment.getIssue().getId() + "/comments", message);
+        log.info("Broadcasted comment created: {}", comment.getId());
     }
 
     public void broadcastCommentUpdated(Comment comment) {
@@ -51,6 +49,7 @@ public class WebSocketService {
                 .build();
 
         messagingTemplate.convertAndSend("/topic/issue/" + comment.getIssue().getId() + "/comments", message);
+        log.info("Broadcasted comment updated: {}", comment.getId());
     }
 
     public void broadcastCommentDeleted(UUID commentId, UUID issueId) {
@@ -61,53 +60,29 @@ public class WebSocketService {
                 .build();
 
         messagingTemplate.convertAndSend("/topic/issue/" + issueId + "/comments", message);
+        log.info("Broadcasted comment deleted: {}", commentId);
     }
 
-    // Chat broadcasting methods
-    public void broadcastChatMessageCreated(Message message) {
-        ChatMessage chatMessage = ChatMessage.builder()
+    // Notification broadcasting methods
+    public void broadcastNotificationToUser(Notification notification) {
+        NotificationMessage message = NotificationMessage.builder()
                 .type("CREATE")
-                .messageId(message.getId())
-                .chatId(message.getChat().getId())
-                .content(message.getContent())
-                .senderId(message.getSender().getId())
-                .senderName(message.getSender().getName())
-                .senderEmail(message.getSender().getEmail())
-                .senderAvatarUrl(message.getSender().getAvatarUrl())
-                .createdAt(message.getCreatedAt())
-                .updatedAt(message.getUpdatedAt())
+                .notificationId(notification.getId())
+                .title(notification.getTitle())
+                .content(notification.getContent())
+                .link(notification.getLink())
+                .notificationType(notification.getType())
+                .priority(notification.getPriority())
+                .createdAt(notification.getCreatedAt())
                 .build();
 
-        String topic = "/topic/chat/" + message.getChat().getId() + "/messages";
-        messagingTemplate.convertAndSend(topic, chatMessage);
-    }
-
-    public void broadcastChatMessageUpdated(Message message) {
-        ChatMessage chatMessage = ChatMessage.builder()
-                .type("UPDATE")
-                .messageId(message.getId())
-                .chatId(message.getChat().getId())
-                .content(message.getContent())
-                .senderId(message.getSender().getId())
-                .senderName(message.getSender().getName())
-                .senderEmail(message.getSender().getEmail())
-                .senderAvatarUrl(message.getSender().getAvatarUrl())
-                .createdAt(message.getCreatedAt())
-                .updatedAt(message.getUpdatedAt())
-                .build();
-
-        String topic = "/topic/chat/" + message.getChat().getId() + "/messages";
-        messagingTemplate.convertAndSend(topic, chatMessage);
-    }
-
-    public void broadcastChatMessageDeleted(UUID messageId, UUID chatId) {
-        ChatMessage chatMessage = ChatMessage.builder()
-                .type("DELETE")
-                .messageId(messageId)
-                .chatId(chatId)
-                .build();
-
-        String topic = "/topic/chat/" + chatId + "/messages";
-        messagingTemplate.convertAndSend(topic, chatMessage);
+        // Gửi đến user cụ thể
+        messagingTemplate.convertAndSendToUser(
+            notification.getUserId().toString(), 
+            "/notifications", 
+            message
+        );
+        
+        log.info("Broadcasted notification to user: {}", notification.getUserId());
     }
 } 

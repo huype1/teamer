@@ -36,6 +36,7 @@ public class IssueService {
     ProjectMemberRepository projectMemberRepository;
     SprintRepository sprintRepository;
     CommentRepository commentRepository;
+    NotificationService notificationService;
 
     public Issue getIssueById(UUID id) {
         return issueRepository.findById(id)
@@ -73,6 +74,17 @@ public class IssueService {
             issue.setStoryPoints(issueRequest.getStoryPoints());
             issue.setReporter(reporter);
             issue.setProject(project);
+            
+            // Handle parent issue for subtasks
+            if (issueRequest.getParentId() != null) {
+                Issue parentIssue = getIssueById(issueRequest.getParentId());
+                // Validate that parent issue belongs to the same project
+                if (!parentIssue.getProject().getId().equals(projectId)) {
+                    log.error("Parent issue {} does not belong to project {}", issueRequest.getParentId(), projectId);
+                    throw new AppException(ErrorCode.BAD_REQUEST);
+                }
+                issue.setParent(parentIssue);
+            }
             
             if (issueRequest.getAssigneeId() != null) {
                 User assignee = userService.getUserEntity(issueRequest.getAssigneeId());
@@ -117,7 +129,19 @@ public class IssueService {
         
         User assignee = userService.getUserEntity(assigneeId);
         issue.setAssignee(assignee);
-        return issueRepository.save(issue);
+        Issue savedIssue = issueRepository.save(issue);
+        
+        // Gửi notification cho assignee
+        if (assigneeId != null) {
+            notificationService.notifyIssueAssigned(
+                assigneeId, 
+                issue.getTitle(), 
+                issue.getId(), 
+                issue.getProject().getName()
+            );
+        }
+        
+        return savedIssue;
     }
 
     public Issue updateIssue(UUID id, IssueRequest issueRequest, UUID userId) {
@@ -161,6 +185,20 @@ public class IssueService {
             issue.setSprint(null);
         }
         
+        // Handle parent issue for subtasks
+        if (issueRequest.getParentId() != null) {
+            Issue parentIssue = getIssueById(issueRequest.getParentId());
+            // Validate that parent issue belongs to the same project
+            if (!parentIssue.getProject().getId().equals(issue.getProject().getId())) {
+                log.error("Parent issue {} does not belong to project {}", issueRequest.getParentId(), issue.getProject().getId());
+                throw new AppException(ErrorCode.BAD_REQUEST);
+            }
+            issue.setParent(parentIssue);
+        } else if (issueRequest.getParentId() == null && issue.getParent() != null) {
+            // Remove parent relationship
+            issue.setParent(null);
+        }
+        
         return issueRepository.save(issue);
     }
 
@@ -173,12 +211,31 @@ public class IssueService {
             throw new AppException(ErrorCode.UNAUTHORIZED);
         }
         
+        String oldStatus = issue.getStatus();
         issue.setStatus(status);
-        return issueRepository.save(issue);
+        Issue savedIssue = issueRepository.save(issue);
+        
+        // Gửi notification cho assignee nếu có
+        if (issue.getAssignee() != null) {
+            notificationService.notifyIssueStatusChanged(
+                issue.getAssignee().getId(),
+                issue.getTitle(),
+                oldStatus,
+                status,
+                issue.getId()
+            );
+        }
+        
+        return savedIssue;
     }
 
     public List<Issue> getIssuesByAssigneeId(UUID userId) {
         return issueRepository.findByAssigneeId(userId);
+    }
+
+    public List<Issue> getSubtasksByIssueId(UUID issueId) {
+        Issue parentIssue = getIssueById(issueId);
+        return parentIssue.getSubtasks();
     }
 
     private String generateIssueKey(Project project) {

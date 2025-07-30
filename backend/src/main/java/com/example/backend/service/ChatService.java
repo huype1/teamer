@@ -100,7 +100,7 @@ public class ChatService {
         log.info("Created message with id: {} in chat: {}", savedMessage.getId(), chat.getId());
         
         // Broadcast message via WebSocket
-        webSocketService.broadcastChatMessageCreated(savedMessage);
+//        webSocketService.broadcastChatMessageCreated(savedMessage);
         
         return chatMessageMapper.toResponse(savedMessage);
     }
@@ -151,8 +151,7 @@ public class ChatService {
         messageRepository.delete(message.get());
         log.info("Deleted message with id: {} from chat: {}", messageId, chatId);
         
-        // Broadcast message deletion via WebSocket
-        webSocketService.broadcastChatMessageDeleted(messageId, chatId);
+
     }
     
     /**

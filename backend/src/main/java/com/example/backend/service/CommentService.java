@@ -34,6 +34,7 @@ public class CommentService {
     UserRepository userRepository;
     AttachmentRepository attachmentRepository;
     WebSocketService webSocketService;
+    NotificationService notificationService;
 
     public Comment createComment(UUID issueId, UUID userId, String content, List<AttachmentMeta> attachments) {
       Optional<Issue> issue = issueRepository.findById(issueId);
@@ -69,6 +70,16 @@ public class CommentService {
           
           // Broadcast comment creation via WebSocket
           webSocketService.broadcastCommentCreated(savedComment);
+          
+          // Gửi notification cho assignee của issue
+          if (issue.get().getAssignee() != null && !issue.get().getAssignee().getId().equals(userId)) {
+              notificationService.notifyNewComment(
+                  issue.get().getAssignee().getId(),
+                  user.get().getName(),
+                  issue.get().getTitle(),
+                  issueId
+              );
+          }
           
           return savedComment;
       } catch (Exception e) {

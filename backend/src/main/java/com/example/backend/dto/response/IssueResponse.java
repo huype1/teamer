@@ -7,6 +7,7 @@ import lombok.NoArgsConstructor;
 
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
+import java.util.List;
 import java.util.UUID;
 
 @Data
@@ -50,5 +51,8 @@ public class IssueResponse {
     private UUID assigneeId;
     private String assigneeName;
     private String assigneeEmail;
+
+    // Subtasks info
+    private List<IssueResponse> subtasks;
 
 }
