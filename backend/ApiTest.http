@@ -434,27 +434,6 @@ Content-Type: text/csv
 
 < ./teamer-uploader_accessKeys.csv
 
-### Lấy download URL cho file
-POST http://localhost:8080/api/attachments/download-url
-Authorization: Bearer {{authToken}}
-Content-Type: application/json
-
-{
-  "filePath": "attachments/1234567890_teamer-uploader_accessKeys.csv"
-}
-
-### Lấy attachments theo comment ID
-GET http://localhost:8080/api/attachments/comment/{{commentId}}
-Authorization: Bearer {{authToken}}
-
-### Lấy attachments theo issue ID
-GET http://localhost:8080/api/attachments/issue/{{issueId}}
-Authorization: Bearer {{authToken}}
-
-### Lấy attachments theo message ID
-GET http://localhost:8080/api/attachments/message/{{messageId}}
-Authorization: Bearer {{authToken}}
-
 ### Chat API Tests ###
 
 # Get all chats
@@ -487,26 +466,6 @@ Content-Type: application/json
 
 ###
 
-# Create a new message with attachments
-POST http://localhost:8080/api/chats/messages
-Authorization: Bearer {{token}}
-Content-Type: application/json
-
-{
-  "content": "Xin chào! Đây là tin nhắn có file đính kèm.",
-  "chatId": "{{chatId}}",
-  "attachments": [
-    {
-      "fileName": "document.pdf",
-      "fileType": "application/pdf",
-      "fileSize": 1024000,
-      "filePath": "attachments/1234567890_document.pdf"
-    }
-  ]
-}
-
-###
-
 # Delete a message
 DELETE http://localhost:8080/api/chats/messages/{{messageId}}
 Authorization: Bearer {{token}}
@@ -515,12 +474,6 @@ Authorization: Bearer {{token}}
 
 # Get messages with pagination (for future use)
 GET http://localhost:8080/api/chats/{{chatId}}/messages?page=0&size=20
-Authorization: Bearer {{token}}
-
-###
-
-# Get message count for a chat
-GET http://localhost:8080/api/chats/{{chatId}}/messages/count
 Authorization: Bearer {{token}}
 
 ###
@@ -567,22 +520,5 @@ Content-Type: application/json
 # Delete a document
 DELETE http://localhost:8080/api/documents/{{documentId}}
 Authorization: Bearer {{authToken}}
-
-###
-
-### Avatar API Tests ###
-
-# Upload avatar
-POST http://localhost:8080/api/avatars/upload
-Authorization: Bearer {{token}}
-Content-Type: multipart/form-data
-
-< ./test-avatar.jpg
-
-###
-
-# Delete avatar
-DELETE http://localhost:8080/api/avatars/delete
-Authorization: Bearer {{token}}
 
 ###

@@ -3,16 +3,14 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Bell } from "lucide-react";
 import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
 import { useSelector } from "react-redux";
 import type { RootState } from "@/store";
 import { useEffect, useState } from "react";
 import issueService from "@/service/issueService";
 import projectService from "@/service/projectService";
-import type { Issue as IssueType } from "@/types/issue";
-import type { Project as ProjectType } from "@/types/project";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
+import { NotificationList } from "@/components/ui/notification-list";
 
 // Interface chuẩn hóa cho dữ liệu từ API
 interface Project {
@@ -61,8 +59,8 @@ export default function DashboardPage() {
         const issuesArr = (issueRes.result || []).map((issue: Partial<Issue>) => ({
           ...issue,
           status: issue.status === "TO_DO" ? "TO_DO" : issue.status,
-          projectId: issue.projectId || (issue as any).project?.id,
-          project: (issue as any).project || projectsArr.find((p: Project) => p.id === (issue.projectId || (issue as any).project?.id)),
+          projectId: issue.projectId || (issue as Partial<Issue>).project?.id,
+          project: (issue as Partial<Issue>).project || projectsArr.find((p: Project) => p.id === (issue.projectId || (issue as Partial<Issue>).project?.id)),
         }));
         setIssues(issuesArr);
         setDisplayedIssues(issuesArr.slice(0, 10));
@@ -289,20 +287,7 @@ export default function DashboardPage() {
       </div>
 
       {/* Thông báo cá nhân */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Bell className="h-5 w-5" />
-            Thông báo
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-2">
-            {[] && <div className="text-muted-foreground text-sm">Không có thông báo nào.</div>}
-            {[] && []}
-          </div>
-        </CardContent>
-      </Card>
+      <NotificationList maxItems={5} showActions={true} />
     </div>
   );
 }
