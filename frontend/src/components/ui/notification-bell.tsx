@@ -11,7 +11,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { toast } from "sonner";
 import { useSelector } from "react-redux";
 import type { RootState } from "@/store";
-import type { Notification, NotificationMessage } from "@/types/notification";
+import type { NotificationRecipient, NotificationMessage } from "@/types/notification";
 import notificationService from "@/service/notificationService";
 import notificationWebSocketService from "@/service/notificationWebSocketService";
 import { formatDistanceToNow } from "date-fns";
@@ -19,7 +19,7 @@ import { vi } from "date-fns/locale";
 
 const NotificationBell = () => {
   const { user } = useSelector((state: RootState) => state.auth);
-  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [notifications, setNotifications] = useState<NotificationRecipient[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [isOpen, setIsOpen] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -101,7 +101,7 @@ const NotificationBell = () => {
   };
 
   // Handle notification click
-  const handleNotificationClick = async (notification: Notification) => {
+  const handleNotificationClick = async (notification: NotificationRecipient) => {
     // Mark as read if not already read
     if (!notification.isRead) {
       await handleMarkAsRead(notification.id);
@@ -116,24 +116,11 @@ const NotificationBell = () => {
   // WebSocket notification handler
   const handleNewNotification = useCallback((message: NotificationMessage) => {
     if (message.type === 'CREATE') {
-      const newNotification: Notification = {
-        id: message.notificationId,
-        userId: user?.id || '',
-        title: message.title,
-        content: message.content,
-        link: message.link,
-        type: message.notificationType,
-        isRead: false,
-        isEmailSent: false,
-        priority: message.priority,
-        createdAt: message.createdAt,
-        updatedAt: message.createdAt,
-      };
-      
-      setNotifications(prev => [newNotification, ...prev]);
-      setUnreadCount(prev => prev + 1);
-      
-      // Show toast notification
+      // Tự động fetch lại danh sách + số lượng unread để đồng bộ với server
+      fetchNotifications();
+      fetchUnreadCount();
+
+      // Hiển thị toast
       toast.info(message.title, {
         description: message.content,
         action: message.link ? {
@@ -142,7 +129,7 @@ const NotificationBell = () => {
         } : undefined
       });
     }
-  }, [user?.id]);
+  }, [fetchNotifications, fetchUnreadCount]);
 
   // Setup WebSocket subscription
   useEffect(() => {

@@ -151,6 +151,20 @@ public class IssueController {
                 .build();
     }
 
+    @DeleteMapping("/{issueId}/assignee")
+    public ApiResponse<IssueResponse> unassignIssue(@PathVariable UUID issueId) {
+        UUID userId = JwtUtils.getSubjectFromJwt();
+        log.info("Unassigning issue: {} by user: {}", issueId, userId);
+
+        Issue updatedIssue = issueService.unassignIssue(issueId, userId);
+        IssueResponse response = issueMapper.toResponse(updatedIssue);
+
+        return ApiResponse.<IssueResponse>builder()
+                .message("Issue unassigned successfully")
+                .result(response)
+                .build();
+    }
+
     @DeleteMapping("/{issueId}")
     public ApiResponse<Void> deleteIssue(@PathVariable UUID issueId) {
         UUID userId = JwtUtils.getSubjectFromJwt();

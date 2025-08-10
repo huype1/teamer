@@ -17,6 +17,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.OffsetDateTime;
 import java.util.List;
@@ -124,6 +125,7 @@ public class TeamService {
         return savedMember;
     }
 
+    @Transactional
     public void removeMemberFromTeam(UUID teamId, UUID userId) {
         if (!teamMemberRepository.existsByTeamIdAndUserId(teamId, userId)) {
             throw new AppException(ErrorCode.NOT_FOUND);

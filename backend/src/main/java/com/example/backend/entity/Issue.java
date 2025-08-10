@@ -70,7 +70,6 @@ public class Issue {
     @JoinColumn(name = "project_id")
     Project project;
 
-    //Handling parent-child relationship for subtasks and epics
     @ManyToOne
     @JoinColumn(name = "parent_id")
     @JsonIgnore

@@ -144,6 +144,19 @@ public class IssueService {
         return savedIssue;
     }
 
+    public Issue unassignIssue(UUID issueId, UUID userId) {
+        Issue issue = getIssueById(issueId);
+        
+        // Check if user is project member
+        if (!isUserProjectMember(issue.getProject().getId(), userId)) {
+            log.error("User {} is not a member of project {}", userId, issue.getProject().getId());
+            throw new AppException(ErrorCode.UNAUTHORIZED);
+        }
+        
+        issue.setAssignee(null);
+        return issueRepository.save(issue);
+    }
+
     public Issue updateIssue(UUID id, IssueRequest issueRequest, UUID userId) {
         Issue issue = getIssueById(id);
         

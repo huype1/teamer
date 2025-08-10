@@ -44,6 +44,13 @@ export const getDownloadUrl = async (filePath: string) => {
   return res.data.downloadUrl;
 };
 
+// Get download URL for file (sync version for direct use in components)
+export const getDownloadUrlSync = (filePath: string) => {
+  // For now, we'll construct the URL directly since we know the pattern
+  // In production, you might want to cache presigned URLs or use a different approach
+  return `${baseUrl}/download-url`;
+};
+
 // Upload file to S3 using presigned URL
 export const uploadFileToS3 = async (file: File, presignedUrl: string) => {
   await fetch(presignedUrl, {

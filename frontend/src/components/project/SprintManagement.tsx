@@ -306,7 +306,7 @@ const SprintManagement: React.FC<SprintManagementProps> = ({
           <DialogHeader>
             <DialogTitle>Tạo Sprint mới</DialogTitle>
           </DialogHeader>
-          <form onSubmit={handleSubmit(onCreateSprint)} className="space-y-4">
+          <form onSubmit={handleSubmit(onCreateSprint as any)} className="space-y-4">
             <div>
               <Input
                 placeholder="Tên sprint"
@@ -353,7 +353,7 @@ const SprintManagement: React.FC<SprintManagementProps> = ({
           <DialogHeader>
             <DialogTitle>Chỉnh sửa Sprint</DialogTitle>
           </DialogHeader>
-          <form onSubmit={handleSubmit(onUpdateSprint)} className="space-y-4">
+          <form onSubmit={handleSubmit(onUpdateSprint as any)} className="space-y-4">
             <div>
               <Input
                 placeholder="Tên sprint"

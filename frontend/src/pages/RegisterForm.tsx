@@ -59,7 +59,7 @@ export function RegisterForm({
         email: decoded.email,
         name: decoded.name,
         picture: decoded.picture,
-      }));
+      }) as unknown as any);
     } catch (error) {
       console.error('Google login failed:', error);
     }
@@ -75,8 +75,7 @@ export function RegisterForm({
         name: data.name,
         email: data.email,
         password: data.password});
-      console.log(data.email, data.password);
-      dispatch(login({email: data.email, password: data.password}));
+      dispatch(login({email: data.email, password: data.password}) as unknown as any);
       // navigate('/');
     } catch (error: any) {
         console.error('Registration failed:', error);

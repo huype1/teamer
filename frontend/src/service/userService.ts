@@ -37,4 +37,20 @@ export const getUserById = async (userId: string): Promise<UserResponse> => {
     return res.data;
 };
 
-export default { getMyInfo, updateMyInfo, deleteMyAccount, getUserById };
+export const getUsers = async (): Promise<{ result: UserResponse[] }> => {
+    const res = await axios.get(
+        baseUrl,
+        addReqToken(localStorage.getItem("token")),
+    );
+    return res.data;
+};
+
+export const searchUsers = async (query: string): Promise<{ result: UserResponse[] }> => {
+    const res = await axios.get(
+        `${baseUrl}?search=${encodeURIComponent(query)}`,
+        addReqToken(localStorage.getItem("token")),
+    );
+    return res.data;
+};
+
+export default { getMyInfo, updateMyInfo, deleteMyAccount, getUserById, getUsers, searchUsers };

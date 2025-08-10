@@ -12,9 +12,10 @@ import java.util.UUID;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class NotificationResponse {
+public class NotificationRecipientResponse {
 
-    private UUID id;
+    private UUID id; // NotificationRecipient ID
+    private UUID notificationId;
     private String title;
     private String content;
     private String link;
@@ -26,7 +27,7 @@ public class NotificationResponse {
     private OffsetDateTime createdAt;
     private OffsetDateTime updatedAt;
     
-    // Thông tin recipient (cho user hiện tại)
+    // Thông tin recipient
     private Boolean isRead;
     private Boolean isEmailSent;
 } 

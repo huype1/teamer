@@ -1,5 +1,6 @@
 package com.example.backend.repository;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -37,4 +38,6 @@ public interface UserRepository extends JpaRepository<User, UUID> {
            "LEFT JOIN FETCH pm.project " +
            "WHERE u.id = :id")
     Optional<User> findByIdWithProjectMembers(@Param("id") UUID id);
+    
+    List<User> findByNameContainingIgnoreCaseOrEmailContainingIgnoreCase(String name, String email);
 }

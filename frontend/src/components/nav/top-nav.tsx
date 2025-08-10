@@ -1,5 +1,5 @@
 import { useState } from "react"
-import { Search, Settings, Plus, Moon, Sun, GanttChartSquare, Menu, X } from "lucide-react"
+import { Search, Moon, Sun, GanttChartSquare, Menu, X } from "lucide-react"
 import NotificationBell from "@/components/ui/notification-bell"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -34,9 +34,6 @@ interface TopNavProps {
 export function TopNav({
   variant = "full",
   onSearch,
-  onSettings,
-  onNotifications,
-  onCreate,
   onLogout,
 }: TopNavProps) {
   const { setTheme } = useTheme()

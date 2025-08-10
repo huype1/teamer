@@ -206,17 +206,7 @@ const ProjectDocumentsPage = () => {
                 required
               />
             </div>
-            
-            <div>
-              <Label htmlFor="content">Nội dung</Label>
-              <Textarea
-                id="content"
-                value={formData.content}
-                onChange={(e) => setFormData({ ...formData, content: e.target.value })}
-                placeholder="Nhập nội dung tài liệu"
-                rows={3}
-              />
-            </div>
+
             
             <DialogFooter>
               <Button type="submit" disabled={loading}>

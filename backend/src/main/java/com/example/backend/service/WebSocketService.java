@@ -13,6 +13,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.UUID;
+import com.example.backend.entity.NotificationRecipient;
 
 @Service
 @RequiredArgsConstructor
@@ -147,25 +148,25 @@ public class WebSocketService {
     }
 
     // Notification broadcasting methods
-    public void broadcastNotificationToUser(Notification notification) {
+    public void broadcastNotificationToUser(NotificationRecipient recipient) {
         NotificationMessage message = NotificationMessage.builder()
                 .type("CREATE")
-                .notificationId(notification.getId())
-                .title(notification.getTitle())
-                .content(notification.getContent())
-                .link(notification.getLink())
-                .notificationType(notification.getType())
-                .priority(notification.getPriority())
-                .createdAt(notification.getCreatedAt())
+                .notificationId(recipient.getNotification().getId())
+                .title(recipient.getNotification().getTitle())
+                .content(recipient.getNotification().getContent())
+                .link(recipient.getNotification().getLink())
+                .notificationType(recipient.getNotification().getType())
+                .priority(recipient.getNotification().getPriority())
+                .createdAt(recipient.getNotification().getCreatedAt())
                 .build();
 
         // Gửi đến user cụ thể
         messagingTemplate.convertAndSendToUser(
-            notification.getUserId().toString(), 
+            recipient.getUser().getId().toString(), 
             "/notifications", 
             message
         );
         
-        log.info("Broadcasted notification to user: {}", notification.getUserId());
+        log.info("Broadcasted notification to user: {}", recipient.getUser().getId());
     }
 } 

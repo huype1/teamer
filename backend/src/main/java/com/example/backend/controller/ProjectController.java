@@ -73,9 +73,9 @@ public class ProjectController {
         UUID userId = JwtUtils.getSubjectFromJwt();
         log.info("Fetching project: {} for user: {}", projectId, userId);
 
-        if (!projectService.isUserProjectMember(projectId, userId)) {
-            throw new AppException(com.example.backend.exception.ErrorCode.UNAUTHORIZED);
-        }
+//        if (!projectService.isUserProjectMember(projectId, userId)) {
+//            throw new AppException(com.example.backend.exception.ErrorCode.UNAUTHORIZED);
+//        }
 
         Project project = projectService.getProjectById(projectId);
         ProjectResponse response = projectMapper.toResponse(project);
@@ -230,10 +230,6 @@ public class ProjectController {
         UUID userId = JwtUtils.getSubjectFromJwt();
         log.info("Fetching members for project: {} by user: {}", projectId, userId);
 
-        // Check if user has access to this project
-        if (!projectService.isUserProjectMember(projectId, userId)) {
-            throw new AppException(com.example.backend.exception.ErrorCode.UNAUTHORIZED);
-        }
 
         List<com.example.backend.entity.ProjectMember> members = projectService.getProjectMembers(projectId);
         List<ProjectMemberResponse> responses = members.stream()

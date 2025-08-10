@@ -25,11 +25,14 @@ public class UserController {
     UserService userService;
 
     @GetMapping
-    public ApiResponse<List<UserResponse>> getUsers() {
-        log.info("Fetching all users");
+    public ApiResponse<List<UserResponse>> getUsers(@RequestParam(required = false) String search) {
+        log.info("Fetching users with search: {}", search);
+        List<UserResponse> users = search != null && !search.trim().isEmpty() 
+            ? userService.searchUsers(search) 
+            : userService.getUsers();
         return ApiResponse.<List<UserResponse>>builder()
                 .message("List of users fetched successfully")
-                .result(userService.getUsers())
+                .result(users)
                 .build();
     }
 

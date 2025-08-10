@@ -21,6 +21,7 @@ import org.springframework.stereotype.Service;
 import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 
 import java.util.Optional;
 
@@ -72,15 +73,19 @@ public class CommentService {
           // Broadcast comment creation via WebSocket
           webSocketService.broadcastCommentCreated(savedComment);
           
-          // Gửi notification cho assignee của issue
-          if (issue.get().getAssignee() != null && !issue.get().getAssignee().getId().equals(userId)) {
-              notificationService.notifyNewComment(
-                  issue.get().getAssignee().getId(),
-                  user.get().getName(),
-                  issue.get().getTitle(),
-                  issueId
-              );
-          }
+          // Gửi notification cho assignee và reporter của issue - async để không block
+          CompletableFuture.runAsync(() -> {
+              try {
+                  notificationService.notifyNewComment(
+                      issueId,
+                      user.get().getName(),
+                      issue.get().getTitle(),
+                      userId
+                  );
+              } catch (Exception e) {
+                  log.warn("Failed to notify comment async: {}", e.getMessage());
+              }
+          });
           
           return savedComment;
       } catch (Exception e) {

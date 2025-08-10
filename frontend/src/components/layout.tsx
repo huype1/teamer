@@ -24,17 +24,7 @@ export function Layout({ children }: LayoutProps) {
     console.log("Search query:", query);
   };
 
-  const handleSettings = () => {
-    console.log("Settings clicked");
-  };
-
-  const handleNotifications = () => {
-    console.log("Notifications clicked");
-  };
-
-  const handleCreate = () => {
-    console.log("Create clicked");
-  };
+  
 
   const handleLogout = () => {
     dispatch(logout());
@@ -45,9 +35,6 @@ export function Layout({ children }: LayoutProps) {
       <TopNav
         variant="full"
         onSearch={handleSearch}
-        onSettings={handleSettings}
-        onNotifications={handleNotifications}
-        onCreate={handleCreate}
         onLogout={handleLogout}
       />
       <SidebarProvider open={isSidebarOpen} onOpenChange={setSidebarOpen}>

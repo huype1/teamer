@@ -17,7 +17,10 @@ export const isCurrentUserManager = (user: User | null, projectId: string): bool
   const role = getCurrentUserRole(user, projectId);
   return role === "ADMIN" || role === "PM";
 };
-
+export const isCurrentUserNonViewer= (user: User | null, projectId: string): boolean => {
+  const role = getCurrentUserRole(user, projectId);
+  return role === "ADMIN" || role === "PM" || role === "MEMBER";
+};
 // Helper function để kiểm tra user có thể quản lý thành viên không (chỉ ADMIN)
 export const canManageMembers = (user: User | null, projectId: string, projectCreatorId?: string): boolean => {
   if (!user || !projectId) return false;
@@ -35,4 +38,16 @@ export const canInviteMembers = (user: User | null, projectId: string): boolean 
 // Helper function để kiểm tra user có thể cập nhật vai trò không (chỉ ADMIN)
 export const canUpdateRoles = (user: User | null, projectId: string): boolean => {
   return isCurrentUserAdmin(user, projectId);
+};
+
+// Helper function để lấy role của user hiện tại trong team
+export const getCurrentUserTeamRole = (user: User | null, teamId: string): string | null => {
+  if (!user || !teamId) return null;
+  const teamMember = user.teamMembers?.find(tm => tm.teamId === teamId);
+  return teamMember?.role || null;
+};
+
+// Helper function để kiểm tra user có phải là ADMIN trong team không
+export const isCurrentUserTeamAdmin = (user: User | null, teamId: string): boolean => {
+  return getCurrentUserTeamRole(user, teamId) === "ADMIN";
 }; 

@@ -27,20 +27,20 @@ export const markAllAsRead = async () => {
 };
 
 // Mark single notification as read
-export const markAsRead = async (notificationId: string) => {
-  const res = await axios.put(`${baseUrl}/${notificationId}/read`, {}, addReqToken(localStorage.getItem("token")));
+export const markAsRead = async (notificationRecipientId: string) => {
+  const res = await axios.put(`${baseUrl}/${notificationRecipientId}/read`, {}, addReqToken(localStorage.getItem("token")));
   return res.data;
 };
 
 // Xóa notification
-export const deleteNotification = async (notificationId: string) => {
-  const res = await axios.delete(`${baseUrl}/${notificationId}`, addReqToken(localStorage.getItem("token")));
+export const deleteNotification = async (notificationRecipientId: string) => {
+  const res = await axios.delete(`${baseUrl}/${notificationRecipientId}`, addReqToken(localStorage.getItem("token")));
   return res.data;
 };
 
 // Tạo notification (cho testing)
 export const createNotification = async (data: {
-  userId: string;
+  userIds: string[];
   title: string;
   content: string;
   link?: string;

@@ -1,11 +1,11 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
+// import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from "@/components/ui/select";
 import { 
   Dialog, 
@@ -23,42 +23,39 @@ import {
   Clock,
   Zap,
   Target,
-  Paperclip
 } from "lucide-react";
 import { useSelector } from "react-redux";
 import type { RootState } from "@/store";
 import issueService from "@/service/issueService";
 import ProjectService from "@/service/projectService";
 import commentService, { type Comment } from "@/service/commentService";
-import type { Issue, UpdateIssueRequest } from "@/types/issue";
+import type {CreateIssueRequest, Issue, UpdateIssueRequest} from "@/types/issue";
 import type { ProjectMember } from "@/types/project";
 import type { Sprint } from "@/types/sprint";
 import { toastSuccess, toastError } from "@/utils/toast";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
+// import { useForm } from "react-hook-form";
+// import { zodResolver } from "@hookform/resolvers/zod";
+// import { z } from "zod";
 import { Layout } from "@/components/layout";
 import sprintService from "@/service/sprintService";
 import type { User } from "@/types/user";
-import { getCurrentUserRole, isCurrentUserManager } from "@/utils/projectHelpers";
+import { isCurrentUserManager, isCurrentUserNonViewer} from "@/utils/projectHelpers";
 import {IssueForm} from "@/components/project/IssueForm";
-import attachmentService from "@/service/attachmentService";
+import type { IssueFormValues } from "@/components/project/IssueForm";
+import attachmentService, { type Attachment } from "@/service/attachmentService";
 import { IssuesTable } from "@/components/project/IssuesTable";
 // import { useWebSocket } from "@/hooks/useWebSocket";
 import type { CommentMessage } from "@/service/websocketService";
 import websocketService from "@/service/websocketService";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { AttachmentList } from "@/components/ui/attachment-list";
+import MessageComposer from "@/components/ui/message-composer";
 
-const commentSchema = z.object({
-  content: z.string().min(1, "Nội dung comment không được để trống"),
-});
-
-type CommentFormData = z.infer<typeof commentSchema>;
+// Comment handled by MessageComposer
 
 // Map API response to FE Issue type
 const mapIssue = (issue: Record<string, unknown>): Issue => ({
-  ...(issue as Issue),
+  ...(issue as unknown as Issue),
   sprintId: issue.sprintId ? String(issue.sprintId) : undefined,
   reporter: issue.reporterId
     ? {
@@ -82,7 +79,7 @@ const IssueDetailPage: React.FC = () => {
   const { user } = useSelector((state: RootState) => state.auth);
   
   const [issue, setIssue] = useState<Issue | null>(null);
-  const [rawIssueData, setRawIssueData] = useState<any>(null); // Store raw data for subtask creation
+  const [rawIssueData, setRawIssueData] = useState<{ sprintId?: string; storyPoints?: number; dueDate?: string; projectName?: string; projectKey?: string; parentTitle?: string; parentKey?: string } | null>(null); // Store raw data for subtask creation
   const [project, setProject] = useState<{ id: string; name: string; members: ProjectMember[] } | null>(null);
 
   const [projectUsers, setProjectUsers] = useState<User[]>([]);
@@ -95,13 +92,11 @@ const IssueDetailPage: React.FC = () => {
   const [subtasks, setSubtasks] = useState<Issue[]>([]);
   const [updating, setUpdating] = useState(false);
   const [projectMembers, setProjectMembers] = useState<ProjectMember[]>([]);
-
-  // Thêm state cho file upload
-  const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
-  const [uploading, setUploading] = useState(false);
+  console.log('subtasks', subtasks);
+  // Removed inline upload states (handled in MessageComposer)
 
   // State for comment attachments
-  const [commentAttachments, setCommentAttachments] = useState<Record<string, any[]>>({});
+  const [commentAttachments, setCommentAttachments] = useState<Record<string, Attachment[]>>({});
 
   // State for create subtask dialog
   const [isCreateSubtaskOpen, setIsCreateSubtaskOpen] = useState(false);
@@ -126,7 +121,6 @@ const IssueDetailPage: React.FC = () => {
               avatarUrl: message.userAvatarUrl || '',
             },
           };
-          console.log('newComment', newComment);
           setComments(prev => [...prev, newComment]);
         } else if (message.type === 'UPDATE') {
           setComments(prev => prev.map(comment => 
@@ -153,16 +147,20 @@ const IssueDetailPage: React.FC = () => {
   // Handler for creating subtask
   const handleCreateSubtask = async (data: import("@/components/project/IssueForm").IssueFormValues) => {
     try {
-      const requestBody: Record<string, unknown> = {
+      const requestBody: CreateIssueRequest = {
         title: data.title,
         description: data.description || "",
         priority: data.priority,
-        issueType: data.issueType, // will be locked to TASK/BUG/STORY
-        projectId: issue?.projectId!, // parent issue's project
+        issueType: "SUBTASK",
+        projectId: issue?.projectId as string,
         parentId: issue?.id,
       };
       if (data.assigneeId && data.assigneeId !== "none") requestBody.assigneeId = data.assigneeId;
       if (data.sprintId && data.sprintId !== "backlog" && data.sprintId !== "none") requestBody.sprintId = data.sprintId;
+      // Ensure subtask inherits parent's sprint if available
+      if (!requestBody.sprintId && rawIssueData?.sprintId) {
+        requestBody.sprintId = rawIssueData.sprintId as string;
+      }
       if (data.storyPoints !== undefined) requestBody.storyPoints = data.storyPoints;
       if (data.startDate) requestBody.startDate = data.startDate;
       if (data.dueDate) requestBody.dueDate = data.dueDate;
@@ -175,32 +173,14 @@ const IssueDetailPage: React.FC = () => {
     }
   };
 
-  const {
-    register,
-    handleSubmit,
-    reset,
-    formState: { errors, isSubmitting },
-  } = useForm<CommentFormData>({
-    resolver: zodResolver(commentSchema),
-    defaultValues: {
-      content: "",
-    },
-  });
+  // Removed react-hook-form for comments (handled in MessageComposer)
 
-  useEffect(() => {
-    if (issueId) {
-      fetchIssueData();
-    }
-  }, [issueId]);
-
-  const fetchIssueData = async () => {
+  const fetchIssueData = useCallback(async () => {
     try {
       setLoading(true);
       const issueRes = await issueService.getIssueById(issueId!);
-      console.log(issueRes);
-      console.log("Issue response:", issueRes);
       setIssue(mapIssue(issueRes.result));
-      setRawIssueData(issueRes.result); // Store raw data
+      setRawIssueData(issueRes.result as { sprintId?: string; storyPoints?: number; dueDate?: string; projectName?: string; projectKey?: string; parentTitle?: string; parentKey?: string });
       
       if (issueRes.result.projectId) {
         try {
@@ -216,16 +196,13 @@ const IssueDetailPage: React.FC = () => {
           setProjectMembers(membersRes.result || []);
         } catch (sprintError) {
           console.error("Lỗi khi lấy dữ liệu sprint:", sprintError);
-          // Không set error chính, chỉ log và tiếp tục
           setSprints([]);
         }
       }
       
-      // Fetch comments
       const commentsRes = await commentService.getCommentsByIssueId(issueId!);
       setComments(commentsRes.result || []);
       
-      // Fetch subtasks if this issue has subtasks
       if (issueRes.result.subtasks && issueRes.result.subtasks.length > 0) {
         setSubtasks(issueRes.result.subtasks.map(mapIssue));
       }
@@ -235,14 +212,33 @@ const IssueDetailPage: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [issueId]);
 
-  const handleUpdateIssue = async (data: UpdateIssueRequest) => {
+  useEffect(() => {
+    if (issueId) {
+      fetchIssueData();
+    }
+  }, [issueId, fetchIssueData]);
+
+  const handleUpdateIssue = async (form: IssueFormValues) => {
     if (!issue) return;
     
     setUpdating(true);
     try {
-      await issueService.updateIssue(issue.id, data);
+      // Sanitize payload: map backlog/none/empty strings to undefined
+      const payload: UpdateIssueRequest = {};
+      if (typeof form.title === 'string' && form.title.trim() !== '') payload.title = form.title;
+      if (typeof form.description === 'string') payload.description = form.description.trim() === '' ? undefined : form.description;
+      if (form.priority) payload.priority = form.priority;
+      if (form.issueType) payload.issueType = form.issueType;
+      if (form.assigneeId && form.assigneeId !== 'none') payload.assigneeId = form.assigneeId;
+      if (form.sprintId && form.sprintId !== 'backlog' && form.sprintId !== 'none') payload.sprintId = form.sprintId;
+      if (typeof form.parentId === 'string' && form.parentId.trim() !== '') payload.parentId = form.parentId;
+      if (typeof form.startDate === 'string' && form.startDate.trim() !== '') payload.startDate = form.startDate;
+      if (typeof form.dueDate === 'string' && form.dueDate.trim() !== '') payload.dueDate = form.dueDate;
+      if (typeof form.storyPoints === 'number') payload.storyPoints = form.storyPoints;
+
+      await issueService.updateIssue(issue.id, payload);
       toastSuccess("Cập nhật issue thành công!");
       setEditDialogOpen(false);
       fetchIssueData(); // Refresh data
@@ -284,7 +280,7 @@ const IssueDetailPage: React.FC = () => {
     if (!issue || !user) return;
     
     try {
-      await issueService.setAssignee(issue.id, assigneeId === "unassigned" ? undefined : assigneeId);
+      await issueService.setAssignee(issue.id, assigneeId === "unassigned" ? '' : assigneeId);
       const assignee = assigneeId === "unassigned" ? undefined : projectUsers.find(u => u.id === assigneeId);
       setIssue(prev => prev ? { 
         ...prev, 
@@ -314,46 +310,7 @@ const IssueDetailPage: React.FC = () => {
     }
   };
 
-  // Hàm upload file lên S3 và lấy metadata
-  const uploadFilesToS3 = async (files: File[]) => {
-    setUploading(true);
-    const uploaded: unknown[] = [];
-    for (const file of files) {
-      try {
-        const attachmentMeta = await attachmentService.uploadFile(file);
-        uploaded.push(attachmentMeta);
-      } catch (error) {
-        console.error("Lỗi khi upload file:", error);
-        toastError(`Không thể upload file ${file.name}`);
-      }
-    }
-    setUploading(false);
-    return uploaded;
-  };
-
-  const onSubmitComment = async (data: CommentFormData) => {
-    if (!issue || !user) return;
-    
-    let attachments: any[] = [];
-    if (selectedFiles.length > 0) {
-      attachments = await uploadFilesToS3(selectedFiles);
-    }
-    
-    try {
-      await commentService.createComment({
-        content: data.content,
-        issueId: issue.id,
-        userId: user.id,
-        attachments: attachments,
-      });
-      reset();
-      setSelectedFiles([]);
-      // Don't call fetchIssueData() - let WebSocket handle the update
-    } catch (error) {
-      console.error("Error creating comment:", error);
-      toastError("Không thể tạo comment!");
-    }
-  };
+  // Removed local submit in favor of MessageComposer
 
   const getPriorityColor = (priority: string) => {
     switch (priority) {
@@ -415,20 +372,13 @@ const IssueDetailPage: React.FC = () => {
     return (
       issue.assignee?.id === user.id ||
       issue.reporter?.id === user.id ||
-      isCurrentUserManager(user, project.id, project.teamId)
+      isCurrentUserManager(user, project.id)
     );
-  };
-
-  const canComment = () => {
-    if (!user || !issue || !project) return false;
-    const role = getCurrentUserRole(user, issue.projectId!, project.teamId);
-    return role && role !== "VIEWER";
   };
 
   const handleDeleteComment = async (commentId: string) => {
     try {
       await commentService.deleteComment(commentId);
-      // Don't call fetchIssueData() - let WebSocket handle the update
     } catch (error) {
       console.error("Error deleting comment:", error);
     }
@@ -436,7 +386,7 @@ const IssueDetailPage: React.FC = () => {
 
   // Fetch attachments for comments
   const fetchAttachmentsForComments = async (comments: Comment[]) => {
-    const result: Record<string, any[]> = {};
+    const result: Record<string, Attachment[]> = {};
     for (const c of comments) {
       try {
         const res = await attachmentService.getByCommentId(c.id);
@@ -457,61 +407,7 @@ const IssueDetailPage: React.FC = () => {
 
 
 
-  // Component upload file đẹp cho comment
-  function FileUploadInput({
-    selectedFiles,
-    setSelectedFiles,
-    uploading
-  }: {
-    selectedFiles: File[];
-    setSelectedFiles: (files: File[]) => void;
-    uploading: boolean;
-  }) {
-    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-      setSelectedFiles(Array.from(e.target.files || []));
-    };
-
-    const removeFile = (index: number) => {
-      setSelectedFiles(selectedFiles.filter((_, i) => i !== index));
-    };
-
-    return (
-      <div className="mt-2">
-        <label className="flex items-center gap-2 cursor-pointer">
-          <Paperclip className="w-4 h-4" />
-          <span className="text-sm text-muted-foreground">Đính kèm file</span>
-          <input
-            type="file"
-            multiple
-            className="hidden"
-            onChange={handleFileChange}
-            disabled={uploading}
-          />
-        </label>
-        {selectedFiles.length > 0 && (
-          <ul className="mt-2 space-y-1">
-            {selectedFiles.map((file, idx) => (
-              <li key={idx} className="flex items-center gap-2 text-sm bg-muted rounded px-2 py-1">
-                <span className="truncate max-w-xs">{file.name}</span>
-                <span className="text-xs text-muted-foreground">({Math.round(file.size / 1024)} KB)</span>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon"
-                  className="h-5 w-5"
-                  onClick={() => removeFile(idx)}
-                  disabled={uploading}
-                >
-                  <Trash2 className="w-4 h-4 text-destructive" />
-                </Button>
-              </li>
-            ))}
-          </ul>
-        )}
-        {uploading && <div className="text-xs text-blue-500 mt-1">Đang upload file...</div>}
-      </div>
-    );
-  }
+  // Removed old FileUploadInput (MessageComposer has its own)
 
   if (loading) {
     return (
@@ -541,9 +437,9 @@ const IssueDetailPage: React.FC = () => {
               <div className="flex items-center gap-2 mb-2">
                 <h1 className="text-3xl font-bold">{issue.title}</h1>
                 <Badge variant="outline">{issue.key}</Badge>
-                <Button size="sm" variant="outline" className="ml-2" onClick={() => setIsCreateSubtaskOpen(true)}>
+                {canEditIssue() && <Button size="sm" variant="outline" className="ml-2" onClick={() => setIsCreateSubtaskOpen(true)}>
                   <Zap className="w-4 h-4 mr-1" /> Tạo subtask
-                </Button>
+                </Button>}
               </div>
               <div className="flex items-center gap-4 text-sm text-muted-foreground">
                 <div className="flex items-center gap-2">
@@ -647,26 +543,22 @@ const IssueDetailPage: React.FC = () => {
                   </div>
                 )}
                 
-                {/* Add Comment Form */}
-                {canComment() ? (
-                <form onSubmit={handleSubmit(onSubmitComment)} className="mt-4 space-y-2">
-                  <Textarea
-                    placeholder="Thêm comment..."
-                    {...register("content")}
-                    rows={3}
-                  />
-                  <FileUploadInput
-                    selectedFiles={selectedFiles}
-                    setSelectedFiles={setSelectedFiles}
-                    uploading={uploading}
-                  />
-                  {errors.content && (
-                    <span className="text-xs text-red-500">{errors.content.message}</span>
-                  )}
-                  <Button type="submit" size="sm" disabled={isSubmitting}>
-                    {isSubmitting ? "Đang gửi..." : "Gửi comment"}
-                  </Button>
-                </form>
+                {/* Add Comment Form (reused component) */}
+                {user && issue && isCurrentUserNonViewer(user, project.id) ? (
+                  <div className="mt-4">
+                    <MessageComposer
+                      placeholder="Thêm comment..."
+                      submitLabel="Gửi comment"
+                      onSubmit={async ({ content, attachments }) => {
+                        await commentService.createComment({
+                          content,
+                          issueId: issue.id,
+                          userId: user.id,
+                          attachments,
+                        });
+                      }}
+                    />
+                  </div>
                 ) : (
                   <div className="mt-4 p-3 bg-muted rounded-lg text-center text-sm text-muted-foreground">
                     Bạn không có quyền thêm comment
@@ -769,11 +661,11 @@ const IssueDetailPage: React.FC = () => {
                 </div>
 
                 {/* Project Info */}
-                  <div>
+                <div>
                   <Label className="text-sm font-medium">Dự án</Label>
                   <div className="mt-1">
-                    <div className="text-sm font-medium">{issue.projectName || "N/A"}</div>
-                    <div className="text-xs text-muted-foreground">{issue.projectKey || "N/A"}</div>
+                    <div className="text-sm font-medium">{rawIssueData?.projectName ?? "N/A"}</div>
+                    <div className="text-xs text-muted-foreground">{rawIssueData?.projectKey ?? "N/A"}</div>
                   </div>
                 </div>
 
@@ -794,9 +686,9 @@ const IssueDetailPage: React.FC = () => {
                   <div>
                     <Label className="text-sm font-medium">Issue cha</Label>
                     <div className="mt-1">
-                      <div className="text-sm font-medium">{issue.parentTitle || "N/A"}</div>
+                      <div className="text-sm font-medium">{rawIssueData?.parentTitle ?? "N/A"}</div>
                       <div className="text-xs text-muted-foreground">
-                        {issue.parentKey || issue.parentId}
+                        {rawIssueData?.parentKey ?? issue.parentId}
                       </div>
                     </div>
                   </div>
@@ -913,7 +805,18 @@ const IssueDetailPage: React.FC = () => {
               <DialogTitle>Chỉnh sửa Issue</DialogTitle>
             </DialogHeader>
             <IssueForm
-              initialValues={issue}
+              initialValues={{
+                title: issue.title,
+                description: issue.description,
+                priority: issue.priority,
+                issueType: issue.issueType === "EPIC" ? "TASK" : (issue.issueType as "STORY" | "TASK" | "BUG" | "SUBTASK"),
+                assigneeId: issue.assignee?.id,
+                sprintId: issue.sprintId,
+                storyPoints: issue.storyPoints,
+                startDate: issue.startDate,
+                dueDate: issue.dueDate,
+                parentId: issue.parentId,
+              }}
               onSubmit={handleUpdateIssue}
               loading={updating}
               projectMembers={projectMembers}

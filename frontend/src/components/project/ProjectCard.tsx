@@ -20,9 +20,9 @@ interface ProjectCardProps {
 const ProjectCard: React.FC<ProjectCardProps> = ({ project, onEdit, onDelete, onManageMembers }) => {
   const { user } = useSelector((state: RootState) => state.auth);
   
-  const canEdit = user && getCurrentUserRole(user, project.id, project.teamId) === "ADMIN";
-  const canDelete = user && getCurrentUserRole(user, project.id, project.teamId) === "ADMIN";
-  const canManageMembers = user && getCurrentUserRole(user, project.id, project.teamId) === "ADMIN";
+  const canEdit = user  ? getCurrentUserRole(user, project.id, project.teamId) === "ADMIN" : undefined;
+  const canDelete = user ? getCurrentUserRole(user, project.id, project.teamId) === "ADMIN": undefined;
+  const canManageMembers = user ? getCurrentUserRole(user, project.id, project.teamId) === "ADMIN": undefined;
   const getInitials = (name: string) => {
     return name
       .split(' ')

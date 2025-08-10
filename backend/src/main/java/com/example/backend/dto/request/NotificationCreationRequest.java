@@ -1,6 +1,7 @@
 package com.example.backend.dto.request;
 
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
@@ -8,6 +9,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.util.List;
 import java.util.UUID;
 
 @Data
@@ -16,8 +18,8 @@ import java.util.UUID;
 @AllArgsConstructor
 public class NotificationCreationRequest {
 
-    @NotNull(message = "User ID is required")
-    private UUID userId;
+    @NotEmpty(message = "User IDs are required")
+    private List<UUID> userIds; // Danh sách user nhận notification
 
     @NotBlank(message = "Title is required")
     @Size(max = 255, message = "Title must not exceed 255 characters")
@@ -40,4 +42,16 @@ public class NotificationCreationRequest {
 
     @Size(max = 20, message = "Priority must not exceed 20 characters")
     private String priority = "NORMAL";
+
+    // Constructor để backward compatibility với single user
+    public NotificationCreationRequest(UUID userId, String title, String content, String link, String type, String entityType, UUID entityId, String priority) {
+        this.userIds = List.of(userId);
+        this.title = title;
+        this.content = content;
+        this.link = link;
+        this.type = type;
+        this.entityType = entityType;
+        this.entityId = entityId;
+        this.priority = priority;
+    }
 } 

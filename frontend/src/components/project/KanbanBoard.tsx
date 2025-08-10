@@ -6,7 +6,7 @@ import { Badge } from "../ui/badge";
 import { Button } from "../ui/button";
 import { DndContext, useDraggable, useDroppable, PointerSensor, useSensor, useSensors, closestCorners } from '@dnd-kit/core';
 import type { DragEndEvent } from '@dnd-kit/core';
-import { Bug, FileText, Layers, Target, Zap, Plus, AlertCircle, CheckCircle2, Clock, Eye } from "lucide-react";
+import { Bug, FileText, Target, Zap, Plus, AlertCircle, CheckCircle2, Clock, Eye } from "lucide-react";
 import { Link } from "react-router-dom";
 
 interface KanbanBoardProps {
@@ -69,14 +69,7 @@ const STATUS_COLUMNS = [
 
 const getIssueTypeConfig = (issueType: string) => {
   switch (issueType) {
-    case "EPIC":
-      return {
-        icon: Layers,
-        gradient: "from-purple-600 to-indigo-600",
-        textColor: "text-white",
-        label: "Epic",
-        emoji: "🎯"
-      };
+    // EPIC removed from app; default mapping will be used if encountered
     case "STORY":
       return {
         icon: FileText,
@@ -209,7 +202,6 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({ issues, onOpenCreateIssue, ca
     })
   );
 
-  // Update column counts
   const columnsWithCount: ColumnConfig[] = STATUS_COLUMNS.map(col => ({
     ...col,
     count: issues.filter(i => i.status === col.key).length

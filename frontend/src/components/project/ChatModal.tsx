@@ -16,6 +16,7 @@ import websocketService, { type AttachmentInfo } from "@/service/websocketServic
 import { useWebSocketContext } from "@/components/WebSocketProvider";
 import type { RootState } from "@/store";
 import { LoadingSpinner } from "../ui/loading-spinner";
+import MessageComposer from "@/components/ui/message-composer";
 
 const messageSchema = z.object({
   content: z.string().min(1, "Tin nhắn không được để trống"),
@@ -368,30 +369,19 @@ const ChatModal: React.FC<ChatModalProps> = ({ isOpen, onClose, chatId, chatName
             )}
           </div>
           
-          {/* Message Input */}
+          {/* Message Input - reused */}
           <div className="border-t p-4">
-            <form onSubmit={handleSubmit(onSubmitMessage)} className="space-y-2">
-              <Textarea
-                placeholder="Nhập tin nhắn..."
-                {...register("content")}
-                rows={3}
-                className="resize-none"
-              />
-              <FileUploadInput
-                selectedFiles={selectedFiles}
-                setSelectedFiles={setSelectedFiles}
-                uploading={uploading}
-              />
-              {errors.content && (
-                <span className="text-xs text-red-500">{errors.content.message}</span>
-              )}
-              <div className="flex justify-end">
-                <Button type="submit" size="sm" disabled={isSubmitting || uploading}>
-                  <Send className="w-4 h-4 mr-2" />
-                  {isSubmitting || uploading ? "Đang gửi..." : "Gửi"}
-                </Button>
-              </div>
-            </form>
+            <MessageComposer
+              placeholder="Nhập tin nhắn..."
+              submitLabel="Gửi"
+              onSubmit={async ({ content, attachments }) => {
+                await chatService.createChatMessage({
+                  content,
+                  chatId,
+                  attachments,
+                });
+              }}
+            />
           </div>
         </div>
       </DialogContent>

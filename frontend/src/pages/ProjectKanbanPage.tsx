@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { useParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import KanbanBoard from "@/components/project/KanbanBoard";
@@ -49,12 +49,11 @@ const ProjectKanbanPage: React.FC = () => {
   const { projectId } = useParams<{ projectId: string }>();
   const [project, setProject] = useState<Project | null>(null);
   const [sprints, setSprints] = useState<Sprint[]>([]);
-  const [activeSprint, setActiveSprint] = useState<Sprint | null>(null);
-  const [sprintIssues, setSprintIssues] = useState<Issue[]>([]);
+  const [selectedScope, setSelectedScope] = useState<string>("BACKLOG");
+  const [kanbanIssues, setKanbanIssues] = useState<Issue[]>([]);
   const [projectMembers, setProjectMembers] = useState<ProjectMember[]>([]);
   const [projectUsers, setProjectUsers] = useState<User[]>([]);
   const { user } = useSelector((state: RootState) => state.auth);
-  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [isCreateSubtaskDialogOpen, setIsCreateSubtaskDialogOpen] = useState(false);
   const [selectedParentIssue, setSelectedParentIssue] = useState<Issue | null>(null);
   const { register, handleSubmit, reset, setValue, watch } = useForm({
@@ -68,6 +67,45 @@ const ProjectKanbanPage: React.FC = () => {
   });
   const [creating, setCreating] = useState(false);
 
+  const fetchProject = useCallback(async () => {
+    try {
+      const response = await ProjectService.getProjectById(projectId!);
+      setProject(response.result);
+    } catch (error) {
+      console.error("Error fetching project:", error);
+    }
+  }, [projectId]);
+
+  const fetchSprints = useCallback(async () => {
+    try {
+      const response = await sprintService.getSprintsByProject(projectId!);
+      const sprints = response.result || [];
+      setSprints(sprints);
+      const active = sprints.find(s => s.status === "ACTIVE");
+      setSelectedScope(active ? active.id : "BACKLOG");
+    } catch (error) {
+      console.error("Error fetching sprints:", error);
+    }
+  }, [projectId]);
+
+  const fetchProjectMembers = useCallback(async () => {
+    try {
+      const response = await ProjectService.getProjectMembers(projectId!);
+      setProjectMembers(response.result || []);
+    } catch (error) {
+      console.error("Error fetching project members:", error);
+    }
+  }, [projectId]);
+
+  const fetchProjectUsers = useCallback(async () => {
+    try {
+      const response = await ProjectService.getProjectUsers(projectId!);
+      setProjectUsers(response.result || []);
+    } catch (error) {
+      console.error("Error fetching project users:", error);
+    }
+  }, [projectId]);
+
   useEffect(() => {
     if (projectId) {
       fetchProject();
@@ -75,70 +113,31 @@ const ProjectKanbanPage: React.FC = () => {
       fetchProjectMembers();
       fetchProjectUsers();
     }
-  }, [projectId]);
+  }, [projectId, fetchProject, fetchSprints, fetchProjectMembers, fetchProjectUsers]);
+
+  const fetchKanbanIssues = useCallback(async () => {
+    if (!projectId) return;
+    try {
+      let response;
+      if (selectedScope === "BACKLOG") {
+        response = await sprintService.getBacklogIssues(projectId!);
+      } else {
+        response = await sprintService.getIssuesBySprint(selectedScope);
+      }
+      const rawIssues = (response.result || []).map(mapIssue);
+      const filteredIssues = rawIssues.filter(issue => issue.issueType !== "EPIC" && issue.issueType !== "SUBTASK");
+      setKanbanIssues(filteredIssues);
+    } catch (error) {
+      console.error("Error fetching kanban issues:", error);
+      setKanbanIssues([]);
+    }
+  }, [projectId, selectedScope]);
 
   useEffect(() => {
-    if (activeSprint) {
-      fetchSprintIssues();
-    }
-  }, [activeSprint, projectId]);
+    fetchKanbanIssues();
+  }, [fetchKanbanIssues]);
 
-  const fetchProject = async () => {
-    try {
-      const response = await ProjectService.getProjectById(projectId!);
-      setProject(response.result);
-    } catch (error) {
-      console.error("Error fetching project:", error);
-    }
-  };
-
-  const fetchSprints = async () => {
-    try {
-      const response = await sprintService.getSprintsByProject(projectId!);
-      const sprints = response.result || [];
-      setSprints(sprints);
-      
-      // Chỉ tìm sprint đang ACTIVE cho Kanban
-      const activeSprint = sprints.find(s => s.status === "ACTIVE");
-      setActiveSprint(activeSprint || null);
-    } catch (error) {
-      console.error("Error fetching sprints:", error);
-    }
-  };
-
-  const fetchSprintIssues = async () => {
-    if (!activeSprint) return;
-    try {
-      const response = await sprintService.getIssuesBySprint(activeSprint.id);
-      const sprintIssues = (response.result || []).map(mapIssue);
-      // Lọc bỏ EPIC và SUBTASK khỏi danh sách chính
-      const filteredIssues = sprintIssues.filter(issue => 
-        issue.issueType !== "EPIC" && issue.issueType !== "SUBTASK"
-      );
-      setSprintIssues(filteredIssues);
-    } catch (error) {
-      console.error("Error fetching sprint issues:", error);
-      setSprintIssues([]);
-    }
-  };
-
-  const fetchProjectMembers = async () => {
-    try {
-      const response = await ProjectService.getProjectMembers(projectId!);
-      setProjectMembers(response.result || []);
-    } catch (error) {
-      console.error("Error fetching project members:", error);
-    }
-  };
-
-  const fetchProjectUsers = async () => {
-    try {
-      const response = await ProjectService.getProjectUsers(projectId!);
-      setProjectUsers(response.result || []);
-    } catch (error) {
-      console.error("Error fetching project users:", error);
-    }
-  };
+  
 
   const canCreateIssue = () => {
     if (!user || !projectId) return false;
@@ -151,21 +150,21 @@ const ProjectKanbanPage: React.FC = () => {
     return (
       issue.assignee?.id === user.id ||
       issue.reporter?.id === user.id ||
-      isCurrentUserManager(user, projectId!, project?.teamId)
+      isCurrentUserManager(user, projectId!)
     );
   };
 
   const handleStatusChange = async (issueId: string, newStatus: string) => {
-    const issue = sprintIssues.find(i => i.id === issueId);
+    const issue = kanbanIssues.find(i => i.id === issueId);
     if (!issue || !user || !canMoveIssue(issue)) {
       toastError("Bạn không có quyền thay đổi trạng thái issue này!");
       return;
     }
     try {
-      await issueService.updateIssueStatus(issueId, newStatus);
-      setSprintIssues(prev => prev.map(issue => 
+      setKanbanIssues(prev => prev.map(issue =>
         issue.id === issueId ? { ...issue, status: newStatus as Issue["status"] } : issue
       ));
+      await issueService.updateIssueStatus(issueId, newStatus);
       toastSuccess("Cập nhật trạng thái thành công!");
     } catch (error) {
       toastError("Cập nhật trạng thái thất bại!");
@@ -173,36 +172,6 @@ const ProjectKanbanPage: React.FC = () => {
     }
   };
 
-  const onCreateIssue = async (data: { title: string; description: string; priority: string; issueType: string; assigneeId: string }) => {
-    setCreating(true);
-    try {
-      const requestBody: { title: string; description: string; priority: string; issueType: string; projectId: string; assigneeId?: string; sprintId?: string } = {
-        title: data.title,
-        description: data.description,
-        priority: data.priority,
-        issueType: data.issueType,
-        projectId: projectId!,
-      };
-      if (data.assigneeId !== "none") {
-        requestBody.assigneeId = data.assigneeId;
-      }
-      if (activeSprint) {
-        requestBody.sprintId = activeSprint.id;
-      }
-      await issueService.createIssue(requestBody);
-      toastSuccess("Tạo issue thành công!");
-      setIsCreateDialogOpen(false);
-      reset();
-      if (activeSprint) {
-        fetchSprintIssues();
-      }
-    } catch (error) {
-      toastError("Tạo issue thất bại!");
-      console.error("Error creating issue:", error);
-    } finally {
-      setCreating(false);
-    }
-  };
 
   const onCreateSubtask = async (data: { title: string; description: string; priority: string; assigneeId: string }) => {
     if (!selectedParentIssue) return;
@@ -232,9 +201,7 @@ const ProjectKanbanPage: React.FC = () => {
       setIsCreateSubtaskDialogOpen(false);
       setSelectedParentIssue(null);
       reset();
-      if (activeSprint) {
-        fetchSprintIssues();
-      }
+      fetchKanbanIssues();
     } catch (error) {
       toastError("Tạo subtask thất bại!");
       console.error("Error creating subtask:", error);
@@ -269,40 +236,57 @@ const ProjectKanbanPage: React.FC = () => {
       <ProjectNavigation projectId={projectId!} activeTab="kanban" />
 
       <div className="space-y-6">
-        {/* Active Sprint Kanban - Chỉ hiển thị sprint đang ACTIVE */}
-        {activeSprint ? (
-          <Card>
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <CardTitle className="flex items-center gap-2">
-                  Sprint: {activeSprint.name}
-                  <Badge variant="default">Đang chạy</Badge>
-                </CardTitle>
-                {activeSprint.goal && (
-                  <p className="text-sm text-muted-foreground">{activeSprint.goal}</p>
+        <Card>
+          <CardHeader>
+            <div className="flex items-center justify-between gap-4">
+              <CardTitle className="flex items-center gap-2">
+                {selectedScope === "BACKLOG" ? (
+                  <>Backlog</>
+                ) : (
+                  <>
+                    Sprint: {sprints.find(s => s.id === selectedScope)?.name || ""}
+                    {(() => {
+                      const s = sprints.find(s => s.id === selectedScope);
+                      if (!s) return null;
+                      const text = s.status === "ACTIVE"
+                        ? "Đang chạy"
+                        : s.status === "COMPLETED"
+                        ? "Đã kết thúc"
+                        : s.status === "PLANNING"
+                        ? "Đang lập kế hoạch"
+                        : s.status === "CANCELLED"
+                        ? "Đã hủy"
+                        : s.status;
+                      return <Badge variant="default">{text}</Badge>;
+                    })()}
+                  </>
                 )}
+              </CardTitle>
+              <div className="w-64">
+                <Select value={selectedScope} onValueChange={setSelectedScope}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Chọn sprint hoặc backlog" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="BACKLOG">Backlog</SelectItem>
+                    {sprints.map(s => (
+                      <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
-            </CardHeader>
-            <CardContent>
-              <KanbanBoard
-                issues={sprintIssues}
-                projectMembers={projectMembers}
-                onStatusChange={handleStatusChange}
-                canCreateIssue={canCreateIssue() || false}
-                onCreateSubtask={handleCreateSubtask}
-              />
-            </CardContent>
-          </Card>
-        ) : (
-          <Card>
-            <CardHeader>
-              <CardTitle>Không có sprint đang chạy</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-muted-foreground">Vui lòng bắt đầu một sprint để xem kanban board.</p>
-            </CardContent>
-          </Card>
-        )}
+            </div>
+          </CardHeader>
+          <CardContent>
+            <KanbanBoard
+              issues={kanbanIssues}
+              projectMembers={projectMembers}
+              onStatusChange={handleStatusChange}
+              canCreateIssue={canCreateIssue() || false}
+              onCreateSubtask={handleCreateSubtask}
+            />
+          </CardContent>
+        </Card>
       </div>
 
       {/* Create Subtask Dialog */}

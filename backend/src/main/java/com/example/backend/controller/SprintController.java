@@ -25,9 +25,11 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 import com.example.backend.repository.IssueRepository;
 import com.example.backend.entity.Issue;
 import com.example.backend.service.ProjectService;
+import com.example.backend.service.NotificationService;
 
 @RestController
 @RequestMapping("/sprints")
@@ -43,6 +45,7 @@ public class SprintController {
     SprintMapper sprintMapper;
     IssueMapper issueMapper;
     ProjectService projectService;
+    NotificationService notificationService;
 
     private void checkProjectManagerOrAdmin(UUID projectId, UUID userId) {
         ProjectMember member = projectMemberRepository.findByProjectIdAndUserId(projectId, userId)
@@ -57,7 +60,8 @@ public class SprintController {
         UUID userId = JwtUtils.getSubjectFromJwt();
         log.info("Fetching sprints for project: {} by user: {}", projectId, userId);
         
-        List<Sprint> sprints = sprintRepository.findByProjectId(projectId);
+        // Use sorted query to match frontend sorting logic
+        List<Sprint> sprints = sprintRepository.findByProjectIdOrderByStatusPriority(projectId);
         List<SprintResponse> responses = sprintMapper.toResponseList(sprints);
         
         return ApiResponse.<List<SprintResponse>>builder()
@@ -110,6 +114,19 @@ public class SprintController {
         existing.setEndDate(sprint.getEndDate());
         Sprint saved = sprintRepository.save(existing);
         SprintResponse response = sprintMapper.toResponse(saved);
+
+        // Notify members about sprint update - async để không block
+        try {
+            CompletableFuture.runAsync(() -> {
+                try {
+                    notificationService.notifySprintUpdated(saved.getProject().getId(), saved.getName(), "UPDATED", userId);
+                } catch (Exception e) {
+                    log.warn("Failed to notify sprint update async: {}", e.getMessage());
+                }
+            });
+        } catch (Exception e) {
+            log.warn("Failed to start sprint update notification: {}", e.getMessage());
+        }
         
         return ApiResponse.<SprintResponse>builder()
                 .result(response)
@@ -149,6 +166,17 @@ public class SprintController {
         sprint.setStartDate(java.time.OffsetDateTime.now());
         Sprint saved = sprintRepository.save(sprint);
         SprintResponse response = sprintMapper.toResponse(saved);
+        try {
+            CompletableFuture.runAsync(() -> {
+                try {
+                    notificationService.notifySprintUpdated(saved.getProject().getId(), saved.getName(), "STARTED", userId);
+                } catch (Exception e) {
+                    log.warn("Failed to notify sprint start async: {}", e.getMessage());
+                }
+            });
+        } catch (Exception e) {
+            log.warn("Failed to start sprint start notification: {}", e.getMessage());
+        }
         return ApiResponse.<SprintResponse>builder()
                 .result(response)
                 .message("Sprint started successfully")
@@ -167,6 +195,17 @@ public class SprintController {
         sprint.setEndDate(java.time.OffsetDateTime.now());
         Sprint saved = sprintRepository.save(sprint);
         SprintResponse response = sprintMapper.toResponse(saved);
+        try {
+            CompletableFuture.runAsync(() -> {
+                try {
+                    notificationService.notifySprintUpdated(saved.getProject().getId(), saved.getName(), "ENDED", userId);
+                } catch (Exception e) {
+                    log.warn("Failed to notify sprint end async: {}", e.getMessage());
+                }
+            });
+        } catch (Exception e) {
+            log.warn("Failed to start sprint end notification: {}", e.getMessage());
+        }
         return ApiResponse.<SprintResponse>builder()
                 .result(response)
                 .message("Sprint ended successfully")
@@ -184,6 +223,17 @@ public class SprintController {
         sprint.setStatus("CANCELLED");
         Sprint saved = sprintRepository.save(sprint);
         SprintResponse response = sprintMapper.toResponse(saved);
+        try {
+            CompletableFuture.runAsync(() -> {
+                try {
+                    notificationService.notifySprintUpdated(saved.getProject().getId(), saved.getName(), "CANCELLED", userId);
+                } catch (Exception e) {
+                    log.warn("Failed to notify sprint cancel async: {}", e.getMessage());
+                }
+            });
+        } catch (Exception e) {
+            log.warn("Failed to start sprint cancel notification: {}", e.getMessage());
+        }
         return ApiResponse.<SprintResponse>builder()
                 .result(response)
                 .message("Sprint cancelled successfully")

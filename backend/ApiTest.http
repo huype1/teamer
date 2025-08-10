@@ -35,6 +35,16 @@ Content-Type: application/json
 
 ### User APIs
 
+GET http://localhost:8080/api/users
+Authorization: Bearer {{authToken}}
+
+###
+
+GET http://localhost:8080/api/users?search=john
+Authorization: Bearer {{authToken}}
+
+###
+
 GET http://localhost:8080/api/users/me
 Authorization: Bearer {{authToken}}
 
@@ -98,6 +108,28 @@ Content-Type: application/json
 ###
 
 DELETE http://localhost:8080/api/teams/{{teamId}}
+Authorization: Bearer {{authToken}}
+
+###
+
+### Team Member APIs
+
+GET http://localhost:8080/api/teams/{{teamId}}/users
+Authorization: Bearer {{authToken}}
+
+###
+
+POST http://localhost:8080/api/teams/{{teamId}}/members?userId={{userId}}&role=MEMBER
+Authorization: Bearer {{authToken}}
+
+###
+
+PUT http://localhost:8080/api/teams/{{teamId}}/members?userId={{userId}}&role=ADMIN
+Authorization: Bearer {{authToken}}
+
+###
+
+DELETE http://localhost:8080/api/teams/{{teamId}}/members/{{userId}}
 Authorization: Bearer {{authToken}}
 
 ###
@@ -299,6 +331,11 @@ Authorization: Bearer {{authToken}}
 ###
 
 PUT http://localhost:8080/api/issues/{{issueId}}/assignee/{{userId}}
+Authorization: Bearer {{authToken}}
+
+###
+
+DELETE http://localhost:8080/api/issues/{{issueId}}/assignee
 Authorization: Bearer {{authToken}}
 
 ###
@@ -519,6 +556,99 @@ Content-Type: application/json
 
 # Delete a document
 DELETE http://localhost:8080/api/documents/{{documentId}}
+Authorization: Bearer {{authToken}}
+
+###
+
+### Notification API Tests ###
+
+# Create notification for multiple users
+POST http://localhost:8080/api/notifications
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+  "userIds": ["{{userId1}}", "{{userId2}}"],
+  "title": "Bạn có cập nhật mới",
+  "content": "Issue TEST-123 vừa được cập nhật",
+  "link": "http://localhost:5173/issues/{{issueId}}",
+  "type": "ISSUE",
+  "entityType": "ISSUE",
+  "entityId": "{{issueId}}",
+  "priority": "NORMAL"
+}
+
+###
+
+# Get notifications for current user
+GET http://localhost:8080/api/notifications
+Authorization: Bearer {{authToken}}
+
+###
+
+# Get unread count
+GET http://localhost:8080/api/notifications/unread-count
+Authorization: Bearer {{authToken}}
+
+###
+
+# Mark one as read
+PUT http://localhost:8080/api/notifications/{{notificationRecipientId}}/read
+Authorization: Bearer {{authToken}}
+
+###
+
+# Mark all as read
+PUT http://localhost:8080/api/notifications/mark-all-read
+Authorization: Bearer {{authToken}}
+
+###
+
+# Delete one notification
+DELETE http://localhost:8080/api/notifications/{{notificationRecipientId}}
+Authorization: Bearer {{authToken}}
+
+###
+
+### Attachment API Tests ###
+
+# Get presigned URL for upload
+POST http://localhost:8080/api/attachments/presigned-url
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+  "fileName": "test-image.jpg",
+  "fileType": "image/jpeg"
+}
+
+###
+
+# Get download URL
+POST http://localhost:8080/api/attachments/download-url
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+  "filePath": "test-image.jpg"
+}
+
+###
+
+# Get attachments by issue ID
+GET http://localhost:8080/api/attachments/issue/{{issueId}}
+Authorization: Bearer {{authToken}}
+
+###
+
+# Get attachments by comment ID
+GET http://localhost:8080/api/attachments/comment/{{commentId}}
+Authorization: Bearer {{authToken}}
+
+###
+
+# Get attachments by message ID
+GET http://localhost:8080/api/attachments/message/{{messageId}}
 Authorization: Bearer {{authToken}}
 
 ###

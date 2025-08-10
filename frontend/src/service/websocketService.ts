@@ -196,7 +196,6 @@ class WebSocketService {
   subscribeToChatMessages(chatId: string, callback: (message: ChatMessage) => void): void {
     console.log('Attempting to subscribe to chat messages for chatId:', chatId);
     console.log('WebSocket connected:', this.isConnected);
-    console.log('STOMP client exists:', !!this.stompClient);
     
     if (!this.stompClient || !this.isConnected) {
       console.error('WebSocket not connected, cannot subscribe');

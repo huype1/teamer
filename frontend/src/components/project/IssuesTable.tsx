@@ -1,5 +1,5 @@
 import React from "react";
-import { Bug, FileText, Target } from "lucide-react";
+import { Bug, FileText, Target, Zap } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
@@ -31,7 +31,6 @@ interface IssuesTableProps {
 
 export const IssuesTable: React.FC<IssuesTableProps> = ({
   issues,
-  allIssues,
   projectMembers,
   sprints,
   onStatusChange,
@@ -109,6 +108,12 @@ export const IssuesTable: React.FC<IssuesTableProps> = ({
           color: "issue-type-task",
           label: "Task"
         };
+      case "SUBTASK":
+        return {
+          icon: Zap,
+          color: "issue-type-task",
+          label: "Subtask"
+        };
       case "BUG":
         return {
           icon: Bug,
@@ -124,12 +129,7 @@ export const IssuesTable: React.FC<IssuesTableProps> = ({
     }
   };
 
-  // Helper to get Epic title
-  const getEpicTitle = (issue: Issue) => {
-    if (!issue.parentId || !allIssues) return null;
-    const parent = allIssues.find(i => i.id === issue.parentId && i.issueType === "EPIC");
-    return parent ? parent.title : null;
-  };
+  // Epic has been removed from app; no epic reference
 
   return (
     <div className="border rounded-lg overflow-hidden">
@@ -140,7 +140,6 @@ export const IssuesTable: React.FC<IssuesTableProps> = ({
                   <th className="px-2 py-2 text-left text-xs font-semibold w-16">Key</th>
                   <th className="px-2 py-2 text-left text-xs font-semibold w-48">Tên issue</th>
                   <th className="px-2 py-2 text-left text-xs font-semibold w-24">Loại</th>
-                  <th className="px-2 py-2 text-left text-xs font-semibold w-24">Epic</th>
                   <th className="px-2 py-2 text-left text-xs font-semibold w-24">Trạng thái</th>
                   <th className="px-2 py-2 text-left text-xs font-semibold w-20">Độ ưu tiên</th>
                   <th className="px-2 py-2 text-left text-xs font-semibold w-24">Người tạo</th>
@@ -155,7 +154,7 @@ export const IssuesTable: React.FC<IssuesTableProps> = ({
               <tbody>
                 {issues.length === 0 && (
                   <tr>
-                    <td colSpan={13} className="p-2 text-center text-muted-foreground">Không có issue</td>
+                    <td colSpan={12} className="p-2 text-center text-muted-foreground">Không có issue</td>
                   </tr>
                 )}
                 {issues.map((issue: Issue) => {
@@ -196,9 +195,6 @@ export const IssuesTable: React.FC<IssuesTableProps> = ({
                             {typeConfig.label}
                           </Badge>
                         )}
-                      </td>
-                      <td className="px-2 py-2 text-xs truncate">
-                        {getEpicTitle(issue) || "-"}
                       </td>
                       <td className="px-2 py-2">
                         {canChangeStatus(issue) ? (
@@ -260,9 +256,9 @@ export const IssuesTable: React.FC<IssuesTableProps> = ({
                           </SelectTrigger>
                           <SelectContent>
                             <SelectItem value="unassigned">Chưa giao</SelectItem>
-                            {projectMembers?.map((member) => (
+                            {projectMembers?.filter(member => member.role !== "VIEWER" && member.user).map((member) => (
                               <SelectItem key={member.userId} value={member.userId}>
-                                {member.user?.name || 'Unknown User'}
+                                {member.user!.name}
                               </SelectItem>
                             )) || []}
                           </SelectContent>
@@ -305,12 +301,12 @@ export const IssuesTable: React.FC<IssuesTableProps> = ({
                       </td>
                       <td className="px-2 py-2">
                         <div className="flex gap-1">
-                          {onEditIssue && (
+                          {onEditIssue && canEditIssue(issue) && (
                             <Button size="icon" variant="outline" onClick={() => onEditIssue(issue)} title="Chỉnh sửa issue" className="h-6 w-6">
                               <svg width="16" height="16" fill="none" viewBox="0 0 24 24"><path d="M15.232 5.232l3.536 3.536M4 20h4.586a1 1 0 0 0 .707-.293l9.414-9.414a2 2 0 0 0 0-2.828l-3.172-3.172a2 2 0 0 0-2.828 0l-9.414 9.414A1 1 0 0 0 4 20z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
                             </Button>
                           )}
-                          {onDeleteIssue && (
+                          {onDeleteIssue && canEditIssue(issue) && (
                             <Button size="icon" variant="destructive" onClick={() => onDeleteIssue(issue)} title="Xóa issue" className="h-6 w-6">
                               <svg width="16" height="16" fill="none" viewBox="0 0 24 24"><path d="M3 6h18M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2m2 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6h14z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
                             </Button>

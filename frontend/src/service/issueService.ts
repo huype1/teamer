@@ -40,6 +40,12 @@ export const setAssignee = async (issueId: string, assigneeId: string): Promise<
   return res.data;
 };
 
+// Unassign issue
+export const unassignIssue = async (issueId: string): Promise<{ result: Issue }> => {
+  const res = await axios.delete(`${baseUrl}/${issueId}/assignee`, addReqToken(localStorage.getItem("token")));
+  return res.data;
+};
+
 // Delete issue
 export const deleteIssue = async (issueId: string): Promise<{ result: void }> => {
   const res = await axios.delete(`${baseUrl}/${issueId}`, addReqToken(localStorage.getItem("token")));
@@ -65,6 +71,7 @@ export default {
   updateIssue,
   updateIssueStatus,
   setAssignee,
+  unassignIssue,
   deleteIssue,
   getIssuesByAssigneeId,
   getSubtasksByIssueId,

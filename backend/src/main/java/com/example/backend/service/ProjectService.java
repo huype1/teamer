@@ -46,7 +46,6 @@ public class ProjectService {
         createdProject.setAvatarUrl(project.getAvatarUrl());
         createdProject.setIsPublic(project.getIsPublic());
 
-        // Create chat for the project
         Chat chat = new Chat();
         chat.setName("Project Chat - " + project.getName());
         Chat chatProject = chatService.createChat(chat);
@@ -58,15 +57,12 @@ public class ProjectService {
 
         Project savedProject = projectRepository.save(createdProject);
 
-        // Add the creator as admin member
         ProjectMember projectMember = new ProjectMember();
         projectMember.setProjectId(savedProject.getId());
         projectMember.setUserId(creator.getId());
         projectMember.setRole("ADMIN");
         projectMember.setJoinedAt(OffsetDateTime.now());
         projectMemberRepository.save(projectMember);
-
-        // No automatic team member addition - access is computed
 
         return savedProject;
     }
@@ -107,14 +103,11 @@ public class ProjectService {
 
         Project savedProject = projectRepository.save(project);
 
-        // No automatic team member addition when making public - access is computed
-
         return savedProject;
     }
 
     public void addUserToProject(UUID projectId, UUID userId, String role) throws AppException {
         Project project = getProjectById(projectId);
-        // Check if user is already a member
         if (projectMemberRepository.existsByProjectIdAndUserId(projectId, userId)) {
             log.error("User with id: {} is already a member of project with id: {}", userId, projectId);
             throw new AppException(ErrorCode.USER_EXISTED);
@@ -126,12 +119,9 @@ public class ProjectService {
         projectMember.setJoinedAt(OffsetDateTime.now());
         projectMemberRepository.save(projectMember);
 
-        // Automatically add user to team if project belongs to a team
         if (project.getTeam() != null) {
             try {
-                // Check if user is already a team member
                 if (!teamService.isUserTeamMember(project.getTeam().getId(), userId)) {
-                    // Add user to team with VIEWER role by default
                     teamService.addMemberToTeam(project.getTeam().getId(), userId, "VIEWER");
                     log.info("Automatically added user {} to team {} when added to project {}", 
                             userId, project.getTeam().getId(), projectId);
@@ -139,7 +129,6 @@ public class ProjectService {
             } catch (Exception e) {
                 log.warn("Failed to automatically add user {} to team {}: {}", 
                         userId, project.getTeam().getId(), e.getMessage());
-                // Don't throw exception - project member addition should still succeed
             }
         }
 
@@ -160,7 +149,6 @@ public class ProjectService {
         Project project = getProjectById(projectId);
         Chat chat = project.getChat();
         
-        // Security validation: Ensure chat exists
         if (chat == null) {
             log.error("Chat not found for project: {}", projectId);
             throw new AppException(ErrorCode.NOT_FOUND);
@@ -185,16 +173,13 @@ public class ProjectService {
 
     public boolean isUserProjectMember(UUID projectId, UUID userId) {
         Project project = getProjectById(projectId);
-        // Check if user is creator
         if (project.getCreator().getId().equals(userId)) {
             return true;
         }
-        // Check explicit membership
         Optional<ProjectMember> member = projectMemberRepository.findByProjectIdAndUserId(projectId, userId);
         if (member.isPresent()) {
-            return true; // Cho phép cả VIEWER xem project
+            return true;
         }
-        // Check team admin access
         if (project.getTeam() != null && teamService.isUserTeamAdmin(project.getTeam().getId(), userId)) {
             return true;
         }
@@ -205,18 +190,15 @@ public class ProjectService {
     public boolean isUserProjectManager (UUID projectId, UUID userId) {
         Project project = getProjectById(projectId);
         
-        // Check if user is creator
         if (project.getCreator().getId().equals(userId)) {
             return true;
         }
         
-        // Check explicit membership
         Optional<ProjectMember> member = projectMemberRepository.findByProjectIdAndUserId(projectId, userId);
         if (member.isPresent() && ("ADMIN".equals(member.get().getRole()) || "PM".equals(member.get().getRole()))) {
             return true;
         }
         
-        // Check team admin access
         if (project.getTeam() != null && teamService.isUserTeamAdmin(project.getTeam().getId(), userId)) {
             return true;
         }
@@ -252,17 +234,14 @@ public class ProjectService {
     public boolean hasAccessToProject(UUID projectId, UUID userId) throws AppException {
         Project project = getProjectById(projectId);
 
-        // Check if user is creator
         if (project.getCreator().getId().equals(userId)) {
             return true;
         }
 
-        // Check explicit membership
         if (projectMemberRepository.existsByProjectIdAndUserId(projectId, userId)) {
             return true;
         }
 
-        // Check team-based access for public projects
         if (project.getIsPublic() && project.getTeam() != null) {
             return isUserTeamMember(userId, project.getTeam().getId());
         }
@@ -273,23 +252,20 @@ public class ProjectService {
     public String getUserProjectRole(UUID projectId, UUID userId) throws AppException {
         Project project = getProjectById(projectId);
 
-        // Check if user is creator
         if (project.getCreator().getId().equals(userId)) {
             return "ADMIN";
         }
 
-        // Check explicit membership
         Optional<ProjectMember> member = projectMemberRepository.findByProjectIdAndUserId(projectId, userId);
         if (member.isPresent()) {
             return member.get().getRole();
         }
 
-        // Check team-based access for public projects
         if (project.getIsPublic() && project.getTeam() != null && isUserTeamMember(userId, project.getTeam().getId())) {
             return "VIEWER";
         }
 
-        return null; // No access
+        return null;
     }
 
     private boolean isUserTeamMember(UUID userId, UUID teamId) {

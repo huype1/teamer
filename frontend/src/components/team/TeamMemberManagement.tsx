@@ -23,13 +23,16 @@ const TeamMemberManagement: React.FC<TeamMemberManagementProps> = ({
   teamId,
   canManageTeam,
 }) => {
+
   const [members, setMembers] = useState<TeamUser[]>([]);
   const [allUsers, setAllUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isRoleDialogOpen, setIsRoleDialogOpen] = useState(false);
+  const [isRemoveDialogOpen, setIsRemoveDialogOpen] = useState(false);
   const [selectedMember, setSelectedMember] = useState<TeamUser | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
+  const [isRemoving, setIsRemoving] = useState(false);
 
   const { handleSubmit: handleAddSubmit, reset: resetAddForm, setValue: setAddValue, watch: watchAdd } = useForm({
     defaultValues: {
@@ -70,6 +73,15 @@ const TeamMemberManagement: React.FC<TeamMemberManagementProps> = ({
     }
   };
 
+  const searchUsers = async (query: string) => {
+    try {
+      const response = await userService.searchUsers(query);
+      setAllUsers(response.result || []);
+    } catch (error) {
+      console.error("Error searching users:", error);
+    }
+  };
+
   const handleAddMember = async (data: { userId: string; role: string }) => {
     try {
       await teamService.addMemberToTeam(teamId, data.userId, data.role);
@@ -97,12 +109,22 @@ const TeamMemberManagement: React.FC<TeamMemberManagementProps> = ({
 
   const handleRemoveMember = async (memberId: string) => {
     try {
+      setIsRemoving(true);
       await teamService.removeMember(teamId, memberId);
       toastSuccess("Xóa thành viên thành công!");
+      setIsRemoveDialogOpen(false);
+      setSelectedMember(null);
       fetchTeamMembers();
     } catch (error) {
       toastError("Xóa thành viên thất bại!");
+    } finally {
+      setIsRemoving(false);
     }
+  };
+
+  const openRemoveDialog = (member: TeamUser) => {
+    setSelectedMember(member);
+    setIsRemoveDialogOpen(true);
   };
 
   const getRoleIcon = (role: string) => {
@@ -111,8 +133,6 @@ const TeamMemberManagement: React.FC<TeamMemberManagementProps> = ({
         return <Crown className="h-4 w-4 text-yellow-500" />;
       case "MEMBER":
         return <UserIcon className="h-4 w-4 text-blue-500" />;
-      case "VIEWER":
-        return <Eye className="h-4 w-4 text-gray-500" />;
       default:
         return <UserIcon className="h-4 w-4" />;
     }
@@ -124,8 +144,6 @@ const TeamMemberManagement: React.FC<TeamMemberManagementProps> = ({
         return "default";
       case "MEMBER":
         return "secondary";
-      case "VIEWER":
-        return "outline";
       default:
         return "outline";
     }
@@ -134,7 +152,8 @@ const TeamMemberManagement: React.FC<TeamMemberManagementProps> = ({
   // Lọc users chưa là thành viên team
   const availableUsers = allUsers.filter(user => 
     !members.some(member => member.userId === user.id) &&
-    user.email.toLowerCase().includes(searchQuery.toLowerCase())
+    (user.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
+     user.name.toLowerCase().includes(searchQuery.toLowerCase()))
   );
 
   if (loading) {
@@ -152,6 +171,8 @@ const TeamMemberManagement: React.FC<TeamMemberManagementProps> = ({
     );
   }
 
+
+  
   return (
     <div className="space-y-4">
       {/* Header */}
@@ -207,7 +228,7 @@ const TeamMemberManagement: React.FC<TeamMemberManagementProps> = ({
                         <Button
                           variant="outline"
                           size="sm"
-                          onClick={() => handleRemoveMember(member.userId)}
+                          onClick={() => openRemoveDialog(member)}
                         >
                           Xóa
                         </Button>
@@ -244,9 +265,16 @@ const TeamMemberManagement: React.FC<TeamMemberManagementProps> = ({
           <form onSubmit={handleAddSubmit(handleAddMember)} className="space-y-4">
             <div>
               <Input
-                placeholder="Tìm kiếm theo email..."
+                placeholder="Tìm kiếm theo tên hoặc email..."
                 value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
+                onChange={(e) => {
+                  setSearchQuery(e.target.value);
+                  if (e.target.value.trim()) {
+                    searchUsers(e.target.value);
+                  } else {
+                    fetchAllUsers();
+                  }
+                }}
                 className="mb-2"
               />
               <Select
@@ -282,7 +310,6 @@ const TeamMemberManagement: React.FC<TeamMemberManagementProps> = ({
                 <SelectContent>
                   <SelectItem value="ADMIN">Admin</SelectItem>
                   <SelectItem value="MEMBER">Member</SelectItem>
-                  <SelectItem value="VIEWER">Viewer</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -311,7 +338,6 @@ const TeamMemberManagement: React.FC<TeamMemberManagementProps> = ({
                 <SelectContent>
                   <SelectItem value="ADMIN">Admin</SelectItem>
                   <SelectItem value="MEMBER">Member</SelectItem>
-                  <SelectItem value="VIEWER">Viewer</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -319,6 +345,40 @@ const TeamMemberManagement: React.FC<TeamMemberManagementProps> = ({
               <Button type="submit">Cập nhật</Button>
             </DialogFooter>
           </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Remove Member Confirmation Dialog */}
+      <Dialog open={isRemoveDialogOpen} onOpenChange={setIsRemoveDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Xóa thành viên</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <p>
+              Bạn có chắc chắn muốn xóa thành viên <strong>{selectedMember?.name}</strong> khỏi nhóm?
+            </p>
+            <p className="text-sm text-muted-foreground">
+              Hành động này không thể hoàn tác.
+            </p>
+          </div>
+          <DialogFooter>
+            <Button 
+              type="button" 
+              variant="outline" 
+              onClick={() => setIsRemoveDialogOpen(false)}
+            >
+              Hủy
+            </Button>
+            <Button 
+              type="button" 
+              variant="destructive" 
+              disabled={isRemoving}
+              onClick={() => selectedMember && handleRemoveMember(selectedMember.userId)}
+            >
+              {isRemoving ? "Đang xóa..." : "Xóa thành viên"}
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>

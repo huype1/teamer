@@ -7,6 +7,8 @@ import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
 import java.time.OffsetDateTime;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 
 @Entity
@@ -22,9 +24,6 @@ public class Notification {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     UUID id;
-
-    @Column(name = "user_id", nullable = false)
-    UUID userId;
 
     @Column(name = "title", nullable = false)
     String title;
@@ -44,14 +43,11 @@ public class Notification {
     @Column(name = "entity_id")
     UUID entityId;
 
-    @Column(name = "is_read", nullable = false)
-    Boolean isRead = false;
-
-    @Column(name = "is_email_sent", nullable = false)
-    Boolean isEmailSent = false;
-
     @Column(name = "priority", nullable = false)
     String priority = "NORMAL";
+
+    @Column(name = "created_by")
+    UUID createdBy; // User tạo notification
 
     @CreationTimestamp
     @Column(name = "created_at", updatable = false)
@@ -61,18 +57,12 @@ public class Notification {
     @Column(name = "updated_at")
     OffsetDateTime updatedAt;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id", insertable = false, updatable = false)
-    User user;
+    // Many-to-Many relationship với User thông qua NotificationRecipient
+    @OneToMany(mappedBy = "notification", cascade = CascadeType.ALL, orphanRemoval = true)
+    List<NotificationRecipient> recipients = new ArrayList<>();
 
     @PrePersist
     protected void onCreate() {
-        if (isRead == null) {
-            isRead = false;
-        }
-        if (isEmailSent == null) {
-            isEmailSent = false;
-        }
         if (priority == null) {
             priority = "NORMAL";
         }

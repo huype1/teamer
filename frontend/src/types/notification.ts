@@ -1,27 +1,42 @@
 export interface Notification {
   id: string;
-  userId: string;
   title: string;
   content: string;
   link?: string;
   type: string;
   entityType?: string;
   entityId?: string;
-  isRead: boolean;
-  isEmailSent: boolean;
   priority: string;
+  createdBy: string;
   createdAt: string;
   updatedAt: string;
 }
 
+export interface NotificationRecipient {
+  id: string;
+  notificationId: string;
+  title: string;
+  content: string;
+  link?: string;
+  type: string;
+  entityType?: string;
+  entityId?: string;
+  priority: string;
+  createdBy: string;
+  createdAt: string;
+  updatedAt: string;
+  isRead: boolean;
+  isEmailSent: boolean;
+}
+
 export interface NotificationResponse {
   message: string;
-  result: Notification;
+  result: NotificationRecipient;
 }
 
 export interface NotificationListResponse {
   message: string;
-  result: Notification[];
+  result: NotificationRecipient[];
 }
 
 export interface NotificationCountResponse {

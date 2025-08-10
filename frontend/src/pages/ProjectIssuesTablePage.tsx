@@ -7,7 +7,7 @@ import issueService from "@/service/issueService";
 import projectService from "@/service/projectService";
 import { toastError, toastSuccess } from "@/utils/toast";
 import type { Sprint } from "@/types/sprint";
-import type { Issue } from "@/types/issue";
+import type { CreateIssueRequest, Issue } from "@/types/issue";
 import type { ProjectMember } from "@/types/project";
 import type { Project } from "@/types/project";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
@@ -22,7 +22,7 @@ import { formatDateForAPI, formatEndDateForAPI } from "@/utils/dateUtils";
 import { ProjectHeader, ProjectNavigation } from "@/components/project";
 import ProjectService from "@/service/projectService";
 import { isCurrentUserManager } from "@/utils/projectHelpers";
-import { IssueForm } from "@/components/project/IssueForm";
+import { IssueForm, type IssueFormValues } from "@/components/project/IssueForm";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
 
@@ -31,12 +31,11 @@ const ProjectIssuesTablePage: React.FC = () => {
   const dispatch = useDispatch();
   const { user } = useSelector((state: RootState) => state.auth);
   
-  // Debug user data
-  console.log('Current user from auth:', user);
   const [project, setProject] = useState<Project | null>(null);
   const [sprints, setSprints] = useState<Sprint[]>([]);
   const [backlogIssues, setBacklogIssues] = useState<Issue[]>([]);
   const [projectMembers, setProjectMembers] = useState<ProjectMember[]>([]);
+  const [projectUsers, setProjectUsers] = useState<{ id: string; name: string; email?: string }[]>([]);
   const [loading, setLoading] = useState(true);
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
 
@@ -108,25 +107,24 @@ const ProjectIssuesTablePage: React.FC = () => {
   // fetchProjectMembers
   const fetchProjectMembers = useCallback(async () => {
     try {
-      const response = await projectService.getProjectUsers(projectId!);
-      const mappedMembers = (response.result || []).map(user => ({
-        projectId: projectId!,
-        userId: user.id,
-        role: "MEMBER" as const,
-        joinedAt: new Date().toISOString(),
-        user: {
-          id: user.id,
-          name: user.name,
-          email: user.email,
-          avatarUrl: user.avatarUrl,
-          provider: user.provider,
-          createdAt: user.createdAt,
-          updatedAt: user.updatedAt,
-        }
+      const [membersResponse, usersResponse] = await Promise.all([
+        projectService.getProjectMembers(projectId!),
+        projectService.getProjectUsers(projectId!)
+      ]);
+      
+      const members = membersResponse.result || [];
+      const users = usersResponse.result || [];
+      setProjectUsers(users);
+      
+      // Merge members with user data
+      const mergedMembers = members.map(member => ({
+        ...member,
+        user: users.find(user => user.id === member.userId)
       }));
-      setProjectMembers(mappedMembers);
+      
+      setProjectMembers(mergedMembers);
     } catch (error) {
-      console.error("Error fetching project users:", error);
+      console.error("Error fetching project members:", error);
       toastError("Không thể tải danh sách thành viên!");
     }
   }, [projectId]);
@@ -135,9 +133,9 @@ const ProjectIssuesTablePage: React.FC = () => {
     if (projectId) {
       const fetchData = async () => {
         try {
-          // Ensure user data is loaded first
           if (!user?.projectMembers) {
-            await dispatch(fetchUserInfo());
+            // @ts-expect-error - Redux dispatch type issue
+            dispatch(fetchUserInfo());
           }
           
           await Promise.all([
@@ -156,21 +154,20 @@ const ProjectIssuesTablePage: React.FC = () => {
     }
   }, [projectId, user?.projectMembers, dispatch, fetchProject, fetchSprints, fetchBacklogIssues, fetchProjectMembers]);
 
-  // Lấy thông tin user hiện tại trong project này
   const getCurrentUserProjectMember = () => {
     if (!user || !projectId) return null;
     const member = user.projectMembers?.find(m => m.projectId === projectId) || null;
-    console.log('getCurrentUserProjectMember:', { 
-      userId: user.id, 
-      projectId, 
-      projectIdType: typeof projectId,
-      userProjectMembers: user.projectMembers?.map(pm => ({ 
-        projectId: pm.projectId, 
-        projectIdType: typeof pm.projectId,
-        role: pm.role 
-      })),
-      foundMember: member 
-    });
+    // console.log('getCurrentUserProjectMember:', { 
+    //   userId: user.id, 
+    //   projectId, 
+    //   projectIdType: typeof projectId,
+    //   userProjectMembers: user.projectMembers?.map(pm => ({ 
+    //     projectId: pm.projectId, 
+    //     projectIdType: typeof pm.projectId,
+    //     role: pm.role 
+    //   })),
+    //   foundMember: member 
+    // });
     return member;
   };
 
@@ -230,7 +227,7 @@ const ProjectIssuesTablePage: React.FC = () => {
       await issueService.updateIssueStatus(issueId, newStatus);
       toastSuccess("Cập nhật trạng thái thành công!");
       fetchBacklogIssues();
-      setSprintReloadKey(prev => prev + 1); // Trigger reload sprint issues
+      setSprintReloadKey(prev => prev + 1); 
     } catch (error) {
       console.error("Error updating status:", error);
       toastError("Cập nhật trạng thái thất bại!");
@@ -242,7 +239,7 @@ const ProjectIssuesTablePage: React.FC = () => {
       await issueService.updateIssue(issueId, { priority: newPriority });
       toastSuccess("Cập nhật độ ưu tiên thành công!");
       fetchBacklogIssues();
-      setSprintReloadKey(prev => prev + 1); // Trigger reload sprint issues
+      setSprintReloadKey(prev => prev + 1); 
     } catch (error) {
       console.error("Error updating priority:", error);
       toastError("Cập nhật độ ưu tiên thất bại!");
@@ -254,7 +251,7 @@ const ProjectIssuesTablePage: React.FC = () => {
       await issueService.updateIssue(issueId, { issueType: newIssueType });
       toastSuccess("Cập nhật loại issue thành công!");
       fetchBacklogIssues();
-      setSprintReloadKey(prev => prev + 1); // Trigger reload sprint issues
+      setSprintReloadKey(prev => prev + 1); 
     } catch (error) {
       console.error("Error updating issue type:", error);
       toastError("Cập nhật loại issue thất bại!");
@@ -264,13 +261,13 @@ const ProjectIssuesTablePage: React.FC = () => {
   const handleAssigneeChange = async (issueId: string, assigneeId: string) => {
     try {
       if (assigneeId === "unassigned") {
-        await issueService.updateIssue(issueId, { assigneeId: null });
+        await issueService.unassignIssue(issueId);
       } else {
         await issueService.setAssignee(issueId, assigneeId);
       }
       toastSuccess("Cập nhật người phụ trách thành công!");
       fetchBacklogIssues();
-      setSprintReloadKey(prev => prev + 1); // Trigger reload sprint issues
+      setSprintReloadKey(prev => prev + 1); 
     } catch (error) {
       console.error("Error updating assignee:", error);
       toastError("Cập nhật người phụ trách thất bại!");
@@ -280,14 +277,14 @@ const ProjectIssuesTablePage: React.FC = () => {
   const handleSprintChange = async (issueId: string, sprintId: string) => {
     try {
       if (sprintId === "backlog") {
-        await issueService.updateIssue(issueId, { sprintId: null });
+        await issueService.updateIssue(issueId, { sprintId: null as unknown as string });
       } else {
         await issueService.updateIssue(issueId, { sprintId });
       }
       toastSuccess("Cập nhật sprint thành công!");
       fetchBacklogIssues();
       fetchSprints();
-      setSprintReloadKey(prev => prev + 1); // Trigger reload sprint issues
+      setSprintReloadKey(prev => prev + 1); 
     } catch {
       toastError("Cập nhật sprint thất bại!");
     }
@@ -295,7 +292,6 @@ const ProjectIssuesTablePage: React.FC = () => {
 
 
 
-  // Phân quyền thay đổi sprint, assignee, due date
   const canManageIssue = () => {
     if (!user || !projectId) return false;
     const result = isCurrentUserManager(user, projectId!);
@@ -320,16 +316,16 @@ const ProjectIssuesTablePage: React.FC = () => {
     const isPM = currentUserMember?.role === "PM";
     const result = isReporter || isAdmin || isPM;
     
-    console.log('canEditIssue check:', { 
-      userId: user.id, 
-      issueReporterId: issue.reporter?.id, 
-      isReporter,
-      currentUserMember, 
-      isAdmin,
-      isPM,
-      result,
-      issueTitle: issue.title 
-    });
+    // console.log('canEditIssue check:', { 
+    //   userId: user.id, 
+    //   issueReporterId: issue.reporter?.id, 
+    //   isReporter,
+    //   currentUserMember, 
+    //   isAdmin,
+    //   isPM,
+    //   result,
+    //   issueTitle: issue.title 
+    // });
     return result;
   };
 
@@ -344,7 +340,7 @@ const ProjectIssuesTablePage: React.FC = () => {
   // Tạo issue mới
   const onCreateIssue = async (data: import("@/components/project/IssueForm").IssueFormValues) => {
     try {
-      const requestBody: Record<string, unknown> = {
+      const requestBody: CreateIssueRequest = {
         title: data.title,
         description: data.description || "",
         priority: data.priority,
@@ -385,6 +381,20 @@ const ProjectIssuesTablePage: React.FC = () => {
     setEditIssue(issue);
     setIsEditDialogOpen(true);
   };
+
+  // Chuẩn hoá dữ liệu Issue sang InitialValues cho IssueForm khi chỉnh sửa
+  const toIssueFormInitialValues = (issue: Issue): Partial<IssueFormValues> => ({
+    title: issue.title,
+    description: issue.description || "",
+    priority: issue.priority as IssueFormValues["priority"],
+    issueType: issue.issueType as IssueFormValues["issueType"],
+    assigneeId: issue.assignee?.id || "none",
+    sprintId: issue.sprintId || "backlog",
+    storyPoints: issue.storyPoints,
+    startDate: issue.startDate || "",
+    dueDate: issue.dueDate || "",
+    parentId: issue.parentId || "",
+  });
   // Mở popup xác nhận xoá
   const openDeleteIssueDialog = (issue: Issue) => {
     setDeleteIssue(issue);
@@ -458,11 +468,7 @@ const ProjectIssuesTablePage: React.FC = () => {
     );
   }
 
-  // Sắp xếp sprint: ACTIVE đầu tiên, sau đó PLANNING, COMPLETED, CANCELLED
-  const sortedSprints = [...sprints].sort((a, b) => {
-    const statusOrder = { ACTIVE: 0, PLANNING: 1, COMPLETED: 2, CANCELLED: 3 };
-    return (statusOrder[a.status as keyof typeof statusOrder] || 4) - (statusOrder[b.status as keyof typeof statusOrder] || 4);
-  });
+  // Backend now handles sorting, so we can use sprints directly
   const activeSprint = sprints.find(s => s.status === "ACTIVE");
 
   return (
@@ -491,10 +497,11 @@ const ProjectIssuesTablePage: React.FC = () => {
             {sprints.length > 0 && (
               <div className="space-y-4" style={{ maxWidth: '100%' }}>
                 <h3 className="text-lg font-semibold">Issues trong Sprint</h3>
-                {sortedSprints.map((sprint) => (
+                {sprints.map((sprint) => (
                   <SprintIssuesCombinedTable
                     key={sprint.id}
                     sprint={sprint}
+                    sprints={sprints}
                     projectMembers={projectMembers}
                     canEditIssue={canEditIssue}
                     canChangeStatus={canChangeStatus}
@@ -502,6 +509,7 @@ const ProjectIssuesTablePage: React.FC = () => {
                     onPriorityChange={handlePriorityChange}
                     onIssueTypeChange={handleIssueTypeChange}
                     onAssigneeChange={handleAssigneeChange}
+                    onSprintChange={handleSprintChange}
                     onStartSprint={onStartSprint}
                     onEndSprint={onEndSprint}
                     onCancelSprint={onCancelSprint}
@@ -600,6 +608,7 @@ const ProjectIssuesTablePage: React.FC = () => {
             onSubmit={onCreateIssue}
             loading={false}
             projectMembers={projectMembers}
+            projectUsers={projectUsers}
             sprints={sprints}
           />
         </DialogContent>
@@ -615,8 +624,9 @@ const ProjectIssuesTablePage: React.FC = () => {
               onSubmit={onEditIssueSubmit}
               loading={false}
               projectMembers={projectMembers}
+              projectUsers={projectUsers}
               sprints={sprints}
-              defaultValues={editIssue}
+              initialValues={toIssueFormInitialValues(editIssue)}
             />
           )}
         </DialogContent>

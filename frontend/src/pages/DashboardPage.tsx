@@ -61,7 +61,7 @@ export default function DashboardPage() {
           status: issue.status === "TO_DO" ? "TO_DO" : issue.status,
           projectId: issue.projectId || (issue as Partial<Issue>).project?.id,
           project: (issue as Partial<Issue>).project || projectsArr.find((p: Project) => p.id === (issue.projectId || (issue as Partial<Issue>).project?.id)),
-        }));
+        }) as Issue);
         setIssues(issuesArr);
         setDisplayedIssues(issuesArr.slice(0, 10));
         setProjects(projectsArr);

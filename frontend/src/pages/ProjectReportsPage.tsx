@@ -53,11 +53,9 @@ const getStatusPieData = (statusStats) => [
   { name: 'Hoàn thành', value: statusStats.DONE },
 ];
 
-// Chuẩn bị data cho BarChart (priority)
 const getPriorityBarData = (priorityStats) =>
   Object.keys(priorityStats).map((key) => ({ name: key, value: priorityStats[key] }));
 
-// Hàm tính dữ liệu burndown thực tế từ issues và sprint
 function calculateBurndownData(sprint, issues) {
   if (!sprint?.startDate || !sprint?.endDate) return [];
   const start = new Date(sprint.startDate);
@@ -65,23 +63,16 @@ function calculateBurndownData(sprint, issues) {
   const totalDays = differenceInCalendarDays(end, start) + 1;
   if (totalDays <= 0) return [];
   const totalIssues = issues.length;
-  // Lấy ngày hoàn thành của từng issue (status DONE)
   const doneDates = issues
     .filter(i => i.status === 'DONE')
     .map(i => new Date(i.updatedAt));
-  // Tạo mảng ngày
   const days = Array.from({ length: totalDays }, (_, i) => addDays(start, i));
-  // Lý tưởng: giảm đều mỗi ngày
   const idealStep = totalIssues / (totalDays - 1 || 1);
-  // Tính số lượng còn lại thực tế mỗi ngày
   const actualArr = days.map(day => {
-    // Đếm số issue hoàn thành đến hết ngày này
     const doneCount = doneDates.filter(d => d <= day).length;
     return totalIssues - doneCount;
   });
-  // Lý tưởng: giảm đều
   const idealArr = days.map((_, i) => Math.max(totalIssues - Math.round(i * idealStep), 0));
-  // Kết quả
   return days.map((day, i) => ({
     day: format(day, 'dd/MM/yyyy'),
     ideal: idealArr[i],
@@ -89,7 +80,6 @@ function calculateBurndownData(sprint, issues) {
   }));
 }
 
-// Hàm tính velocity (story points hoàn thành) cho sprint
 function calculateVelocity(sprint, issues) {
   if (!sprint || !issues.length) return 0;
   // Tính tổng story points của các issue đã hoàn thành (DONE)
@@ -98,7 +88,6 @@ function calculateVelocity(sprint, issues) {
     .reduce((sum, issue) => sum + (issue.storyPoints || 0), 0);
 }
 
-// Hàm tính velocity cho tất cả sprint
 function calculateAllVelocities(sprints, allIssues) {
   return sprints.map(sprint => {
     const sprintIssues = allIssues.filter(issue => issue.sprintId === sprint.id);
@@ -110,10 +99,9 @@ function calculateAllVelocities(sprints, allIssues) {
       startDate: sprint.startDate,
       endDate: sprint.endDate
     };
-  }).filter(item => item.velocity > 0); // Chỉ hiển thị sprint có velocity > 0
+  }).filter(item => item.velocity > 0);
 }
 
-// Hàm tính tỷ lệ hoàn thành mới dựa trên status và subtask status
 function calculateCompletionPercentage(issues: Issue[]): number {
   if (issues.length === 0) return 0;
   
@@ -121,8 +109,7 @@ function calculateCompletionPercentage(issues: Issue[]): number {
   let completedWeight = 0;
   
   issues.forEach(issue => {
-    // Tính weight cho issue chính
-    const issueWeight = issue.storyPoints || 1; // Nếu không có story points thì weight = 1
+    const issueWeight = issue.storyPoints || 1;
     totalWeight += issueWeight;
     
     // Nếu issue đã hoàn thành
@@ -144,7 +131,6 @@ function calculateCompletionPercentage(issues: Issue[]): number {
         }
       });
       
-      // Nếu có subtasks, tính completion dựa trên subtasks
       if (subtaskTotalWeight > 0) {
         const subtaskCompletion = subtaskCompletedWeight / subtaskTotalWeight;
         completedWeight += issueWeight * subtaskCompletion;

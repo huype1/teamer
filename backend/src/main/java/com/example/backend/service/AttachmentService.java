@@ -25,6 +25,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.List;
 import java.util.UUID;
+import jakarta.annotation.PostConstruct;
 
 @Service
 @RequiredArgsConstructor
@@ -41,6 +42,28 @@ public class AttachmentService {
     private String secretKey;
     @Value("${aws.s3.prefix:}")
     private String prefix;
+
+    // Singleton S3Presigner để tái sử dụng
+    private S3Presigner s3Presigner;
+    private S3Client s3Client;
+
+    @PostConstruct
+    public void init() {
+        AwsBasicCredentials awsCreds = AwsBasicCredentials.create(accessKey, secretKey);
+        StaticCredentialsProvider credentialsProvider = StaticCredentialsProvider.create(awsCreds);
+        
+        // Khởi tạo S3Presigner một lần duy nhất
+        this.s3Presigner = S3Presigner.builder()
+                .region(Region.of(region))
+                .credentialsProvider(credentialsProvider)
+                .build();
+        
+        // Khởi tạo S3Client một lần duy nhất
+        this.s3Client = S3Client.builder()
+                .region(Region.of(region))
+                .credentialsProvider(credentialsProvider)
+                .build();
+    }
 
     public Attachment save(Attachment attachment) {
         return attachmentRepository.save(attachment);
@@ -59,12 +82,7 @@ public class AttachmentService {
     }
 
     public Map<String, String> generatePresignedUrl(PresignedUrlRequest request) {
-        AwsBasicCredentials awsCreds = AwsBasicCredentials.create(accessKey, secretKey);
-        S3Presigner presigner = S3Presigner.builder()
-                .region(Region.of(region))
-                .credentialsProvider(StaticCredentialsProvider.create(awsCreds))
-                .build();
-
+        // Sử dụng singleton S3Presigner đã khởi tạo
         String key = (prefix != null ? prefix : "") + System.currentTimeMillis() + "_" + request.getFileName();
 
         PutObjectRequest objectRequest = PutObjectRequest.builder()
@@ -78,7 +96,7 @@ public class AttachmentService {
                 .putObjectRequest(objectRequest)
                 .build();
 
-        String url = presigner.presignPutObject(presignRequest).url().toString();
+        String url = s3Presigner.presignPutObject(presignRequest).url().toString();
 
         Map<String, String> result = new HashMap<>();
         result.put("url", url);
@@ -87,12 +105,7 @@ public class AttachmentService {
     }
 
     public String generateDownloadUrl(String filePath) {
-        AwsBasicCredentials awsCreds = AwsBasicCredentials.create(accessKey, secretKey);
-        S3Presigner presigner = S3Presigner.builder()
-                .region(Region.of(region))
-                .credentialsProvider(StaticCredentialsProvider.create(awsCreds))
-                .build();
-
+        // Sử dụng singleton S3Presigner đã khởi tạo
         GetObjectRequest objectRequest = GetObjectRequest.builder()
                 .bucket(bucketName)
                 .key(filePath)
@@ -103,7 +116,7 @@ public class AttachmentService {
                 .getObjectRequest(objectRequest)
                 .build();
 
-        return presigner.presignGetObject(presignRequest).url().toString();
+        return s3Presigner.presignGetObject(presignRequest).url().toString();
     }
 
     public Attachment createAttachment(AttachmentMeta meta, User uploader, UUID issueId, UUID commentId, UUID messageId) {
@@ -138,12 +151,7 @@ public class AttachmentService {
 
     public AttachmentMeta uploadFileToS3(MultipartFile file) {
         try {
-            AwsBasicCredentials awsCreds = AwsBasicCredentials.create(accessKey, secretKey);
-            S3Client s3Client = S3Client.builder()
-                    .region(Region.of(region))
-                    .credentialsProvider(StaticCredentialsProvider.create(awsCreds))
-                    .build();
-
+            // Sử dụng singleton S3Client đã khởi tạo
             String key = (prefix != null ? prefix : "") + "avatars/" + System.currentTimeMillis() + "_" + file.getOriginalFilename();
 
             PutObjectRequest putObjectRequest = PutObjectRequest.builder()

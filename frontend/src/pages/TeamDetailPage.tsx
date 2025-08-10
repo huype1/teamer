@@ -26,7 +26,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useSelector } from "react-redux";
 import type { RootState } from "@/store";
-import { getCurrentUserRole } from "@/utils/projectHelpers";
+import { getCurrentUserRole, isCurrentUserTeamAdmin } from "@/utils/projectHelpers";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
 
 const teamEditSchema = z.object({
@@ -259,10 +259,19 @@ const TeamDetailPage: React.FC = () => {
 
       {/* Team Member Management */}
       <div className="mb-6">
-        <TeamMemberManagement 
-          teamId={teamId!} 
-          canManageTeam={user ? getCurrentUserRole(user, teamId!) === "ADMIN" : false}
-        />
+        {(() => {
+          const canManage = user ? isCurrentUserTeamAdmin(user, teamId!) : false;
+          
+          return (
+            <div>
+              
+              <TeamMemberManagement 
+                teamId={teamId!} 
+                canManageTeam={canManage}
+              />
+            </div>
+          );
+        })()}
       </div>
 
       {/* Projects Section */}
@@ -289,9 +298,7 @@ const TeamDetailPage: React.FC = () => {
                       <p className="text-sm text-muted-foreground">{project.description}</p>
                       <div className="flex items-center gap-2 mt-1">
                         <span className="text-xs bg-secondary px-2 py-1 rounded">Key: {project.key}</span>
-                        <span className="text-xs text-muted-foreground">
-                          {project.memberCount} thành viên
-                        </span>
+                        
                       </div>
                     </div>
                   </div>

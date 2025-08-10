@@ -13,7 +13,7 @@ import {
   CardTitle,
 } from "@/components/ui/card"
 import {
-  ChartConfig,
+  type ChartConfig,
   ChartContainer,
   ChartTooltip,
   ChartTooltipContent,
@@ -164,6 +164,8 @@ export function ChartAreaInteractive() {
     return date >= startDate
   })
 
+  // @ts-ignore
+  // @ts-ignore
   return (
     <Card className="@container/card">
       <CardHeader>
@@ -260,14 +262,15 @@ export function ChartAreaInteractive() {
               defaultIndex={isMobile ? -1 : 10}
               content={
                 <ChartTooltipContent
-                  labelFormatter={(value) => {
-                    return new Date(value).toLocaleDateString("en-US", {
-                      month: "short",
-                      day: "numeric",
-                    })
-                  }}
-                  indicator="dot"
-                />
+                    labelFormatter={(value) => {
+                      return new Date(value).toLocaleDateString("en-US", {
+                        month: "short",
+                        day: "numeric",
+                      })
+                    }}
+                    indicator="dot" active={undefined} payload={undefined} className={undefined} label={undefined}
+                    labelClassName={undefined} formatter={undefined} color={undefined} nameKey={undefined}
+                    labelKey={undefined}                />
               }
             />
             <Area

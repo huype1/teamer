@@ -2,6 +2,7 @@ package com.example.backend.service;
 
 import com.example.backend.entity.Notification;
 import com.example.backend.entity.Project;
+import com.example.backend.entity.NotificationRecipient;
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
 import lombok.AccessLevel;
@@ -63,12 +64,12 @@ public class EmailService {
         );
     }
 
-    public void sendNotificationEmail(String email, Notification notification) throws MessagingException {
+    public void sendNotificationEmail(String email, NotificationRecipient recipient) throws MessagingException {
         MimeMessage mimeMessage = javaMailSender.createMimeMessage();
         MimeMessageHelper helper = new MimeMessageHelper(mimeMessage, "utf-8");
 
-        String subject = notification.getTitle();
-        String content = createNotificationEmailTemplate(notification);
+        String subject = recipient.getNotification().getTitle();
+        String content = createNotificationEmailTemplate(recipient);
         
         helper.setSubject(subject);
         helper.setText(content, true);
@@ -76,14 +77,14 @@ public class EmailService {
 
         try {
             javaMailSender.send(mimeMessage);
-            log.info("Notification email sent successfully to {}: {}", email, notification.getTitle());
+            log.info("Notification email sent successfully to {}: {}", email, recipient.getNotification().getTitle());
         } catch (Exception e) {
             log.error("Failed to send notification email to {}: {}", email, e.getMessage());
             throw new MailSendException("Failed to send notification email", e);
         }
     }
 
-    private String createNotificationEmailTemplate(Notification notification) {
+    private String createNotificationEmailTemplate(NotificationRecipient recipient) {
         return String.format(
             """
             <html>
@@ -95,10 +96,10 @@ public class EmailService {
             </body>
             </html>
             """,
-            notification.getTitle(),
-            notification.getContent(),
-            notification.getLink(),
-            notification.getCreatedAt().toString()
+            recipient.getNotification().getTitle(),
+            recipient.getNotification().getContent(),
+            recipient.getNotification().getLink(),
+            recipient.getNotification().getCreatedAt().toString()
         );
     }
 

@@ -6,6 +6,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 public interface ProjectRepository extends JpaRepository<Project, UUID> {
@@ -40,4 +41,7 @@ public interface ProjectRepository extends JpaRepository<Project, UUID> {
     List<Project> findByKey(@Param("key") String key);
 
     List<Project> findByTeamIdAndIsPublicTrue(UUID teamId);
+
+    @Query("SELECT p FROM Project p WHERE p.chat.id = :chatId")
+    Optional<Project> findByChatId(@Param("chatId") UUID chatId);
 }

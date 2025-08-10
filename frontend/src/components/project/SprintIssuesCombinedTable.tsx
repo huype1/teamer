@@ -13,12 +13,14 @@ import { IssuesTable } from "./IssuesTable";
 interface SprintIssuesCombinedTableProps {
   sprint: Sprint;
   projectMembers: ProjectMember[];
+  sprints: Sprint[];
   canEditIssue: (issue: Issue) => boolean;
   canChangeStatus: (issue: Issue) => boolean;
   onStatusChange: (issueId: string, newStatus: string) => void;
   onPriorityChange: (issueId: string, newPriority: string) => void;
   onIssueTypeChange: (issueId: string, newIssueType: string) => void;
   onAssigneeChange: (issueId: string, assigneeId: string) => void;
+  onSprintChange: (issueId: string, sprintId: string) => void;
   onStartSprint: (sprintId: string) => void;
   onEndSprint: (sprintId: string) => void;
   onCancelSprint: (sprintId: string) => void;
@@ -34,12 +36,14 @@ interface SprintIssuesCombinedTableProps {
 export const SprintIssuesCombinedTable: React.FC<SprintIssuesCombinedTableProps> = ({
   sprint,
   projectMembers,
+  sprints,
   canEditIssue,
   canChangeStatus,
   onStatusChange,
   onPriorityChange,
   onIssueTypeChange,
   onAssigneeChange,
+  onSprintChange,
   onStartSprint,
   onEndSprint,
   onCancelSprint,
@@ -92,25 +96,42 @@ export const SprintIssuesCombinedTable: React.FC<SprintIssuesCombinedTableProps>
   const handleSprintStatusChange = async (newStatus: string) => {
     if (newStatus === sprint.status) return;
     
-    // Sprint status validation logic
-    if (sprint.status === "PLANNING") {
-      // PLANNING can only go to ACTIVE
-      if (newStatus === "ACTIVE") {
-        await onStartSprint(sprint.id);
-      } else if (newStatus === "CANCELLED") {
-        await onCancelSprint(sprint.id);
+    try {
+      if (sprint.status === "PLANNING") {
+        if (newStatus === "ACTIVE") {
+          await onStartSprint(sprint.id);
+        } else if (newStatus === "CANCELLED") {
+          await onCancelSprint(sprint.id);
+        }
+      } else if (sprint.status === "ACTIVE") {
+        if (newStatus === "COMPLETED") {
+          await onEndSprint(sprint.id);
+        }
+        else if (newStatus === "CANCELLED") {
+          await onCancelSprint(sprint.id);
+        }
+      } else if (sprint.status === "CANCELLED") {
+        if (newStatus === "PLANNING") {
+          await onStartSprint(sprint.id);
+        }
       }
-    } else if (sprint.status === "ACTIVE") {
-      // ACTIVE can only go to COMPLETED
-      if (newStatus === "COMPLETED") {
-        await onEndSprint(sprint.id);
-      }
-    } else if (sprint.status === "CANCELLED") {
-      // CANCELLED can only go back to PLANNING
-      if (newStatus === "PLANNING") {
-        // This would need a new API endpoint to reset sprint status
-        console.log("Reset sprint to planning status");
-      }
+    } catch (error) {
+      console.error("Error changing sprint status:", error);
+    }
+  };
+
+  const getSprintStatusLabel = (status: string) => {
+    switch (status) {
+      case "PLANNING":
+        return "Lập kế hoạch";
+      case "ACTIVE":
+        return "Đang thực hiện";
+      case "COMPLETED":
+        return "Hoàn thành";
+      case "CANCELLED":
+        return "Đã hủy";
+      default:
+        return status;
     }
   };
 
@@ -155,7 +176,7 @@ export const SprintIssuesCombinedTable: React.FC<SprintIssuesCombinedTableProps>
             <CardTitle className="text-lg">{sprint.name}</CardTitle>
             <Select value={sprint.status} onValueChange={handleSprintStatusChange} disabled={!canManageSprint}>
               <SelectTrigger className="w-40">
-                <SelectValue />
+                <SelectValue placeholder={getSprintStatusLabel(sprint.status)} />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="PLANNING" disabled={sprint.status !== "PLANNING" && sprint.status !== "CANCELLED"}>
@@ -205,12 +226,14 @@ export const SprintIssuesCombinedTable: React.FC<SprintIssuesCombinedTableProps>
           <IssuesTable
             issues={issues}
             projectMembers={projectMembers}
+            sprints={sprints}
             canEditIssue={canEditIssue}
             canChangeStatus={canChangeStatus}
             onStatusChange={onStatusChange}
             onPriorityChange={onPriorityChange}
             onIssueTypeChange={onIssueTypeChange}
             onAssigneeChange={onAssigneeChange}
+            onSprintChange={onSprintChange}
             onOpenCreateIssue={onOpenCreateIssue}
             canCreateIssue={canCreateIssue}
             onEditIssue={onEditIssue}

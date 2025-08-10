@@ -6,10 +6,7 @@ import com.example.backend.entity.User;
 import com.example.backend.entity.Attachment;
 import com.example.backend.exception.AppException;
 import com.example.backend.exception.ErrorCode;
-import com.example.backend.repository.ChatRepository;
-import com.example.backend.repository.MessageRepository;
-import com.example.backend.repository.UserRepository;
-import com.example.backend.repository.AttachmentRepository;
+import com.example.backend.repository.*;
 import com.example.backend.dto.request.AttachmentMeta;
 
 import org.springframework.stereotype.Service;
@@ -22,6 +19,7 @@ import lombok.extern.slf4j.Slf4j;
 import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 
 @Slf4j
 @Service
@@ -33,6 +31,8 @@ public class MessageService {
     ChatRepository chatRepository;
     AttachmentRepository attachmentRepository;
     NotificationService notificationService;
+    ProjectMemberRepository projectMemberRepository;
+    ProjectRepository projectRepository;
 
     public Message sendMessage(UUID senderId, UUID chatId, String content, List<AttachmentMeta> attachments) {
         User sender = userRepository.findById(senderId).orElseThrow(() -> new AppException(ErrorCode.NOT_FOUND));
@@ -61,6 +61,29 @@ public class MessageService {
 
         chat.getMessages().add(savedMessage);
         chatRepository.save(chat);
+
+        // Gửi notification cho tất cả thành viên project (trừ người gửi) - async để không block
+        try {
+            var projectOpt = projectRepository.findByChatId(chatId);
+            if (projectOpt.isPresent()) {
+                var project = projectOpt.get();
+                // Gọi async để không block việc gửi message
+                CompletableFuture.runAsync(() -> {
+                    try {
+                        notificationService.notifyNewChatMessage(
+                                project.getId(),
+                                sender.getName(),
+                                project.getName(),
+                                senderId
+                        );
+                    } catch (Exception e) {
+                        log.warn("Failed to notify chat message async: {}", e.getMessage());
+                    }
+                });
+            }
+        } catch (Exception e) {
+            log.warn("Failed to get project for chat notification: {}", e.getMessage());
+        }
 
 //        // Gửi notification cho các thành viên khác trong chat (trừ người gửi)
 //        List<User> chatMembers = chat.getProject().getProjectMembers().stream()

@@ -35,7 +35,6 @@ const ProjectMembersPage: React.FC = () => {
   const fetchProject = async () => {
     try {
       const response = await ProjectService.getProjectById(projectId!);
-      console.log("project", response.result);
       setProject(response.result);
     } catch (error) {
       console.error("Error fetching project:", error);

@@ -66,7 +66,7 @@ const UserDetailPage: React.FC = () => {
       setUserInfo(response.result);
       setAvatarUrl(response.result.avatarUrl || "");
       // Refetch user info in auth reducer
-      await dispatch(fetchUserInfo()).unwrap();
+      await dispatch(fetchUserInfo() as unknown as any).unwrap();
       toastSuccess("Cập nhật thông tin thành công!");
     } finally {
       setUpdating(false);

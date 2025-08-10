@@ -53,9 +53,9 @@ export const inviteMember = async (teamId: string, email: string, role: string) 
 };
 
 export const updateMemberRole = async (teamId: string, userId: string, role: string) => {
-  const res = await axios.put(`${baseUrl}/${teamId}/members/${userId}/role`, null, {
+  const res = await axios.put(`${baseUrl}/${teamId}/members`, null, {
     ...addReqToken(localStorage.getItem("token")),
-    params: { role }
+    params: { userId, role }
   });
   return res.data;
 };

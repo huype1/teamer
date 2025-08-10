@@ -44,7 +44,7 @@ export interface ProjectMember {
   userId: string;
   role: 'ADMIN' | 'MEMBER' | 'PM' | 'VIEWER';
   joinedAt: string;
-  user: {
+  user?: {
     id: string;
     email: string;
     name: string;

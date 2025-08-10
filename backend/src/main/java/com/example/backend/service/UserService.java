@@ -166,6 +166,14 @@ public class UserService {
         return userRepository.findAll().stream().map(userMapper::toUserResponse).toList();
     }
 
+    public List<UserResponse> searchUsers(String query) {
+        if (query == null || query.trim().isEmpty()) {
+            return getUsers();
+        }
+        List<User> users = userRepository.findByNameContainingIgnoreCaseOrEmailContainingIgnoreCase(query.trim(), query.trim());
+        return users.stream().map(userMapper::toUserResponse).toList();
+    }
+
     public void deleteUser(UUID userId) {
         userRepository.deleteById(userId);
     }

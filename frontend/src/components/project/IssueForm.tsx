@@ -16,10 +16,7 @@ const issueSchema = z.object({
   issueType: z.enum(["STORY", "TASK", "BUG", "SUBTASK"]),
   assigneeId: z.string().optional(),
   sprintId: z.string().optional(),
-  storyPoints: z.preprocess(
-    (val) => val === "" || val === undefined || Number.isNaN(val) ? undefined : Number(val),
-    z.number().optional()
-  ),
+  storyPoints: z.number().optional(),
   startDate: z.string().optional(),
   dueDate: z.string().optional(),
   parentId: z.string().optional(),
@@ -43,7 +40,7 @@ interface IssueFormProps {
   onSubmit: (data: IssueFormValues) => void | Promise<void>;
   loading?: boolean;
   projectMembers: ProjectMember[];
-  projectUsers?: { id: string; name: string; email: string }[];
+  projectUsers?: { id: string; name: string; email?: string }[];
   sprints?: Sprint[];
   isEdit?: boolean;
   parentOptions?: { id: string; title: string }[];
@@ -70,6 +67,7 @@ export const IssueForm: React.FC<IssueFormProps> = ({
   disableIssueType = false,
   params,
 }) => {
+  
   const {
     register,
     handleSubmit,
@@ -87,17 +85,18 @@ export const IssueForm: React.FC<IssueFormProps> = ({
       sprintId: params?.isSubtask && params?.parentIssue?.sprintId 
         ? params.parentIssue.sprintId 
         : initialValues?.sprintId || "backlog",
-      storyPoints: initialValues?.storyPoints,
+      storyPoints: initialValues?.storyPoints || undefined,
       startDate: initialValues?.startDate || "",
       dueDate: initialValues?.dueDate || "",
       parentId: initialValues?.parentId || "",
     },
   });
 
-  // Auto-set sprint from parent issue for subtasks
+  // Auto-set sprint from parent issue for subtasks (and keep it in sync if parent changes)
   React.useEffect(() => {
-    if (params?.isSubtask && params?.parentIssue?.sprintId) {
-      setValue("sprintId", params.parentIssue.sprintId);
+    if (params?.isSubtask) {
+      const parentSprint = params?.parentIssue?.sprintId;
+      setValue("sprintId", parentSprint && parentSprint !== "backlog" ? parentSprint : "backlog");
     }
   }, [params?.isSubtask, params?.parentIssue?.sprintId, setValue]);
 
@@ -143,7 +142,7 @@ export const IssueForm: React.FC<IssueFormProps> = ({
         <Select
           value={watch("issueType")}
           onValueChange={v => setValue("issueType", v as IssueFormValues["issueType"])}
-          disabled={loading || isEdit || disableIssueType}
+          disabled={loading || disableIssueType}
         >
           <SelectTrigger>
             <SelectValue placeholder="Loại issue" />
@@ -152,7 +151,7 @@ export const IssueForm: React.FC<IssueFormProps> = ({
             <SelectItem value="STORY">Story</SelectItem>
             <SelectItem value="TASK">Task</SelectItem>
             <SelectItem value="BUG">Bug</SelectItem>
-            <SelectItem value="SUBTASK">Subtask</SelectItem>
+            {params?.isSubtask && <SelectItem value="SUBTASK">Subtask</SelectItem>}
           </SelectContent>
         </Select>
       </div>
@@ -167,20 +166,26 @@ export const IssueForm: React.FC<IssueFormProps> = ({
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="none">Không chọn</SelectItem>
-            {projectUsers?.map(user => (
-              <SelectItem key={user.id} value={user.id}>
-                {user.name}
-              </SelectItem>
-            )) || []}
+            {(projectMembers || [])
+              .map(member => {
+                const resolvedUser = member.user || (projectUsers ? projectUsers.find(u => u.id === member.userId) : undefined);
+                return { ...member, user: resolvedUser } as typeof member & { user?: { id: string; name: string } };
+              })
+              .filter(member => member.role !== "VIEWER" && member.user)
+              .map(member => (
+                <SelectItem key={member.user!.id} value={member.user!.id}>
+                  {member.user!.name}
+                </SelectItem>
+              ))}
           </SelectContent>
         </Select>
       </div>
-      {sprints && !params?.isSubtask && (
+      {sprints && (
         <div>
           <Select
             value={watch("sprintId")}
             onValueChange={v => setValue("sprintId", v)}
-            disabled={loading}
+            disabled={loading || params?.isSubtask}
           >
             <SelectTrigger>
               <SelectValue placeholder="Sprint" />
@@ -194,6 +199,9 @@ export const IssueForm: React.FC<IssueFormProps> = ({
               ))}
             </SelectContent>
           </Select>
+          {params?.isSubtask && (
+            <span className="text-xs text-muted-foreground">Subtask sẽ kế thừa sprint từ issue cha.</span>
+          )}
         </div>
       )}
       <div>
