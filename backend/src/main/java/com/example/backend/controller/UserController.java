@@ -8,6 +8,7 @@ import org.springframework.web.bind.annotation.*;
 import com.example.backend.dto.request.UserUpdateRequest;
 import com.example.backend.dto.response.ApiResponse;
 import com.example.backend.dto.response.UserResponse;
+import com.example.backend.dto.response.UserMinimalResponse;
 import com.example.backend.service.UserService;
 
 import lombok.AccessLevel;
@@ -70,10 +71,19 @@ public class UserController {
 
     @GetMapping("/{userId}")
     public ApiResponse<UserResponse> getUserById(@PathVariable("userId") UUID userId) {
-        log.info("Fetching user with ID: {}", userId);
+        log.info("Fetching user detailed info with ID: {}", userId);
         return ApiResponse.<UserResponse>builder()
-                .message("User fetched successfully")
+                .message("User detailed info fetched successfully")
                 .result(userService.getUser(userId))
+                .build();
+    }
+
+    @GetMapping("/{userId}/minimal")
+    public ApiResponse<UserMinimalResponse> getUserMinimalById(@PathVariable("userId") UUID userId) {
+        log.info("Fetching user minimal info with ID: {}", userId);
+        return ApiResponse.<UserMinimalResponse>builder()
+                .message("User minimal info fetched successfully")
+                .result(userService.getUserMinimal(userId))
                 .build();
     }
 }

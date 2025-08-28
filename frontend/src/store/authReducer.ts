@@ -3,7 +3,7 @@ import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 import type {GoogleCredentials, LoginRequest} from "@/types/auth.ts";
 import UserService from "@/service/userService";
 import type { User } from "@/types/user";
-import notificationWebSocketService from "@/service/notificationWebSocketService";
+import websocketService from "@/service/websocketService";
 
 interface AuthState {
   token: string | null;
@@ -134,8 +134,8 @@ const authSlice = createSlice({
         state.isAuthenticated = false;
         state.loading = false;
         
-        // Disconnect notification WebSocket on logout
-        notificationWebSocketService.disconnect();
+        // Disconnect WebSocket on logout
+        websocketService.disconnect();
         
         // Force navigation to login page
         window.location.href = "/login";

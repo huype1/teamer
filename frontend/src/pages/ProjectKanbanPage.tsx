@@ -173,7 +173,7 @@ const ProjectKanbanPage: React.FC = () => {
   };
 
 
-  const onCreateSubtask = async (data: { title: string; description: string; priority: string; assigneeId: string }) => {
+  const onCreateSubtask = async (data: { title: string; description: string; priority: string; assigneeId: string; sprintId?: string }) => {
     if (!selectedParentIssue) return;
     setCreating(true);
     try {
@@ -185,6 +185,7 @@ const ProjectKanbanPage: React.FC = () => {
         projectId: string;
         parentId: string;
         assigneeId?: string;
+        sprintId?: string;
       } = {
         title: data.title,
         description: data.description,
@@ -195,6 +196,10 @@ const ProjectKanbanPage: React.FC = () => {
       };
       if (data.assigneeId !== "none") {
         requestBody.assigneeId = data.assigneeId;
+      }
+      // Inherit sprint from parent issue if available
+      if (selectedParentIssue.sprintId) {
+        requestBody.sprintId = selectedParentIssue.sprintId;
       }
       await issueService.createIssue(requestBody);
       toastSuccess("Tạo subtask thành công!");

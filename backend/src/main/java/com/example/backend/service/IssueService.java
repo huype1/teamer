@@ -90,6 +90,18 @@ public class IssueService {
                 User assignee = userService.getUserEntity(issueRequest.getAssigneeId());
                 issue.setAssignee(assignee);
             }
+            
+            // Handle sprint assignment
+            if (issueRequest.getSprintId() != null) {
+                Sprint sprint = sprintRepository.findById(issueRequest.getSprintId())
+                        .orElseThrow(() -> new AppException(ErrorCode.NOT_FOUND));
+                // Validate that sprint belongs to the same project
+                if (!sprint.getProject().getId().equals(projectId)) {
+                    log.error("Sprint {} does not belong to project {}", issueRequest.getSprintId(), projectId);
+                    throw new AppException(ErrorCode.BAD_REQUEST);
+                }
+                issue.setSprint(sprint);
+            }
 //            Comment comment = commentRepository.save(new Comment());
 //            issue.setComments(comment);
 

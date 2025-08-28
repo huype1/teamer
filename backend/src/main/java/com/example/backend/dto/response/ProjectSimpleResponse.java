@@ -7,14 +7,13 @@ import lombok.NoArgsConstructor;
 
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
-import java.util.List;
 import java.util.UUID;
 
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class ProjectResponse {
+public class ProjectSimpleResponse {
     
     private UUID id;
     
@@ -42,9 +41,7 @@ public class ProjectResponse {
     
     private UUID chatId;
     
-    private UserResponse creator;
-    
-    private List<ProjectMemberResponse> members;
+    // Removed creator to improve performance like team API
     
     private long memberCount;
-} 
+}

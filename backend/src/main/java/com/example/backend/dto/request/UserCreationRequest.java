@@ -26,4 +26,7 @@ public class UserCreationRequest {
     String provider;
 
     String avatarUrl;
+
+    @Size(max = 1000, message = "Bio must not exceed 1000 characters")
+    String bio;
 }

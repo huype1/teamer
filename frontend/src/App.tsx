@@ -17,6 +17,7 @@ import ProjectKanbanPage from "@/pages/ProjectKanbanPage";
 import ProjectReportsPage from "@/pages/ProjectReportsPage";
 import ProjectMembersPage from "@/pages/ProjectMembersPage";
 import ProjectDocumentsPage from "@/pages/ProjectDocumentsPage";
+import ProjectTimelinePage from "@/pages/ProjectTimelinePage";
 import UserDetailPage from "@/pages/UserDetailPage";
 import DashboardPage from "@/pages/DashboardPage";
 import LandingPage from "@/pages/LandingPage.tsx";
@@ -28,6 +29,7 @@ import NotFoundPage from "./pages/NotFoundPage";
 import TeamDetailPage from "@/pages/TeamDetailPage";
 import { Toaster } from "sonner"
 import IssueDetailPage from "@/pages/IssueDetailPage";
+import SearchPage from "@/pages/SearchPage";
 import { WebSocketProvider } from "@/components/WebSocketProvider";
 
 const useAppDispatch: () => AppDispatch = useDispatch;
@@ -81,6 +83,16 @@ function App() {
             <ProtectedRoute>
               <Layout>
                 <DashboardPage />
+              </Layout>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path='/search'
+          element={
+            <ProtectedRoute>
+              <Layout>
+                <SearchPage />
               </Layout>
             </ProtectedRoute>
           }
@@ -151,6 +163,16 @@ function App() {
             <ProtectedRoute>
               <Layout>
                 <ProjectReportsPage />
+              </Layout>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path='/projects/:projectId/timeline'
+          element={
+            <ProtectedRoute>
+              <Layout>
+                <ProjectTimelinePage />
               </Layout>
             </ProtectedRoute>
           }

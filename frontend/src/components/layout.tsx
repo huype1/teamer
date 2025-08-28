@@ -20,12 +20,6 @@ export function Layout({ children }: LayoutProps) {
   const dispatch = useAppDispatch();
   const [isSidebarOpen, setSidebarOpen] = useState(false);
 
-  const handleSearch = (query: string) => {
-    console.log("Search query:", query);
-  };
-
-  
-
   const handleLogout = () => {
     dispatch(logout());
   };
@@ -34,7 +28,6 @@ export function Layout({ children }: LayoutProps) {
     <div className="min-h-screen bg-background">
       <TopNav
         variant="full"
-        onSearch={handleSearch}
         onLogout={handleLogout}
       />
       <SidebarProvider open={isSidebarOpen} onOpenChange={setSidebarOpen}>

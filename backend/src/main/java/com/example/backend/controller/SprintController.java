@@ -1,6 +1,7 @@
 package com.example.backend.controller;
 
 import com.example.backend.dto.request.SprintRequest;
+import com.example.backend.dto.request.SprintUpdateRequest;
 import com.example.backend.dto.response.ApiResponse;
 import com.example.backend.dto.response.SprintResponse;
 import com.example.backend.dto.response.IssueResponse;
@@ -100,7 +101,7 @@ public class SprintController {
     }
 
     @PutMapping("/{sprintId}")
-    public ApiResponse<SprintResponse> updateSprint(@PathVariable UUID sprintId, @RequestBody Sprint sprint) {
+    public ApiResponse<SprintResponse> updateSprint(@PathVariable UUID sprintId, @RequestBody SprintUpdateRequest request) {
         UUID userId = JwtUtils.getSubjectFromJwt();
         log.info("Updating sprint: {} by user: {}", sprintId, userId);
         
@@ -108,10 +109,19 @@ public class SprintController {
                 .orElseThrow(() -> new AppException(ErrorCode.NOT_FOUND));
         checkProjectManagerOrAdmin(existing.getProject().getId(), userId);
         
-        existing.setName(sprint.getName());
-        existing.setGoal(sprint.getGoal());
-        existing.setStartDate(sprint.getStartDate());
-        existing.setEndDate(sprint.getEndDate());
+        if (request.getName() != null) {
+            existing.setName(request.getName());
+        }
+        if (request.getGoal() != null) {
+            existing.setGoal(request.getGoal());
+        }
+        if (request.getStartDate() != null) {
+            existing.setStartDate(request.getStartDate());
+        }
+        if (request.getEndDate() != null) {
+            existing.setEndDate(request.getEndDate());
+        }
+        
         Sprint saved = sprintRepository.save(existing);
         SprintResponse response = sprintMapper.toResponse(saved);
 
@@ -143,10 +153,18 @@ public class SprintController {
                 .orElseThrow(() -> new AppException(ErrorCode.NOT_FOUND));
         checkProjectManagerOrAdmin(existing.getProject().getId(), userId);
         
+        // Move all issues from this sprint back to backlog
+        List<Issue> sprintIssues = issueRepository.findBySprintId(sprintId);
+        for (Issue issue : sprintIssues) {
+            issue.setSprint(null);
+            issueRepository.save(issue);
+        }
+        
+        // Delete the sprint
         sprintRepository.deleteById(sprintId);
         
         return ApiResponse.<Void>builder()
-                .message("Sprint deleted successfully")
+                .message("Sprint deleted successfully. All issues moved to backlog.")
                 .build();
     }
 

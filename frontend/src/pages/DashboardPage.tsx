@@ -11,6 +11,7 @@ import issueService from "@/service/issueService";
 import projectService from "@/service/projectService";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { NotificationList } from "@/components/ui/notification-list";
+import { useNavigate } from "react-router-dom";
 
 // Interface chuẩn hóa cho dữ liệu từ API
 interface Project {
@@ -42,6 +43,7 @@ export default function DashboardPage() {
   const [error, setError] = useState<string | null>(null);
   const [displayedIssues, setDisplayedIssues] = useState<Issue[]>([]);
   const [showAllIssues, setShowAllIssues] = useState(false);
+  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchData = async () => {
@@ -198,7 +200,7 @@ export default function DashboardPage() {
               </thead>
               <tbody>
                 {displayedIssues.map(issue => (
-                  <tr key={issue.id} className="border-b hover:bg-muted/50">
+                  <tr key={issue.id} className="border-b hover:bg-muted/50" onClick={() => navigate(`/issues/${issue.id}`)}>
                     <td className="py-2 px-2 font-medium">{issue.title}</td>
                     <td className="py-2 px-2">{projects.find(p => p.id === (issue.projectId || issue.project?.id))?.name || ""}</td>
                     <td className="py-2 px-2">{getStatusBadge(issue.status)}</td>

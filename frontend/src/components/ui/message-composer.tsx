@@ -4,9 +4,8 @@ import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
-import { Paperclip, Send } from "lucide-react";
+import { Paperclip, Send, X } from "lucide-react";
 import attachmentService, { type AttachmentMeta } from "@/service/attachmentService";
-import FilePreviewList from "@/components/ui/file-preview-list";
 
 const schema = z.object({
   content: z.string().min(1, "Nội dung không được để trống"),
@@ -23,6 +22,46 @@ interface MessageComposerProps {
   onSubmit: (data: MessageComposerSubmission) => Promise<void> | void;
   disabled?: boolean;
 }
+
+// Component to show selected files before upload
+const SelectedFilesList: React.FC<{
+  files: File[];
+  onRemove: (index: number) => void;
+  disabled?: boolean;
+}> = ({ files, onRemove, disabled }) => {
+  if (files.length === 0) return null;
+
+  return (
+    <div className="mt-2 space-y-2">
+      <div className="text-xs font-semibold text-muted-foreground flex items-center gap-1">
+        <Paperclip className="h-3 w-3" />
+        File đã chọn ({files.length}):
+      </div>
+      <div className="space-y-1">
+        {files.map((file, index) => (
+          <div key={index} className="flex items-center gap-2 text-xs bg-muted/50 rounded-md p-2">
+            <Paperclip className="h-3 w-3 flex-shrink-0 text-muted-foreground" />
+            <span className="truncate flex-1">{file.name}</span>
+            <span className="text-muted-foreground flex-shrink-0">
+              ({Math.round(file.size / 1024)} KB)
+            </span>
+            {!disabled && (
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className="h-6 w-6 p-0 text-muted-foreground hover:text-red-500"
+                onClick={() => onRemove(index)}
+              >
+                <X className="h-3 w-3" />
+              </Button>
+            )}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+};
 
 export const MessageComposer: React.FC<MessageComposerProps> = ({
   placeholder = "Nhập nội dung...",
@@ -68,7 +107,7 @@ export const MessageComposer: React.FC<MessageComposerProps> = ({
     setSelectedFiles([]);
   };
 
-  function FileUploadInput({ selected, setSelected, uploading }: { selected: File[]; setSelected: (files: File[]) => void; uploading: boolean; }) {
+  function FileUploadInput({ setSelected, uploading }: { setSelected: (files: File[]) => void; uploading: boolean; }) {
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
       setSelected(Array.from(e.target.files || []));
     };
@@ -99,8 +138,12 @@ export const MessageComposer: React.FC<MessageComposerProps> = ({
         className="resize-none"
         disabled={disabled}
       />
-      <FileUploadInput selected={selectedFiles} setSelected={setSelectedFiles} uploading={uploading} />
-      <FilePreviewList files={selectedFiles} onRemove={(idx) => setSelectedFiles(selectedFiles.filter((_, i) => i !== idx))} disabled={uploading} />
+      <FileUploadInput setSelected={setSelectedFiles} uploading={uploading} />
+      <SelectedFilesList 
+        files={selectedFiles} 
+        onRemove={(idx) => setSelectedFiles(selectedFiles.filter((_, i) => i !== idx))} 
+        disabled={uploading} 
+      />
       {errors.content && (
         <span className="text-xs text-red-500">{errors.content.message}</span>
       )}
@@ -114,5 +157,4 @@ export const MessageComposer: React.FC<MessageComposerProps> = ({
   );
 };
 
-export default MessageComposer;
-
+export default MessageComposer; 

@@ -4,7 +4,16 @@ import com.example.backend.entity.Attachment;
 import com.example.backend.repository.AttachmentRepository;
 import com.example.backend.dto.request.PresignedUrlRequest;
 import com.example.backend.dto.request.AttachmentMeta;
+import com.example.backend.dto.request.AttachmentCreationRequest;
 import com.example.backend.entity.User;
+import com.example.backend.entity.Project;
+import com.example.backend.entity.Issue;
+import com.example.backend.entity.Comment;
+import com.example.backend.entity.Message;
+import com.example.backend.repository.ProjectRepository;
+import com.example.backend.repository.IssueRepository;
+import com.example.backend.repository.CommentRepository;
+import com.example.backend.repository.MessageRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.beans.factory.annotation.Value;
@@ -31,6 +40,10 @@ import jakarta.annotation.PostConstruct;
 @RequiredArgsConstructor
 public class AttachmentService {
     private final AttachmentRepository attachmentRepository;
+    private final ProjectRepository projectRepository;
+    private final IssueRepository issueRepository;
+    private final CommentRepository commentRepository;
+    private final MessageRepository messageRepository;
 
     @Value("${aws.s3.bucket}")
     private String bucketName;
@@ -79,6 +92,10 @@ public class AttachmentService {
 
     public List<Attachment> getByMessageId(UUID messageId) {
         return attachmentRepository.findByMessageId(messageId);
+    }
+
+    public List<Attachment> getByProjectId(UUID projectId) {
+        return attachmentRepository.findByProjectId(projectId);
     }
 
     public Map<String, String> generatePresignedUrl(PresignedUrlRequest request) {
@@ -147,6 +164,45 @@ public class AttachmentService {
 
     public void deleteAttachment(UUID attachmentId) {
         attachmentRepository.deleteById(attachmentId);
+    }
+
+    public Attachment createAttachmentFromRequest(AttachmentCreationRequest request) {
+        Attachment attachment = Attachment.builder()
+                .fileName(request.getFileName())
+                .fileType(request.getFileType())
+                .fileSize(request.getFileSize())
+                .filePath(request.getFilePath())
+                .build();
+
+        // Set project if provided
+        if (request.getProjectId() != null) {
+            Project project = projectRepository.findById(request.getProjectId())
+                    .orElseThrow(() -> new RuntimeException("Project not found"));
+            attachment.setProject(project);
+        }
+
+        // Set issue if provided
+        if (request.getIssueId() != null) {
+            Issue issue = issueRepository.findById(request.getIssueId())
+                    .orElseThrow(() -> new RuntimeException("Issue not found"));
+            attachment.setIssue(issue);
+        }
+
+        // Set comment if provided
+        if (request.getCommentId() != null) {
+            Comment comment = commentRepository.findById(request.getCommentId())
+                    .orElseThrow(() -> new RuntimeException("Comment not found"));
+            attachment.setComment(comment);
+        }
+
+        // Set message if provided
+        if (request.getMessageId() != null) {
+            Message message = messageRepository.findById(request.getMessageId())
+                    .orElseThrow(() -> new RuntimeException("Message not found"));
+            attachment.setMessage(message);
+        }
+
+        return attachmentRepository.save(attachment);
     }
 
     public AttachmentMeta uploadFileToS3(MultipartFile file) {

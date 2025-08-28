@@ -19,4 +19,7 @@ public interface AttachmentRepository extends JpaRepository<Attachment, UUID> {
     
     @Query("SELECT a FROM Attachment a WHERE a.message.id = :messageId ORDER BY a.uploadedAt DESC")
     List<Attachment> findByMessageId(@org.springframework.data.repository.query.Param("messageId") UUID messageId);
+    
+    @Query("SELECT a FROM Attachment a WHERE a.project.id = :projectId ORDER BY a.uploadedAt DESC")
+    List<Attachment> findByProjectId(@org.springframework.data.repository.query.Param("projectId") UUID projectId);
 } 

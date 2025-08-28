@@ -5,11 +5,13 @@ import com.example.backend.entity.ProjectMemberId;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
+import org.springframework.stereotype.Repository;
 
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
+@Repository
 public interface ProjectMemberRepository extends JpaRepository<ProjectMember, ProjectMemberId> {
     
     // Essential queries for project member operations
@@ -46,4 +48,7 @@ public interface ProjectMemberRepository extends JpaRepository<ProjectMember, Pr
     @Query("SELECT pm.projectId, pm.userId, pm.role, pm.joinedAt FROM ProjectMember pm " +
            "WHERE pm.userId = :userId")
     List<Object[]> findMinimalByUserId(@Param("userId") UUID userId);
+
+    // Delete membership by project and user
+    void deleteByProjectIdAndUserId(UUID projectId, UUID userId);
 }

@@ -1,7 +1,7 @@
 export interface ProjectMember {
   projectId: string;
   userId: string;
-  role: string;
+  role: 'ADMIN' | 'MEMBER' | 'PM' | 'VIEWER';
   joinedAt: string;
 }
 
@@ -17,6 +17,7 @@ export interface User {
   email: string;
   name: string;
   avatarUrl: string;
+  bio?: string;
   provider: string;
   projectMembers: ProjectMember[];
   teamMembers: TeamMember[];
@@ -25,9 +26,8 @@ export interface User {
 }
 
 export interface UserUpdateRequest {
-  email: string;
-  name: string;
-  password?: string;
+  name?: string;
+  bio?: string;
   avatarUrl?: string;
 }
 

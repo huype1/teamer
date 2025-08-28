@@ -49,4 +49,21 @@ export const canManageProject = (user: User | null, projectId?: string): boolean
   if (!user || !projectId) return false;
   const currentUserMember = getCurrentUserProjectMember(user, projectId);
   return !!(currentUserMember && (currentUserMember.role === "ADMIN" || currentUserMember.role === "PM"));
+};
+
+/**
+ * Helper function: Kiểm tra quyền edit document - creator hoặc ADMIN/PM
+ * @param user - User hiện tại
+ * @param creatorId - ID của người tạo document
+ * @param projectId - ID của project
+ * @returns boolean - true nếu user có quyền edit document
+ */
+export const canEditDocument = (user: User | null, creatorId?: string, projectId?: string): boolean => {
+  if (!user || !creatorId || !projectId) return false;
+  
+  // Creator luôn có quyền edit
+  if (user.id === creatorId) return true;
+  
+  // ADMIN và PM cũng có quyền edit
+  return canManageProject(user, projectId);
 }; 

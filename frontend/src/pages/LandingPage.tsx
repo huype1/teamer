@@ -56,7 +56,7 @@ const LandingPage = () => {
                   Tính năng chính
                 </div>
                 <h2 className="text-3xl font-bold tracking-tighter sm:text-5xl">
-                  Mọi thứ bạn cần để thành công
+                  Nâng cấp trải nghiệm quản lý công việc lên một tầm cao mới
                 </h2>
                 <p className="max-w-[900px] text-gray-500 md:text-xl/relaxed lg:text-base/relaxed xl:text-xl/relaxed">
                   Teamer cung cấp các công cụ mạnh mẽ để giúp nhóm của bạn làm việc hiệu quả hơn, từ quản lý nhiệm vụ đến theo dõi tiến độ.
@@ -99,10 +99,10 @@ const LandingPage = () => {
           <div className="container px-4 md:px-6">
             <div className="flex flex-col items-center justify-center space-y-4 text-center">
               <h2 className="text-3xl font-bold tracking-tighter sm:text-5xl">
-                Tại sao chọn Teamer?
+                Vì sao nên chọn Teamer?
               </h2>
               <p className="max-w-[900px] text-gray-500 md:text-xl/relaxed lg:text-base/relaxed xl:text-xl/relaxed">
-                Teamer không chỉ là một công cụ quản lý dự án. Đó là một nền tảng toàn diện được xây dựng để trao quyền cho các nhóm phát triển phần mềm, giúp họ đạt được hiệu suất cao nhất.
+                Teamer không chỉ là một công cụ quản lý dự án. Đó là một nền tảng toàn diện được xây dựng để hỗ trợ riêng cho các dự án theo cách tiếp cận agile
               </p>
             </div>
             <div className="mx-auto grid max-w-5xl items-center gap-6 py-12 lg:grid-cols-2 lg:gap-12">
@@ -146,11 +146,8 @@ const LandingPage = () => {
         <section className="mb-6">
           <div className="container px-4 md:px-6 flex flex-col items-center justify-center space-y-4 text-center">
             <h2 className="text-3xl font-bold tracking-tighter sm:text-5xl">
-              Sẵn sàng bắt đầu?
+              Sẵn sàng bắt đầu với chúng tôi?
             </h2>
-            <p className="max-w-[700px] text-gray-500 md:text-xl/relaxed lg:text-base/relaxed xl:text-xl/relaxed">
-              Tham gia cùng hàng ngàn đội ngũ đang tối ưu hóa quy trình làm việc của họ với Teamer. Đăng ký ngay hôm nay để trải nghiệm sự khác biệt!
-            </p>
             <Button size="lg" onClick={() => navigate("/register")}>
               Bắt đầu ngay <ArrowRight className="ml-2 h-4 w-4" />
             </Button>

@@ -33,6 +33,10 @@ public class Attachment {
     @JoinColumn(name = "message_id")
     Message message;
 
+    @ManyToOne
+    @JoinColumn(name = "project_id")
+    Project project;
+
     @Column(name = "file_name", nullable = false)
     String fileName;
 

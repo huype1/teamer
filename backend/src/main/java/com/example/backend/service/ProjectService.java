@@ -1,6 +1,7 @@
 package com.example.backend.service;
 
 import com.example.backend.dto.response.ProjectResponse;
+import com.example.backend.dto.response.ProjectSimpleResponse;
 import com.example.backend.entity.*;
 import com.example.backend.exception.AppException;
 import com.example.backend.exception.ErrorCode;
@@ -12,6 +13,7 @@ import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 
 import java.time.OffsetDateTime;
@@ -98,6 +100,15 @@ public class ProjectService {
         if (updatedProject.getKey() != null && !updatedProject.getKey().isEmpty()) {
             project.setKey(updatedProject.getKey());
         }
+        if (updatedProject.getClientName() != null) {
+            project.setClientName(updatedProject.getClientName());
+        }
+        if (updatedProject.getStartDate() != null) {
+            project.setStartDate(updatedProject.getStartDate());
+        }
+        if (updatedProject.getEndDate() != null) {
+            project.setEndDate(updatedProject.getEndDate());
+        }
         project.setAvatarUrl(updatedProject.getAvatarUrl());
         project.setIsPublic(updatedProject.getIsPublic());
 
@@ -164,6 +175,16 @@ public class ProjectService {
         }
         List<Project> projects = projectRepository.findByNameOrKeyContainingIgnoreCase(keywords.trim(), userId);
         return projectMapper.toResponseList(projects);
+    }
+
+    @Cacheable(value = "userProjects", key = "#userId")
+    public List<ProjectSimpleResponse> searchProjectsSimple(String keywords, UUID userId) {
+        if (keywords == null || keywords.trim().isEmpty()) {
+            List<Project> projects = projectRepository.findAllProjectsByUserIdSimple(userId);
+            return projectMapper.toSimpleResponseList(projects);
+        }
+        List<Project> projects = projectRepository.findByNameOrKeyContainingIgnoreCase(keywords.trim(), userId);
+        return projectMapper.toSimpleResponseList(projects);
     }
 
 

@@ -7,6 +7,8 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.time.LocalDate;
+
 @Data
 @Builder
 @NoArgsConstructor
@@ -24,4 +26,10 @@ public class ProjectUpdateRequest {
     private String avatarUrl;
     
     private Boolean isPublic;
+    
+    private String clientName;
+    
+    private LocalDate startDate;
+    
+    private LocalDate endDate;
 } 

@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from "react";
 import { useParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { IssuesTable, SprintIssuesCombinedTable } from "@/components/project";
+import SprintManagement from "@/components/project/SprintManagement";
 import sprintService from "@/service/sprintService";
 import issueService from "@/service/issueService";
 import projectService from "@/service/projectService";
@@ -468,8 +469,13 @@ const ProjectIssuesTablePage: React.FC = () => {
     );
   }
 
+  // Filter out COMPLETED and CANCELLED sprints
+  const visibleSprints = sprints.filter(sprint => 
+    sprint.status !== "COMPLETED" && sprint.status !== "CANCELLED"
+  );
+  
   // Backend now handles sorting, so we can use sprints directly
-  const activeSprint = sprints.find(s => s.status === "ACTIVE");
+  const activeSprint = visibleSprints.find(s => s.status === "ACTIVE");
 
   return (
     <div className="p-6 space-y-6">
@@ -482,7 +488,7 @@ const ProjectIssuesTablePage: React.FC = () => {
 
       <div className="space-y-6">
         {/* Sprint Section: chỉ render nếu có sprint hoặc có quyền quản lý */}
-        {(canManageSprint() || sprints.length > 0) && (
+        {(canManageSprint() || visibleSprints.length > 0) && (
           <div className="space-y-4">
             <div className="flex items-center justify-between">
               <h3 className="text-lg font-semibold">Quản lý Sprint</h3>
@@ -493,15 +499,39 @@ const ProjectIssuesTablePage: React.FC = () => {
                 </Button>
               )}
             </div>
+            {/* Sprint Management Section */}
+            {visibleSprints.length > 0 && (
+              <div className="space-y-4" style={{ maxWidth: '100%' }}>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {visibleSprints.map((sprint) => (
+                    <SprintManagement
+                      key={sprint.id}
+                      sprint={sprint}
+                      canManageSprint={canManageSprint()}
+                      onSprintUpdated={() => {
+                        fetchSprints();
+                        setSprintReloadKey(prev => prev + 1);
+                      }}
+                      onSprintDeleted={() => {
+                        fetchSprints();
+                        fetchBacklogIssues();
+                        setSprintReloadKey(prev => prev + 1);
+                      }}
+                    />
+                  ))}
+                </div>
+              </div>
+            )}
+
             {/* Sprint Issues Section */}
-            {sprints.length > 0 && (
+            {visibleSprints.length > 0 && (
               <div className="space-y-4" style={{ maxWidth: '100%' }}>
                 <h3 className="text-lg font-semibold">Issues trong Sprint</h3>
-                {sprints.map((sprint) => (
+                {visibleSprints.map((sprint) => (
                   <SprintIssuesCombinedTable
                     key={sprint.id}
                     sprint={sprint}
-                    sprints={sprints}
+                    sprints={visibleSprints}
                     projectMembers={projectMembers}
                     canEditIssue={canEditIssue}
                     canChangeStatus={canChangeStatus}
@@ -538,7 +568,7 @@ const ProjectIssuesTablePage: React.FC = () => {
                 issues={filteredBacklogIssues}
                 allIssues={backlogIssues}
                 projectMembers={projectMembers}
-                sprints={sprints}
+                sprints={visibleSprints}
                 canEditIssue={canEditIssue}
                 canChangeStatus={canChangeStatus}
                 onStatusChange={handleStatusChange}
@@ -609,7 +639,7 @@ const ProjectIssuesTablePage: React.FC = () => {
             loading={false}
             projectMembers={projectMembers}
             projectUsers={projectUsers}
-            sprints={sprints}
+            sprints={visibleSprints}
           />
         </DialogContent>
       </Dialog>
@@ -625,8 +655,8 @@ const ProjectIssuesTablePage: React.FC = () => {
               loading={false}
               projectMembers={projectMembers}
               projectUsers={projectUsers}
-              sprints={sprints}
-              initialValues={toIssueFormInitialValues(editIssue)}
+                          sprints={visibleSprints}
+            initialValues={toIssueFormInitialValues(editIssue)}
             />
           )}
         </DialogContent>

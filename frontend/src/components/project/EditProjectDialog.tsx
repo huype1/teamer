@@ -26,9 +26,13 @@ const EditProjectDialog: React.FC<EditProjectDialogProps> = ({
   project,
   onSubmit,
 }) => {
+  console.log(project, "project info")
   const [formData, setFormData] = useState({
     name: "",
     description: "",
+    clientName: "",
+    startDate: "",
+    endDate: ""
   });
 
   useEffect(() => {
@@ -36,6 +40,9 @@ const EditProjectDialog: React.FC<EditProjectDialogProps> = ({
       setFormData({
         name: project.name,
         description: project.description,
+        clientName: project.clientName || "",
+        startDate: project.startDate || "",
+        endDate: project.endDate || ""
       });
     }
   }, [project]);
@@ -48,7 +55,7 @@ const EditProjectDialog: React.FC<EditProjectDialogProps> = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
           <DialogTitle>Chỉnh sửa dự án</DialogTitle>
           <DialogDescription>
@@ -71,6 +78,37 @@ const EditProjectDialog: React.FC<EditProjectDialogProps> = ({
               value={formData.description}
               onChange={(e) => setFormData({ ...formData, description: e.target.value })}
             />
+          </div>
+          
+          <div className="grid gap-2">
+            <Label htmlFor="edit-clientName">Tên khách hàng</Label>
+            <Input
+              id="edit-clientName"
+              value={formData.clientName}
+              onChange={(e) => setFormData({ ...formData, clientName: e.target.value })}
+              placeholder="Nhập tên khách hàng (tùy chọn)"
+            />
+          </div>
+          
+          <div className="grid grid-cols-2 gap-4">
+            <div className="grid gap-2">
+              <Label htmlFor="edit-startDate">Ngày bắt đầu</Label>
+              <Input
+                id="edit-startDate"
+                type="date"
+                value={formData.startDate}
+                onChange={(e) => setFormData({ ...formData, startDate: e.target.value })}
+              />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="edit-endDate">Ngày kết thúc</Label>
+              <Input
+                id="edit-endDate"
+                type="date"
+                value={formData.endDate}
+                onChange={(e) => setFormData({ ...formData, endDate: e.target.value })}
+              />
+            </div>
           </div>
         </div>
         <DialogFooter>

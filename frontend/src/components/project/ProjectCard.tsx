@@ -83,15 +83,21 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, onEdit, onDelete, on
 
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-2 min-w-0 flex-1">
-              <Avatar className="h-6 w-6 flex-shrink-0">
-                <AvatarImage src={project.creator.avatarUrl} />
-                <AvatarFallback className="text-xs">
-                  {getInitials(project.creator.name)}
-                </AvatarFallback>
-              </Avatar>
-              <span className="text-xs text-muted-foreground truncate">
-                {project.creator.name}
-              </span>
+              {project.creator ? (
+                <>
+                  <Avatar className="h-6 w-6 flex-shrink-0">
+                    <AvatarImage src={project.creator.avatarUrl} />
+                    <AvatarFallback className="text-xs">
+                      {getInitials(project.creator.name)}
+                    </AvatarFallback>
+                  </Avatar>
+                  <span className="text-xs text-muted-foreground truncate">
+                    {project.creator.name}
+                  </span>
+                </>
+              ) : (
+                null
+              )}
             </div>
             <div className="flex items-center space-x-1 text-xs text-muted-foreground flex-shrink-0">
               <span>{formatDate(project.updatedAt)}</span>

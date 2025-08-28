@@ -7,6 +7,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.time.LocalDate;
 import java.util.UUID;
 
 @Data
@@ -28,6 +29,12 @@ public class ProjectCreationRequest {
     private String avatarUrl;
     
     private Boolean isPublic = false;
+    
+    private String clientName;
+    
+    private LocalDate startDate;
+    
+    private LocalDate endDate;
     
     private UUID teamId;
 } 

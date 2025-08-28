@@ -40,6 +40,9 @@ public class User {
     @Column(name = "avatar_url")
     String avatarUrl;
 
+    @Column(name = "bio", columnDefinition = "TEXT")
+    String bio;
+
     @Column(nullable = false)
     String provider;
 

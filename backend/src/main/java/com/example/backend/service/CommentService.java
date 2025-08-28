@@ -74,12 +74,14 @@ public class CommentService {
           webSocketService.broadcastCommentCreated(savedComment);
           
           // Gửi notification cho assignee và reporter của issue - async để không block
+          final String commenterName = user.get().getName();
+          final String issueTitle = issue.get().getTitle();
           CompletableFuture.runAsync(() -> {
               try {
                   notificationService.notifyNewComment(
                       issueId,
-                      user.get().getName(),
-                      issue.get().getTitle(),
+                      commenterName,
+                      issueTitle,
                       userId
                   );
               } catch (Exception e) {

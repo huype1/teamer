@@ -8,7 +8,8 @@ Content-Type: application/json
   "name": "Test User",
   "password": "12345678",
   "provider": "EMAIL_PASSWORD",
-  "avatarUrl": ""
+  "avatarUrl": "",
+  "bio": "Hello! I am a new user and this is my bio."
 }
 
 ###
@@ -55,9 +56,8 @@ Authorization: Bearer {{authToken}}
 Content-Type: application/json
 
 {
-  "email": "updated@example.com",
   "name": "Updated User Name",
-  "password": "newpassword123",
+  "bio": "This is my updated bio with more information about myself",
   "avatarUrl": "https://example.com/avatar.jpg"
 }
 
@@ -159,7 +159,10 @@ Content-Type: application/json
   "name": "Test Project",
   "description": "A test project",
   "key": "TEST",
-  "teamId": "{{teamId}}"
+  "teamId": "{{teamId}}",
+  "clientName": "Test Client",
+  "startDate": "2025-01-01",
+  "endDate": "2025-12-31"
 }
 
 ###
@@ -180,7 +183,10 @@ Content-Type: application/json
 
 {
   "name": "Updated Project",
-  "description": "Updated description"
+  "description": "Updated description",
+  "clientName": "Test Client",
+  "startDate": "2025-01-01",
+  "endDate": "2025-12-31"
 }
 
 ###
@@ -268,6 +274,24 @@ Content-Type: application/json
 
 ###
 
+# Test issue creation with sprint assignment
+POST http://localhost:8080/api/issues
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+  "title": "Test Issue with Sprint",
+  "description": "A test issue assigned to a sprint",
+  "projectId": "{{projectId}}",
+  "priority": "P3",
+  "issueType": "TASK",
+  "sprintId": "{{sprintId}}",
+  "assigneeId": "{{userId}}",
+  "storyPoints": 5
+}
+
+###
+
 POST http://localhost:8080/api/issues
 Authorization: Bearer {{authToken}}
 Content-Type: application/json
@@ -308,6 +332,41 @@ Content-Type: application/json
   "priority": "P1",
   "issueType": "STORY"
 }
+
+###
+
+# Test issue update with sprint assignment
+PUT http://localhost:8080/api/issues/{{issueId}}
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+  "title": "Updated Issue with Sprint",
+  "description": "Updated description with sprint assignment",
+  "priority": "P2",
+  "issueType": "TASK",
+  "sprintId": "{{sprintId}}"
+}
+
+###
+
+# Test sprint update
+PUT http://localhost:8080/api/sprints/{{sprintId}}
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+  "name": "Updated Sprint Name",
+  "goal": "Updated sprint goal",
+  "startDate": "2025-01-01T00:00:00Z",
+  "endDate": "2025-01-15T00:00:00Z"
+}
+
+###
+
+# Test sprint delete (will move all issues to backlog)
+DELETE http://localhost:8080/api/sprints/{{sprintId}}
+Authorization: Bearer {{authToken}}
 
 ###
 
@@ -649,6 +708,42 @@ Authorization: Bearer {{authToken}}
 
 # Get attachments by message ID
 GET http://localhost:8080/api/attachments/message/{{messageId}}
+Authorization: Bearer {{authToken}}
+
+###
+
+
+
+# Test Project API Performance
+
+# Project fetch (detailed, includes all members)
+GET http://localhost:8080/api/projects/6bee79f8-1e07-428b-9f18-3d9f81553b8c
+Authorization: Bearer {{authToken}}
+
+###
+
+# Simple project fetch (fast, no creator info)
+GET http://localhost:8080/api/projects/6bee79f8-1e07-428b-9f18-3d9f81553b8c/simple
+Authorization: Bearer {{authToken}}
+
+###
+
+# Project list (fast, no creator info)
+GET http://localhost:8080/api/projects
+Authorization: Bearer {{authToken}}
+
+###
+
+# Test User API Performance
+
+# Get user detailed info (slower, includes all members)
+GET http://localhost:8080/api/users/210f3b58-3e9f-46eb-a833-10e9ee7a1bc5
+Authorization: Bearer {{authToken}}
+
+###
+
+# Get user minimal info (fast)
+GET http://localhost:8080/api/users/210f3b58-3e9f-46eb-a833-10e9ee7a1bc5/minimal
 Authorization: Bearer {{authToken}}
 
 ###

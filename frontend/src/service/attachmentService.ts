@@ -104,6 +104,15 @@ export const getByMessageId = async (messageId: string): Promise<Attachment[]> =
   return res.data;
 };
 
+// Get all attachments by project ID
+export const getAllAttachmentsByProjectId = async (projectId: string): Promise<Attachment[]> => {
+  const res = await axios.get(
+    `${baseUrl}/project/${projectId}`,
+    addReqToken(localStorage.getItem("token"))
+  );
+  return res.data;
+};
+
 // Download file
 export const downloadFile = async (attachment: Attachment) => {
   const downloadUrl = await getDownloadUrl(attachment.filePath);
@@ -117,6 +126,25 @@ export const downloadFile = async (attachment: Attachment) => {
   document.body.removeChild(link);
 };
 
+// Create attachment record in database
+export const createAttachment = async (attachmentData: {
+  fileName: string;
+  fileType: string;
+  fileSize: number;
+  filePath: string;
+  projectId?: string;
+  issueId?: string;
+  commentId?: string;
+  messageId?: string;
+}): Promise<Attachment> => {
+  const res = await axios.post(
+    `${baseUrl}`,
+    attachmentData,
+    addReqToken(localStorage.getItem("token"))
+  );
+  return res.data.result;
+};
+
 export default {
   getPresignedUrl,
   getDownloadUrl,
@@ -125,5 +153,7 @@ export default {
   getByCommentId,
   getByIssueId,
   getByMessageId,
+  getAllAttachmentsByProjectId,
+  createAttachment,
   downloadFile,
 }; 

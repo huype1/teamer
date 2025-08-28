@@ -62,6 +62,18 @@ class WebSocketService {
 
   connect(): Promise<void> {
     return new Promise((resolve, reject) => {
+      // Nếu đã connected thì return ngay
+      if (this.isConnected && this.stompClient) {
+        resolve();
+        return;
+      }
+
+      // Nếu đang connecting thì đợi
+      if (this.stompClient && !this.isConnected) {
+        this.onConnectCallbacks.push(() => resolve());
+        return;
+      }
+
       try {
         const baseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/api';
         this.stompClient = new Client({
@@ -69,7 +81,7 @@ class WebSocketService {
           debug: () => {
             // Disable debug logging
           },
-          reconnectDelay: 5000,
+          reconnectDelay: 10000, // Tăng delay để giảm spam
           heartbeatIncoming: 4000,
           heartbeatOutgoing: 4000,
         });
@@ -113,13 +125,14 @@ class WebSocketService {
   private attemptReconnect(): void {
     if (this.reconnectAttempts < this.maxReconnectAttempts) {
       this.reconnectAttempts++;
+      console.log(`Attempting to reconnect WebSocket (${this.reconnectAttempts}/${this.maxReconnectAttempts})`);
       setTimeout(() => {
-        this.connect().catch(() => {
-          // Reconnection failed, will try again
+        this.connect().catch((error) => {
+          console.error('Reconnection failed:', error);
         });
-      }, 2000 * this.reconnectAttempts);
+      }, 5000 * this.reconnectAttempts); // Tăng delay để giảm spam
     } else {
-      console.error('Max reconnection attempts reached');
+      console.error('Max reconnection attempts reached, stopping reconnection');
     }
   }
 

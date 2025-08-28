@@ -13,6 +13,7 @@ import org.springframework.stereotype.Service;
 import com.example.backend.dto.request.UserCreationRequest;
 import com.example.backend.dto.request.UserUpdateRequest;
 import com.example.backend.dto.response.UserResponse;
+import com.example.backend.dto.response.UserMinimalResponse;
 import com.example.backend.dto.response.ProjectMemberResponse;
 import com.example.backend.dto.response.TeamMemberResponse;
 import com.example.backend.entity.User;
@@ -47,6 +48,7 @@ public class UserService {
             user.setAvatarUrl(
                     "https://media.istockphoto.com/id/1495088043/vector/user-profile-icon-avatar-or-person-icon-profile-picture-portrait-symbol-default-portrait.jpg?s=612x612&w=0&k=20&c=dhV2p1JwmloBTOaGAtaA3AW1KSnjsdMt7-U_3EZElZ0=");
         }
+        // Bio field sẽ được set tự động từ UserCreationRequest thông qua mapper
 
         try {
             user = userRepository.save(user);
@@ -115,6 +117,7 @@ public class UserService {
                 .email(user.getEmail())
                 .name(user.getName())
                 .avatarUrl(user.getAvatarUrl())
+                .bio(user.getBio())
                 .provider(user.getProvider())
                 .teamMembers(teamMembers)
                 .projectMembers(projectMembers)
@@ -146,10 +149,14 @@ public class UserService {
     public UserResponse updateUser(UUID userId, UserUpdateRequest request) {
         User user = userRepository.findById(userId).orElseThrow(() -> new AppException(ErrorCode.NOT_FOUND));
         userMapper.updateUser(user, request);
-        if (request.getPassword() != null) {
-            user.setPassword(passwordEncoder.encode(request.getPassword()));
-        }
+        // Note: UserUpdateRequest không có password field, chỉ có name, bio, avatarUrl
         return userMapper.toUserResponse(userRepository.save(user));
+    }
+
+    public UserMinimalResponse getUserMinimal(UUID id) {
+        User user = userRepository.findById(id)
+                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
+        return userMapper.toUserMinimalResponse(user);
     }
 
     public UserResponse getUser(UUID id) {

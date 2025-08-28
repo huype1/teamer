@@ -2,6 +2,8 @@ package com.example.backend.controller;
 
 import com.example.backend.entity.Attachment;
 import com.example.backend.service.AttachmentService;
+import com.example.backend.dto.request.AttachmentCreationRequest;
+import com.example.backend.dto.response.ApiResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
@@ -32,6 +34,11 @@ public class AttachmentController {
         return attachmentService.getByMessageId(messageId);
     }
 
+    @GetMapping("/project/{projectId}")
+    public List<Attachment> getByProject(@PathVariable UUID projectId) {
+        return attachmentService.getByProjectId(projectId);
+    }
+
     @PostMapping("/presigned-url")
     public Map<String, String> getPresignedUrl(@RequestBody PresignedUrlRequest request) {
         return attachmentService.generatePresignedUrl(request);
@@ -45,5 +52,14 @@ public class AttachmentController {
         Map<String, String> result = new HashMap<>();
         result.put("downloadUrl", downloadUrl);
         return result;
+    }
+
+    @PostMapping
+    public ApiResponse<Attachment> createAttachment(@RequestBody AttachmentCreationRequest request) {
+        Attachment attachment = attachmentService.createAttachmentFromRequest(request);
+        return ApiResponse.<Attachment>builder()
+                .message("Attachment created successfully")
+                .result(attachment)
+                .build();
     }
 } 

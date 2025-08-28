@@ -1,399 +1,278 @@
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { 
+  Dialog, 
+  DialogContent, 
+  DialogHeader, 
+  DialogTitle, 
+  DialogFooter 
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Edit, Trash2, Calendar, Target } from "lucide-react";
 import { useForm } from "react-hook-form";
-import { toastError, toastSuccess } from "@/utils/toast";
+import { toastSuccess, toastError } from "@/utils/toast";
 import sprintService from "@/service/sprintService";
 import type { Sprint } from "@/types/sprint";
-import { Play, Square, Edit, Trash2, Plus } from "lucide-react";
-import { z } from "zod";
-import { zodResolver } from "@hookform/resolvers/zod";
 
 interface SprintManagementProps {
-  projectId: string;
-  sprints: Sprint[];
-  onSprintUpdate: () => void;
-  canManageSprint: boolean;
+  sprint: Sprint;
+  onSprintUpdated: () => void;
+  onSprintDeleted: () => void;
+  canManageSprint?: boolean;
 }
 
-const sprintSchema = z.object({
-  name: z.string().min(1, "Tên sprint không được để trống"),
-  goal: z.string().optional(),
-  startDate: z.string().optional(),
-  endDate: z.string().optional(),
-}).refine(
-  (data) => {
-    if (data.startDate && data.endDate) {
-      return new Date(data.startDate) <= new Date(data.endDate);
-    }
-    return true;
-  },
-  {
-    message: "Ngày bắt đầu phải trước hoặc bằng ngày kết thúc",
-    path: ["startDate"],
-  }
-);
+interface SprintFormData {
+  name: string;
+  goal: string;
+  startDate: string;
+  endDate: string;
+}
 
 const SprintManagement: React.FC<SprintManagementProps> = ({
-  projectId,
-  sprints,
-  onSprintUpdate,
-  canManageSprint
+  sprint,
+  onSprintUpdated,
+  onSprintDeleted,
+  canManageSprint = false
 }) => {
-  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
-  const [selectedSprint, setSelectedSprint] = useState<Sprint | null>(null);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  const { register, handleSubmit, reset, setValue, formState: { errors } } = useForm({
-    resolver: zodResolver(sprintSchema),
+  const { register, handleSubmit, reset, formState: { errors } } = useForm<SprintFormData>({
     defaultValues: {
-      name: "",
-      goal: "",
-      startDate: "",
-      endDate: "",
-    },
+      name: sprint.name,
+      goal: sprint.goal || "",
+      startDate: sprint.startDate ? new Date(sprint.startDate).toISOString().split('T')[0] : "",
+      endDate: sprint.endDate ? new Date(sprint.endDate).toISOString().split('T')[0] : "",
+    }
   });
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case "ACTIVE":
-        return "bg-green-100 text-green-800";
-      case "PLANNING":
-        return "bg-blue-100 text-blue-800";
-      case "COMPLETED":
-        return "bg-gray-100 text-gray-800";
-      case "CANCELLED":
-        return "bg-red-100 text-red-800";
-      default:
-        return "bg-gray-100 text-gray-800";
-    }
-  };
-
-  const getStatusLabel = (status: string) => {
-    switch (status) {
-      case "ACTIVE":
-        return "Đang chạy";
-      case "PLANNING":
-        return "Đã lên kế hoạch";
-      case "COMPLETED":
-        return "Đã hoàn thành";
-      case "CANCELLED":
-        return "Hủy";
-      default:
-        return status;
-    }
-  };
-
-  const onCreateSprint = async (data: { name: string; goal: string; startDate: string; endDate: string }) => {
-    setLoading(true);
+  const handleEditSubmit = async (data: SprintFormData) => {
     try {
-      await sprintService.createSprint({
+      setLoading(true);
+      await sprintService.updateSprint(sprint.id, {
         name: data.name,
         goal: data.goal || undefined,
-        startDate: data.startDate || undefined,
-        endDate: data.endDate || undefined,
-        projectId: projectId
-      });
-      toastSuccess("Tạo sprint thành công!");
-      setIsCreateDialogOpen(false);
-      reset();
-      onSprintUpdate();
-    } catch (error) {
-      toastError("Tạo sprint thất bại!");
-      console.error("Error creating sprint:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const onUpdateSprint = async (data: { name: string; goal: string; startDate: string; endDate: string }) => {
-    if (!selectedSprint) return;
-    setLoading(true);
-    try {
-      await sprintService.updateSprint(selectedSprint.id, {
-        name: data.name,
-        goal: data.goal || undefined,
-        startDate: data.startDate || undefined,
-        endDate: data.endDate || undefined,
+        startDate: data.startDate ? new Date(data.startDate).toISOString() : undefined,
+        endDate: data.endDate ? new Date(data.endDate).toISOString() : undefined,
       });
       toastSuccess("Cập nhật sprint thành công!");
       setIsEditDialogOpen(false);
-      setSelectedSprint(null);
-      reset();
-      onSprintUpdate();
+      onSprintUpdated();
     } catch (error) {
-      toastError("Cập nhật sprint thất bại!");
       console.error("Error updating sprint:", error);
+      toastError("Cập nhật sprint thất bại!");
     } finally {
       setLoading(false);
     }
   };
 
-  const handleStartSprint = async (sprintId: string) => {
+  const handleDeleteConfirm = async () => {
     try {
-      await sprintService.startSprint(sprintId);
-      toastSuccess("Cập nhật trạng thái sprint thành công!");
-      onSprintUpdate();
+      setLoading(true);
+      await sprintService.deleteSprint(sprint.id);
+      toastSuccess("Xóa sprint thành công! Tất cả issues đã được chuyển về backlog.");
+      setIsDeleteDialogOpen(false);
+      onSprintDeleted();
     } catch (error) {
-      toastError("Bắt đầu sprint thất bại!");
-      console.error("Error starting sprint:", error);
-    }
-  };
-
-  const handleEndSprint = async (sprintId: string) => {
-    try {
-      await sprintService.endSprint(sprintId);
-      toastSuccess("Cập nhật trạng thái sprint thành công!");
-      onSprintUpdate();
-    } catch (error) {
-      toastError("Kết thúc sprint thất bại!");
-      console.error("Error ending sprint:", error);
-    }
-  };
-
-  const handleDeleteSprint = async (sprintId: string) => {
-    if (!window.confirm('Bạn có chắc chắn muốn xóa sprint này?')) return;
-    try {
-      await sprintService.deleteSprint(sprintId);
-      toastSuccess("Xóa sprint thành công!");
-      onSprintUpdate();
-    } catch (error) {
-      toastError("Xóa sprint thất bại!");
       console.error("Error deleting sprint:", error);
+      toastError("Xóa sprint thất bại!");
+    } finally {
+      setLoading(false);
     }
   };
 
-  const handleEditSprint = (sprint: Sprint) => {
-    setSelectedSprint(sprint);
-    setValue("name", sprint.name);
-    setValue("goal", sprint.goal || "");
-    setValue("startDate", sprint.startDate ? sprint.startDate.split('T')[0] : "");
-    setValue("endDate", sprint.endDate ? sprint.endDate.split('T')[0] : "");
+  const openEditDialog = () => {
+    reset({
+      name: sprint.name,
+      goal: sprint.goal || "",
+      startDate: sprint.startDate ? new Date(sprint.startDate).toISOString().split('T')[0] : "",
+      endDate: sprint.endDate ? new Date(sprint.endDate).toISOString().split('T')[0] : "",
+    });
     setIsEditDialogOpen(true);
   };
 
-  const activeSprint = sprints.find(s => s.status === "ACTIVE");
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case "PLANNING": return "bg-blue-100 text-blue-800";
+      case "ACTIVE": return "bg-green-100 text-green-800";
+      case "COMPLETED": return "bg-gray-100 text-gray-800";
+      case "CANCELLED": return "bg-red-100 text-red-800";
+      default: return "bg-gray-100 text-gray-800";
+    }
+  };
+
+  const getStatusText = (status: string) => {
+    switch (status) {
+      case "PLANNING": return "Lập kế hoạch";
+      case "ACTIVE": return "Đang hoạt động";
+      case "COMPLETED": return "Hoàn thành";
+      case "CANCELLED": return "Đã hủy";
+      default: return status;
+    }
+  };
 
   return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <h3 className="text-lg font-semibold">Quản lý Sprint</h3>
-        {canManageSprint && (
-          <Button onClick={() => setIsCreateDialogOpen(true)} size="sm">
-            <Plus className="h-4 w-4 mr-2" />
-            Tạo Sprint
-          </Button>
-        )}
-      </div>
-
-      {/* Active Sprint */}
-      {activeSprint && (
-        <Card className="border-green-200 bg-green-50">
-          <CardHeader>
-            <CardTitle className="flex items-center justify-between">
-              <span className="text-green-800">Sprint đang chạy</span>
-              <Badge className="bg-green-100 text-green-800">Đang chạy</Badge>
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-2">
-              <h4 className="font-medium">{activeSprint.name}</h4>
-              {activeSprint.goal && (
-                <p className="text-sm text-muted-foreground">{activeSprint.goal}</p>
-              )}
-              <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                {activeSprint.startDate && (
-                  <span>Bắt đầu: {new Date(activeSprint.startDate).toLocaleDateString('vi-VN')}</span>
-                )}
-                {activeSprint.endDate && (
-                  <span>Kết thúc: {new Date(activeSprint.endDate).toLocaleDateString('vi-VN')}</span>
-                )}
+    <>
+      <Card className="hover:shadow-md transition-shadow">
+        <CardHeader className="pb-3">
+          <div className="flex items-center justify-between">
+            <CardTitle className="text-lg">{sprint.name}</CardTitle>
+                           <div className="flex items-center space-x-2">
+                 <span className={`px-2 py-1 text-xs font-medium rounded-full ${getStatusColor(sprint.status)}`}>
+                   {getStatusText(sprint.status)}
+                 </span>
+                 {canManageSprint && (
+                   <div className="flex items-center space-x-1">
+                     <Button
+                       variant="ghost"
+                       size="sm"
+                       onClick={openEditDialog}
+                       className="h-8 w-8 p-0"
+                     >
+                       <Edit className="h-4 w-4" />
+                     </Button>
+                     <Button
+                       variant="ghost"
+                       size="sm"
+                       onClick={() => setIsDeleteDialogOpen(true)}
+                       className="h-8 w-8 p-0 text-red-600 hover:text-red-700"
+                     >
+                       <Trash2 className="h-4 w-4" />
+                     </Button>
+                   </div>
+                 )}
+               </div>
+          </div>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          {sprint.goal && (
+            <div className="flex items-start space-x-2">
+              <Target className="h-4 w-4 mt-0.5 text-muted-foreground" />
+              <p className="text-sm text-muted-foreground">{sprint.goal}</p>
+            </div>
+          )}
+          
+          <div className="flex items-center space-x-4 text-sm text-muted-foreground">
+            {sprint.startDate && (
+              <div className="flex items-center space-x-1">
+                <Calendar className="h-4 w-4" />
+                <span>
+                  {new Date(sprint.startDate).toLocaleDateString('vi-VN')}
+                  {sprint.endDate && ` - ${new Date(sprint.endDate).toLocaleDateString('vi-VN')}`}
+                </span>
               </div>
-              {canManageSprint && (
-                <div className="flex gap-2 mt-3">
-                  <Button 
-                    size="sm" 
-                    variant="outline"
-                    onClick={() => handleEditSprint(activeSprint)}
-                  >
-                    <Edit className="h-4 w-4 mr-1" />
-                    Chỉnh sửa
-                  </Button>
-                  <Button 
-                    size="sm" 
-                    variant="outline"
-                    onClick={() => handleEndSprint(activeSprint.id)}
-                  >
-                    <Square className="h-4 w-4 mr-1" />
-                    Kết thúc
-                  </Button>
-                </div>
-              )}
-            </div>
-          </CardContent>
-        </Card>
-      )}
+            )}
+          </div>
+        </CardContent>
+      </Card>
 
-      {/* Other Sprints */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-        {sprints
-          .filter(sprint => sprint.status !== "ACTIVE")
-          .map((sprint) => (
-            <Card key={sprint.id}>
-              <CardHeader>
-                <CardTitle className="flex items-center justify-between">
-                  <span className="text-sm">{sprint.name}</span>
-                  <Badge className={`text-xs ${getStatusColor(sprint.status)}`}>
-                    {getStatusLabel(sprint.status)}
-                  </Badge>
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-2">
-                  {sprint.goal && (
-                    <p className="text-xs text-muted-foreground line-clamp-2">{sprint.goal}</p>
-                  )}
-                  <div className="flex items-center gap-4 text-xs text-muted-foreground">
-                    {sprint.startDate && (
-                      <span>Bắt đầu: {new Date(sprint.startDate).toLocaleDateString('vi-VN')}</span>
-                    )}
-                    {sprint.endDate && (
-                      <span>Kết thúc: {new Date(sprint.endDate).toLocaleDateString('vi-VN')}</span>
-                    )}
-                  </div>
-                  {canManageSprint && (
-                    <div className="flex gap-1 mt-3">
-                      {sprint.status === "PLANNING" && (
-                        <Button 
-                          size="sm" 
-                          variant="outline"
-                          onClick={() => handleStartSprint(sprint.id)}
-                        >
-                          <Play className="h-3 w-3 mr-1" />
-                          Bắt đầu
-                        </Button>
-                      )}
-                      <Button 
-                        size="sm" 
-                        variant="outline"
-                        onClick={() => handleEditSprint(sprint)}
-                      >
-                        <Edit className="h-3 w-3 mr-1" />
-                      </Button>
-                      <Button 
-                        size="sm" 
-                        variant="outline"
-                        onClick={() => handleDeleteSprint(sprint.id)}
-                      >
-                        <Trash2 className="h-3 w-3 mr-1" />
-                      </Button>
-                    </div>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-      </div>
-
-      {/* Create Sprint Dialog */}
-      <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Tạo Sprint mới</DialogTitle>
-          </DialogHeader>
-          <form onSubmit={handleSubmit(onCreateSprint as any)} className="space-y-4">
-            <div>
-              <Input
-                placeholder="Tên sprint"
-                {...register("name")}
-              />
-              {errors.name && <span className="text-xs text-red-500">{errors.name.message}</span>}
-            </div>
-            <div>
-              <Textarea
-                placeholder="Mục tiêu sprint (tùy chọn)"
-                {...register("goal")}
-              />
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Input
-                  type="date"
-                  placeholder="Ngày bắt đầu"
-                  {...register("startDate")}
-                />
-                {errors.startDate && <span className="text-xs text-red-500">{errors.startDate.message}</span>}
-              </div>
-              <div>
-                <Input
-                  type="date"
-                  placeholder="Ngày kết thúc"
-                  {...register("endDate")}
-                />
-                {errors.endDate && <span className="text-xs text-red-500">{errors.endDate.message}</span>}
-              </div>
-            </div>
-            <DialogFooter>
-              <Button type="submit" disabled={loading}>
-                {loading ? "Đang tạo..." : "Tạo Sprint"}
-              </Button>
-            </DialogFooter>
-          </form>
-        </DialogContent>
-      </Dialog>
-
-      {/* Edit Sprint Dialog */}
+      {/* Edit Dialog */}
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Chỉnh sửa Sprint</DialogTitle>
           </DialogHeader>
-          <form onSubmit={handleSubmit(onUpdateSprint as any)} className="space-y-4">
+          
+          <form onSubmit={handleSubmit(handleEditSubmit)} className="space-y-4">
             <div>
+              <Label htmlFor="name">Tên Sprint *</Label>
               <Input
-                placeholder="Tên sprint"
-                {...register("name")}
+                id="name"
+                {...register("name", { required: "Tên sprint là bắt buộc" })}
+                placeholder="Nhập tên sprint"
               />
-              {errors.name && <span className="text-xs text-red-500">{errors.name.message}</span>}
+              {errors.name && (
+                <p className="text-sm text-red-500 mt-1">{errors.name.message}</p>
+              )}
             </div>
+            
             <div>
+              <Label htmlFor="goal">Mục tiêu</Label>
               <Textarea
-                placeholder="Mục tiêu sprint (tùy chọn)"
+                id="goal"
                 {...register("goal")}
+                placeholder="Nhập mục tiêu sprint (tùy chọn)"
+                rows={3}
               />
             </div>
+            
             <div className="grid grid-cols-2 gap-4">
               <div>
+                <Label htmlFor="startDate">Ngày bắt đầu</Label>
                 <Input
+                  id="startDate"
                   type="date"
-                  placeholder="Ngày bắt đầu"
                   {...register("startDate")}
                 />
-                {errors.startDate && <span className="text-xs text-red-500">{errors.startDate.message}</span>}
               </div>
               <div>
+                <Label htmlFor="endDate">Ngày kết thúc</Label>
                 <Input
+                  id="endDate"
                   type="date"
-                  placeholder="Ngày kết thúc"
                   {...register("endDate")}
                 />
-                {errors.endDate && <span className="text-xs text-red-500">{errors.endDate.message}</span>}
               </div>
             </div>
+            
             <DialogFooter>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setIsEditDialogOpen(false)}
+                disabled={loading}
+              >
+                Hủy
+              </Button>
               <Button type="submit" disabled={loading}>
-                {loading ? "Đang cập nhật..." : "Cập nhật Sprint"}
+                {loading ? "Đang cập nhật..." : "Cập nhật"}
               </Button>
             </DialogFooter>
           </form>
         </DialogContent>
       </Dialog>
-    </div>
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Xác nhận xóa Sprint</DialogTitle>
+          </DialogHeader>
+          
+          <div className="space-y-4">
+            <p className="text-sm text-muted-foreground">
+              Bạn có chắc chắn muốn xóa sprint <strong>"{sprint.name}"</strong> không?
+            </p>
+            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
+              <p className="text-sm text-yellow-800">
+                <strong>Lưu ý:</strong> Tất cả issues trong sprint này sẽ được chuyển về backlog.
+              </p>
+            </div>
+          </div>
+          
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setIsDeleteDialogOpen(false)}
+              disabled={loading}
+            >
+              Hủy
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={handleDeleteConfirm}
+              disabled={loading}
+            >
+              {loading ? "Đang xóa..." : "Xóa Sprint"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 };
 

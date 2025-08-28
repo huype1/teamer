@@ -6,13 +6,16 @@ export interface Project {
   description: string;
   avatarUrl: string | null;
   key: string;
+  clientName?: string;
+  startDate?: string;
+  endDate?: string;
   isPublic?: boolean;
   createdAt: string;
   updatedAt: string;
   teamId: string;
   chatId: string;
   chat?: Chat;
-  creator: {
+  creator?: {
     id: string;
     email: string;
     name: string;
@@ -32,11 +35,17 @@ export interface ProjectCreationRequest {
   teamId: string;
   avatarUrl: string;
   isPublic: boolean;
+  clientName?: string;
+  startDate?: string;
+  endDate?: string;
 }
 
 export interface ProjectUpdateRequest {
   name?: string;
   description?: string;
+  clientName?: string;
+  startDate?: string;
+  endDate?: string;
 }
 
 export interface ProjectMember {

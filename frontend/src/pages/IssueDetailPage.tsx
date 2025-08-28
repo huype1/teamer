@@ -193,6 +193,7 @@ const IssueDetailPage: React.FC = () => {
           setProjectUsers(usersRes.result || []);
           setSprints(sprintsRes.result || []);
           const membersRes = await ProjectService.getProjectMembers(issueRes.result.projectId);
+          console.log('Project members:', membersRes.result);
           setProjectMembers(membersRes.result || []);
         } catch (sprintError) {
           console.error("Lỗi khi lấy dữ liệu sprint:", sprintError);
@@ -204,7 +205,10 @@ const IssueDetailPage: React.FC = () => {
       setComments(commentsRes.result || []);
       
       if (issueRes.result.subtasks && issueRes.result.subtasks.length > 0) {
-        setSubtasks(issueRes.result.subtasks.map(mapIssue));
+        const mappedSubtasks = issueRes.result.subtasks.map(mapIssue);
+        console.log('Raw subtasks from API:', issueRes.result.subtasks);
+        console.log('Mapped subtasks:', mappedSubtasks);
+        setSubtasks(mappedSubtasks);
       }
     } catch (error) {
       console.error("Lỗi khi lấy dữ liệu issue:", error);
@@ -583,12 +587,59 @@ const IssueDetailPage: React.FC = () => {
                       allIssues={subtasks}
                       projectMembers={projectMembers}
                       sprints={sprints}
-                      onStatusChange={() => {}}
-                      onPriorityChange={() => {}}
-                      onIssueTypeChange={() => {}}
-                      onAssigneeChange={() => {}}
-                      canEditIssue={() => false}
-                      canChangeStatus={() => false}
+                      onStatusChange={async (issueId, newStatus) => {
+                        try {
+                          await issueService.updateIssueStatus(issueId, newStatus);
+                          toastSuccess("Cập nhật trạng thái subtask thành công!");
+                          fetchIssueData(); // Refresh data
+                        } catch (error) {
+                          toastError("Cập nhật trạng thái subtask thất bại!");
+                          console.error("Lỗi khi cập nhật trạng thái subtask:", error);
+                        }
+                      }}
+                      onPriorityChange={async (issueId, newPriority) => {
+                        try {
+                          await issueService.updateIssue(issueId, { priority: newPriority });
+                          toastSuccess("Cập nhật độ ưu tiên subtask thành công!");
+                          fetchIssueData(); // Refresh data
+                        } catch (error) {
+                          toastError("Cập nhật độ ưu tiên subtask thất bại!");
+                          console.error("Lỗi khi cập nhật độ ưu tiên subtask:", error);
+                        }
+                      }}
+                      onIssueTypeChange={async (issueId, newIssueType) => {
+                        try {
+                          await issueService.updateIssue(issueId, { issueType: newIssueType });
+                          toastSuccess("Cập nhật loại issue thành công!");
+                          fetchIssueData(); // Refresh data
+                        } catch (error) {
+                          toastError("Cập nhật loại issue thất bại!");
+                          console.error("Lỗi khi cập nhật loại issue:", error);
+                        }
+                      }}
+                      onAssigneeChange={async (issueId, assigneeId) => {
+                        try {
+                          await issueService.setAssignee(issueId, assigneeId === "unassigned" ? '' : assigneeId);
+                          toastSuccess("Cập nhật người được giao subtask thành công!");
+                          fetchIssueData(); // Refresh data
+                        } catch (error) {
+                          toastError("Cập nhật người được giao subtask thất bại!");
+                          console.error("Lỗi khi cập nhật người được giao subtask:", error);
+                        }
+                      }}
+                      canEditIssue={(subtask) => {
+                        if (!user || !project) return false;
+                        const member = projectMembers.find(m => m.userId === user.id);
+                        return subtask.reporter?.id === user.id || member?.role === "ADMIN" || member?.role === "PM";
+                      }}
+                      canChangeStatus={(subtask) => {
+                        if (!user || !project) return false;
+                        return (
+                          subtask.assignee?.id === user.id ||
+                          subtask.reporter?.id === user.id ||
+                          isCurrentUserManager(user, project.id)
+                        );
+                      }}
                     />
                   </div>
                 </CardContent>

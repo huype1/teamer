@@ -24,7 +24,6 @@ const useAppSelector: TypedUseSelectorHook<RootState> = useSelector
 
 interface TopNavProps {
   variant?: "full" | "simple"
-  onSearch?: (query: string) => void
   onSettings?: () => void
   onNotifications?: () => void
   onCreate?: () => void
@@ -33,7 +32,6 @@ interface TopNavProps {
 
 export function TopNav({
   variant = "full",
-  onSearch,
   onLogout,
 }: TopNavProps) {
   const { setTheme } = useTheme()
@@ -45,7 +43,10 @@ export function TopNav({
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault()
-    onSearch?.(searchQuery)
+    if (searchQuery.trim()) {
+      navigate(`/search?q=${encodeURIComponent(searchQuery.trim())}`)
+      setSearchQuery("")
+    }
   }
 
   const getInitials = (name: string) => {
@@ -79,6 +80,11 @@ export function TopNav({
                 Loading email...
               </p>
             )}
+            {user?.bio && (
+              <p className="w-[180px] truncate text-xs text-muted-foreground mt-1">
+                {user.bio}
+              </p>
+            )}
             <div className="text-xs text-muted-foreground mt-1">
               {user?.projectMembers ? (
                 <p>Projects: {user.projectMembers.length}</p>
@@ -93,6 +99,9 @@ export function TopNav({
             </div>
           </div>
         </div>
+        <DropdownMenuItem onClick={() => navigate("/profile")}>
+          Hồ sơ cá nhân
+        </DropdownMenuItem>
         <DropdownMenuItem onClick={onLogout}>Log out</DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
@@ -128,47 +137,65 @@ export function TopNav({
 
         {variant === "full" && (
           <>
-            {/* Desktop Search Bar */}
-            <div className="hidden md:flex flex-1 max-w-sm mx-4 lg:mx-8">
-              <form onSubmit={handleSearch} className="relative w-full">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
-                <Input
-                  type="text"
-                  placeholder="Search..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-10 bg-muted/50 border-0 focus-visible:ring-1 focus-visible:ring-ring w-full"
-                />
-              </form>
-            </div>
+                         {/* Desktop Search Bar */}
+             <div className="hidden md:flex flex-1 max-w-sm mx-4 lg:mx-8">
+               <form onSubmit={handleSearch} className="relative w-full flex gap-2">
+                 <div className="relative flex-1">
+                   <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+                   <Input
+                     type="text"
+                     placeholder="Tìm kiếm..."
+                     value={searchQuery}
+                     onChange={(e) => setSearchQuery(e.target.value)}
+                     className="pl-10 bg-muted/50 border-0 focus-visible:ring-1 focus-visible:ring-ring w-full"
+                   />
+                 </div>
+                 <Button 
+                   type="submit" 
+                   className="bg-purple-600 hover:bg-purple-700 text-white px-3"
+                   disabled={!searchQuery.trim()}
+                 >
+                   <Search className="h-4 w-4" />
+                 </Button>
+               </form>
+             </div>
 
-            {/* Mobile Search Toggle */}
-            <div className="md:hidden">
-              {isSearchOpen ? (
-                <div className="absolute top-14 left-0 right-0 p-2 bg-background border-b z-40">
-                  <form onSubmit={handleSearch} className="relative">
-                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
-                    <Input
-                      type="text"
-                      placeholder="Search..."
-                      value={searchQuery}
-                      onChange={(e) => setSearchQuery(e.target.value)}
-                      className="pl-10 bg-muted/50 border-0 focus-visible:ring-1 focus-visible:ring-ring w-full"
-                      autoFocus
-                    />
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="icon"
-                      className="absolute right-2 top-1/2 transform -translate-y-1/2 h-6 w-6"
-                      onClick={() => setIsSearchOpen(false)}
-                    >
-                      <X className="h-4 w-4" />
-                    </Button>
-                  </form>
-                </div>
-              ) : null}
-            </div>
+                         {/* Mobile Search Toggle */}
+             <div className="md:hidden">
+               {isSearchOpen ? (
+                 <div className="absolute top-14 left-0 right-0 p-2 bg-background border-b z-40">
+                   <form onSubmit={handleSearch} className="relative flex gap-2">
+                     <div className="relative flex-1">
+                       <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+                       <Input
+                         type="text"
+                         placeholder="Tìm kiếm..."
+                         value={searchQuery}
+                         onChange={(e) => setSearchQuery(e.target.value)}
+                         className="pl-10 bg-muted/50 border-0 focus-visible:ring-1 focus-visible:ring-ring w-full"
+                         autoFocus
+                       />
+                     </div>
+                     <Button 
+                       type="submit" 
+                       className="bg-purple-600 hover:bg-purple-700 text-white px-3"
+                       disabled={!searchQuery.trim()}
+                     >
+                       <Search className="h-4 w-4" />
+                     </Button>
+                     <Button
+                       type="button"
+                       variant="ghost"
+                       size="icon"
+                       className="h-10 w-10"
+                       onClick={() => setIsSearchOpen(false)}
+                     >
+                       <X className="h-4 w-4" />
+                     </Button>
+                   </form>
+                 </div>
+               ) : null}
+             </div>
 
             {/* Desktop Actions */}
             <div className="hidden sm:flex items-center space-x-1 lg:space-x-2">

@@ -111,7 +111,7 @@ export const IssuesTable: React.FC<IssuesTableProps> = ({
       case "SUBTASK":
         return {
           icon: Zap,
-          color: "issue-type-task",
+          color: "issue-type-subtask",
           label: "Subtask"
         };
       case "BUG":
@@ -186,6 +186,7 @@ export const IssuesTable: React.FC<IssuesTableProps> = ({
                             <SelectContent>
                               <SelectItem value="STORY">Story</SelectItem>
                               <SelectItem value="TASK">Task</SelectItem>
+                              <SelectItem value="SUBTASK">Subtask</SelectItem>
                               <SelectItem value="BUG">Bug</SelectItem>
                             </SelectContent>
                           </Select>
@@ -246,23 +247,28 @@ export const IssuesTable: React.FC<IssuesTableProps> = ({
                         {issue.reporter?.name || "N/A"}
                       </td>
                       <td className="px-2 py-2">
-                        <Select 
-                          value={issue.assignee?.id || "unassigned"} 
-                          onValueChange={(value) => onAssigneeChange(issue.id, value)}
-                          disabled={!canEditIssue(issue)}
-                        >
-                          <SelectTrigger className="w-28 h-6 text-xs">
-                            <SelectValue placeholder="Chưa giao" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="unassigned">Chưa giao</SelectItem>
-                            {projectMembers?.filter(member => member.role !== "VIEWER" && member.user).map((member) => (
-                              <SelectItem key={member.userId} value={member.userId}>
-                                {member.user!.name}
-                              </SelectItem>
-                            )) || []}
-                          </SelectContent>
-                        </Select>
+                        {canEditIssue(issue) ? (
+                          <Select 
+                            value={issue.assignee?.id || "unassigned"} 
+                            onValueChange={(value) => onAssigneeChange(issue.id, value)}
+                          >
+                            <SelectTrigger className="w-28 h-6 text-xs">
+                              <SelectValue placeholder="Chưa giao" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="unassigned">Chưa giao</SelectItem>
+                              {projectMembers?.filter(member => member.role !== "VIEWER" && member.user).map((member) => (
+                                <SelectItem key={member.userId} value={member.userId}>
+                                  {member.user!.name}
+                                </SelectItem>
+                              )) || []}
+                            </SelectContent>
+                          </Select>
+                        ) : (
+                          <span className="text-xs truncate">
+                            {issue.assignee?.name || "Chưa giao"}
+                          </span>
+                        )}
                       </td>
                       <td className="px-2 py-2">
                         {canEditIssue(issue) && sprints && onSprintChange ? (

@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { User, Lock } from "lucide-react";
@@ -21,6 +22,7 @@ import { AvatarUpload } from "@/components/ui/avatar-upload";
 interface UserFormData {
   email: string;
   name: string;
+  bio?: string;
   avatarUrl?: string;
 }
 
@@ -37,6 +39,7 @@ const UserDetailPage: React.FC = () => {
     register,
     handleSubmit,
     setValue,
+    watch,
     formState: { errors },
     reset
   } = useForm<UserFormData>();
@@ -52,6 +55,7 @@ const UserDetailPage: React.FC = () => {
       setUserInfo(response.result);
       setValue("email", response.result.email);
       setValue("name", response.result.name);
+      setValue("bio", response.result.bio || "");
       setValue("avatarUrl", response.result.avatarUrl || "");
       setAvatarUrl(response.result.avatarUrl || "");
     } finally {
@@ -62,12 +66,25 @@ const UserDetailPage: React.FC = () => {
   const onSubmit = async (data: UserFormData) => {
     try {
       setUpdating(true);
-      const response = await updateMyInfo(data);
+      // Chỉ gửi những field có thể update
+      const updateData = {
+        name: data.name,
+        bio: data.bio,
+        avatarUrl: data.avatarUrl
+      };
+      const response = await updateMyInfo(updateData);
+      
+      // Cập nhật local state
       setUserInfo(response.result);
       setAvatarUrl(response.result.avatarUrl || "");
-      // Refetch user info in auth reducer
-      await dispatch(fetchUserInfo() as unknown as any).unwrap();
+      
+      // Cập nhật Redux state
+      await dispatch(fetchUserInfo() as any).unwrap();
+      
       toastSuccess("Cập nhật thông tin thành công!");
+    } catch (error) {
+      console.error("Error updating profile:", error);
+      toastError("Cập nhật thông tin thất bại!");
     } finally {
       setUpdating(false);
     }
@@ -144,6 +161,19 @@ const UserDetailPage: React.FC = () => {
         </CardHeader>
         <Separator />
         <CardContent className="pt-6">
+          {/* Hiển thị thông tin hiện tại */}
+          <div className="mb-6 p-4 bg-muted/50 rounded-lg">
+            <h3 className="font-medium mb-3">Thông tin hiện tại</h3>
+            <div className="space-y-2 text-sm">
+              <p><span className="font-medium">Email:</span> {userInfo.email}</p>
+              <p><span className="font-medium">Tên:</span> {userInfo.name}</p>
+              {userInfo.bio && (
+                <p><span className="font-medium">Giới thiệu:</span> {userInfo.bio}</p>
+              )}
+              <p><span className="font-medium">Ngày tạo:</span> {new Date(userInfo.createdAt).toLocaleDateString('vi-VN')}</p>
+            </div>
+          </div>
+
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
             <div>
               <Label htmlFor="email">Email</Label>
@@ -168,6 +198,31 @@ const UserDetailPage: React.FC = () => {
               {errors.name && (
                 <p className="text-red-500 text-sm mt-1">{errors.name.message}</p>
               )}
+            </div>
+
+            <div>
+              <Label htmlFor="bio">Giới thiệu bản thân</Label>
+              <Textarea
+                id="bio"
+                placeholder="Viết một vài dòng giới thiệu về bản thân..."
+                {...register("bio", { 
+                  maxLength: { 
+                    value: 1000, 
+                    message: "Giới thiệu không được quá 1000 ký tự" 
+                  } 
+                })}
+                className="mt-1"
+                disabled={updating}
+                rows={4}
+              />
+              <div className="flex justify-between items-center mt-1">
+                {errors.bio && (
+                  <p className="text-red-500 text-sm">{errors.bio.message}</p>
+                )}
+                <p className="text-xs text-muted-foreground ml-auto">
+                  {watch("bio")?.length || 0}/1000 ký tự
+                </p>
+              </div>
             </div>
 
             <div className="flex gap-2 mt-6">

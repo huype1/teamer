@@ -1,14 +1,11 @@
 package com.example.backend.dto.response;
 
-import com.example.backend.entity.User;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.experimental.FieldDefaults;
 
-import java.time.OffsetDateTime;
-import java.util.List;
 import java.util.UUID;
 
 import static lombok.AccessLevel.PRIVATE;
@@ -18,17 +15,10 @@ import static lombok.AccessLevel.PRIVATE;
 @NoArgsConstructor
 @AllArgsConstructor
 @FieldDefaults(level = PRIVATE)
-public class UserResponse {
+public class UserMinimalResponse {
     UUID id;
     String email;
     String name;
     String avatarUrl;
-    String bio;
     String provider;
-    List<ProjectMemberResponse> projectMembers;
-    List<TeamMemberResponse> teamMembers;
-    OffsetDateTime createdAt;
-    OffsetDateTime updatedAt;
 }
-
-

@@ -52,7 +52,7 @@ public class NotificationService {
                 .entityType(request.getEntityType())
                 .entityId(request.getEntityId())
                 .priority(request.getPriority())
-                .createdBy(JwtUtils.getSubjectFromJwt())
+                .createdBy(request.getCreatedBy() != null ? request.getCreatedBy() : JwtUtils.getSubjectFromJwt())
                 .build();
 
         Notification notification = notificationRepository.save(unsavedNotification);
@@ -141,6 +141,7 @@ public class NotificationService {
                 .entityType("ISSUE")
                 .entityId(issueId)
                 .priority("LOW")
+                .createdBy(currentUserId)
                 .build();
 
         createNotification(request);

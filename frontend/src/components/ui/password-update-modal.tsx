@@ -42,13 +42,10 @@ export const PasswordUpdateModal: React.FC<PasswordUpdateModalProps> = ({
 
   const onSubmit = async (data: PasswordUpdateFormData) => {
     try {
-      await updateMyInfo({
-        password: data.newPassword,
-      });
-      toastSuccess("Cập nhật mật khẩu thành công!");
+      // Tạm thời bỏ qua password update vì backend chưa support
+      toastError("Tính năng đổi mật khẩu chưa được hỗ trợ!");
       reset();
       onClose();
-      onSuccess?.();
     } catch (error) {
       toastError("Cập nhật mật khẩu thất bại!");
       console.error("Error updating password:", error);

@@ -1,18 +1,26 @@
 import React from "react";
 import { Link } from "react-router-dom";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import type { ProjectCreationRequest } from "@/types/project";
+import { Input } from "@/components/ui/input";
 
 interface ProjectHeaderProps {
   title?: string;
   showBackButton?: boolean;
+  showSearch?: boolean;
+  searchPlaceholder?: string;
+  searchValue?: string;
+  onSearchChange?: (value: string) => void;
   children?: React.ReactNode;
 }
 
 const ProjectHeader: React.FC<ProjectHeaderProps> = ({
   title = "Projects",
   showBackButton = false,
+  showSearch = false,
+  searchPlaceholder = "Tìm kiếm...",
+  searchValue = "",
+  onSearchChange,
   children
 }) => {
   return (
@@ -33,6 +41,17 @@ const ProjectHeader: React.FC<ProjectHeaderProps> = ({
         </div>
       </div>
       <div className="flex items-center space-x-2">
+        {showSearch && (
+          <div className="relative w-64">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder={searchPlaceholder}
+              value={searchValue}
+              onChange={(e) => onSearchChange?.(e.target.value)}
+              className="pl-10"
+            />
+          </div>
+        )}
         {children}
       </div>
     </div>

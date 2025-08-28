@@ -43,6 +43,8 @@ public class NotificationCreationRequest {
     @Size(max = 20, message = "Priority must not exceed 20 characters")
     private String priority = "NORMAL";
 
+    private UUID createdBy; // User tạo notification (optional, sẽ dùng JWT nếu null)
+
     // Constructor để backward compatibility với single user
     public NotificationCreationRequest(UUID userId, String title, String content, String link, String type, String entityType, UUID entityId, String priority) {
         this.userIds = List.of(userId);

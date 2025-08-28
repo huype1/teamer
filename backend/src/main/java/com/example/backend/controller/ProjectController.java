@@ -6,6 +6,7 @@ import com.example.backend.dto.request.ProjectUpdateRequest;
 import com.example.backend.dto.response.ApiResponse;
 import com.example.backend.dto.response.ProjectMemberResponse;
 import com.example.backend.dto.response.ProjectResponse;
+import com.example.backend.dto.response.ProjectSimpleResponse;
 import com.example.backend.dto.response.UserResponse;
 import com.example.backend.entity.*;
 import com.example.backend.exception.AppException;
@@ -43,7 +44,7 @@ public class ProjectController {
     TeamService teamService;
 
     @GetMapping
-    public ApiResponse<List<ProjectResponse>> getProjects(
+    public ApiResponse<List<ProjectSimpleResponse>> getProjects(
             @RequestParam(required = false) String keyword,
             @RequestParam(required = false, defaultValue = "false") boolean includePublic
 // Not neccessary because we are using JwtUtils to get userId
@@ -52,15 +53,15 @@ public class ProjectController {
         UUID userId = JwtUtils.getSubjectFromJwt();
         log.info("Fetching projects for user: {} with keyword: {}, includePublic: {}", userId, keyword, includePublic);
 
-        List<ProjectResponse> projects = projectService.searchProjects(keyword, userId);
+        List<ProjectSimpleResponse> projects = projectService.searchProjectsSimple(keyword, userId);
 
         if (includePublic) {
             List<Project> publicProjects = projectService.getPublicProjects();
-            List<ProjectResponse> publicProjectResponses = projectMapper.toResponseList(publicProjects);
+            List<ProjectSimpleResponse> publicProjectResponses = projectMapper.toSimpleResponseList(publicProjects);
             projects.addAll(publicProjectResponses);
         }
 
-        return ApiResponse.<List<ProjectResponse>>builder()
+        return ApiResponse.<List<ProjectSimpleResponse>>builder()
                 .message("Projects fetched successfully")
                 .result(projects)
                 .build();
@@ -71,17 +72,53 @@ public class ProjectController {
             @PathVariable("projectId") UUID projectId
     ) {
         UUID userId = JwtUtils.getSubjectFromJwt();
-        log.info("Fetching project: {} for user: {}", projectId, userId);
+        log.info("Fetching detailed project: {} for user: {}", projectId, userId);
 
-//        if (!projectService.isUserProjectMember(projectId, userId)) {
-//            throw new AppException(com.example.backend.exception.ErrorCode.UNAUTHORIZED);
-//        }
+        if (!projectService.isUserProjectMember(projectId, userId)) {
+            throw new AppException(com.example.backend.exception.ErrorCode.UNAUTHORIZED);
+        }
 
         Project project = projectService.getProjectById(projectId);
         ProjectResponse response = projectMapper.toResponse(project);
 
         return ApiResponse.<ProjectResponse>builder()
-                .message("Project fetched successfully")
+                .message("Project details fetched successfully")
+                .result(response)
+                .build();
+    }
+
+    @GetMapping("/{projectId}/simple")
+    public ApiResponse<ProjectSimpleResponse> getProjectSimpleById(
+            @PathVariable("projectId") UUID projectId
+    ) {
+        UUID userId = JwtUtils.getSubjectFromJwt();
+        log.info("Fetching simple project: {} for user: {}", projectId, userId);
+
+        Project project = projectService.getProjectById(projectId);
+        ProjectSimpleResponse response = projectMapper.toSimpleResponse(project);
+
+        return ApiResponse.<ProjectSimpleResponse>builder()
+                .message("Project simple info fetched successfully")
+                .result(response)
+                .build();
+    }
+
+    @GetMapping("/{projectId}/detailed")
+    public ApiResponse<ProjectResponse> getProjectDetailed(
+            @PathVariable("projectId") UUID projectId
+    ) {
+        UUID userId = JwtUtils.getSubjectFromJwt();
+        log.info("Fetching detailed project: {} for user: {}", projectId, userId);
+
+        if (!projectService.isUserProjectMember(projectId, userId)) {
+            throw new AppException(com.example.backend.exception.ErrorCode.UNAUTHORIZED);
+        }
+
+        Project project = projectService.getProjectById(projectId);
+        ProjectResponse response = projectMapper.toResponse(project);
+
+        return ApiResponse.<ProjectResponse>builder()
+                .message("Project details fetched successfully")
                 .result(response)
                 .build();
     }

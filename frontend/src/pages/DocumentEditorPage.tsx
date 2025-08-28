@@ -4,17 +4,22 @@ import Quill from "quill";
 import hljs from "highlight.js";
 import "quill/dist/quill.snow.css";
 import "highlight.js/styles/github.css";
+import { saveAs } from "file-saver";
+import { Document as DocxDocument, Packer, Paragraph, HeadingLevel, TextRun, ImageRun } from "docx";
 
 import { Button } from "@/components/ui/button";
-import { toastError } from "@/utils/toast";
+
+import { toastError, toastSuccess } from "@/utils/toast";
 import documentService from "@/service/documentService";
 import type { Document } from "@/types/document";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { useSelector } from "react-redux";
 import type { RootState } from "@/store";
-import { canEditItem } from "@/utils/permissionHelpers";
+import { canEditDocument } from "@/utils/permissionHelpers";
+import { FileDown } from "lucide-react";
 
-const SAVE_INTERVAL_MS = 3000;
+const SAVE_INTERVAL_MS = 10000; // Tăng lên 10s
+const CHANGE_DETECTION_INTERVAL_MS = 2000; // Kiểm tra thay đổi mỗi 2s
 const TOOLBAR_OPTIONS = [
   ["bold", "italic", "underline", "strike"],
   ["blockquote", "code-block"],
@@ -27,7 +32,6 @@ const TOOLBAR_OPTIONS = [
   [{ direction: "rtl" }],
 
   [{ size: ["small", false, "large", "huge"] }],
-  [{ header: [1, 2, 3, 4, 5, 6, false] }],
 
   [{ color: [] }, { background: [] }],
   [{ font: [] }],
@@ -41,12 +45,13 @@ const DocumentEditorPage = () => {
   const [documentData, setDocumentData] = useState<Document | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [exporting, setExporting] = useState(false);
   const { documentId } = useParams<{ documentId: string }>();
   const navigate = useNavigate();
   const { user } = useSelector((state: RootState) => state.auth);
 
   // Kiểm tra quyền edit
-  const canEdit = documentData ? canEditItem(user, documentData.creator.id) : false;
+  const canEdit = documentData ? canEditDocument(user, documentData.creator.id, documentData.projectId) : false;
 
   // Load document
   useEffect(() => {
@@ -69,17 +74,33 @@ const DocumentEditorPage = () => {
     loadDocument();
   }, [documentId, navigate]);
 
-  // Auto-save functionality - chỉ khi có quyền edit
+  // Auto-save functionality với change detection
   useEffect(() => {
     if (!quill || !documentId || !canEdit) return;
 
-    const interval = setInterval(async () => {
+    let lastContent = JSON.stringify(quill.getContents());
+    let hasChanges = false;
+
+    // Kiểm tra thay đổi mỗi 2s
+    const changeInterval = setInterval(() => {
+      const currentContent = JSON.stringify(quill.getContents());
+      if (currentContent !== lastContent) {
+        hasChanges = true;
+        lastContent = currentContent;
+      }
+    }, CHANGE_DETECTION_INTERVAL_MS);
+
+    // Lưu mỗi 10s nếu có thay đổi
+    const saveInterval = setInterval(async () => {
+      if (!hasChanges) return;
+      
       try {
         setSaving(true);
         const content = quill.getContents();
         await documentService.updateDocument(documentId, {
           content: JSON.stringify(content)
         });
+        hasChanges = false;
       } catch (error) {
         console.error("Auto-save failed:", error);
         toastError("Lưu tự động thất bại!");
@@ -88,7 +109,10 @@ const DocumentEditorPage = () => {
       }
     }, SAVE_INTERVAL_MS);
 
-    return () => clearInterval(interval);
+    return () => {
+      clearInterval(changeInterval);
+      clearInterval(saveInterval);
+    };
   }, [quill, documentId, canEdit]);
 
   // Initialize Quill editor
@@ -143,6 +167,133 @@ const DocumentEditorPage = () => {
     }
   };
 
+    // Enhanced Word export with images
+  const exportToWord = async () => {
+    if (!quill) return;
+
+    try {
+      setExporting(true);
+      const title = documentData?.title || 'document';
+      
+      // Get Quill content with formatting
+      const content = quill.getContents();
+      const paragraphs: any[] = [];
+      
+      // Add title
+      paragraphs.push(
+        new Paragraph({
+          text: title,
+          heading: HeadingLevel.HEADING_1,
+        })
+      );
+      
+      // Process content
+      if (content.ops) {
+        for (const op of content.ops as any[]) {
+          if (op.insert) {
+            if (typeof op.insert === 'string') {
+              // Text content
+              const textRun = new TextRun({
+                text: op.insert,
+                bold: op.attributes?.bold,
+                italics: op.attributes?.italic,
+                underline: op.attributes?.underline,
+              });
+              
+              paragraphs.push(
+                new Paragraph({
+                  children: [textRun],
+                })
+              );
+                         } else if (op.insert.image) {
+               // Handle real image embedding
+               const imageUrl = op.insert.image as string;
+               
+               try {
+                 let imageData: string | ArrayBuffer;
+                 
+                 if (imageUrl.startsWith('data:image/')) {
+                   // Handle base64 data URLs
+                   imageData = imageUrl;
+                 } else if (imageUrl.startsWith('http')) {
+                   // Handle external URLs - fetch and convert to base64
+                   const response = await fetch(imageUrl);
+                   const blob = await response.blob();
+                   const reader = new FileReader();
+                   imageData = await new Promise<string>((resolve) => {
+                     reader.onload = () => resolve(reader.result as string);
+                     reader.readAsDataURL(blob);
+                   });
+                 } else {
+                   // Skip unsupported image types
+                   paragraphs.push(
+                     new Paragraph({
+                       children: [
+                         new TextRun({
+                           text: "[Image: Unsupported format]",
+                           italics: true,
+                           color: "666666",
+                         })
+                       ],
+                     })
+                   );
+                   continue;
+                 }
+                 
+                 // Create image paragraph with proper sizing
+                 paragraphs.push(
+                   new Paragraph({
+                     children: [
+                       new ImageRun({
+                         data: imageData,
+                         transformation: {
+                           width: 400,
+                           height: 300,
+                         },
+                       }),
+                     ],
+                   })
+                 );
+               } catch (imageError) {
+                 console.error("Failed to process image:", imageError);
+                 // Fallback to text placeholder
+                 paragraphs.push(
+                   new Paragraph({
+                     children: [
+                       new TextRun({
+                         text: "[Image: Could not load]",
+                         italics: true,
+                         color: "666666",
+                       })
+                     ],
+                   })
+                 );
+               }
+             }
+          }
+        }
+      }
+      
+      const doc = new DocxDocument({
+        sections: [{
+          properties: {},
+          children: paragraphs,
+        }],
+      });
+      
+      const blob = await Packer.toBlob(doc);
+      saveAs(blob, `${title}.docx`);
+      toastSuccess("Tải về Word thành công!");
+    } catch (error) {
+      console.error("Export to Word failed:", error);
+      toastError("Tải về Word thất bại!");
+    } finally {
+      setExporting(false);
+    }
+  };
+
+
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-screen">
@@ -183,6 +334,18 @@ const DocumentEditorPage = () => {
                 {saving ? "Đang lưu..." : "Lưu"}
               </Button>
             )}
+            
+                                      <Button 
+               onClick={exportToWord}
+               disabled={exporting}
+               variant="ghost"
+               size="sm"
+               className="hover:cursor-pointer"
+             >
+               <FileDown className="h-4 w-4 mr-2" />
+               {exporting ? "Đang tải về..." : "Word"}
+             </Button>
+            
             <Button 
               onClick={() => navigate(-1)}
               variant="ghost"

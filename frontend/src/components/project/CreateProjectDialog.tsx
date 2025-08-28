@@ -32,7 +32,10 @@ const CreateProjectDialog: React.FC<CreateProjectDialogProps> = ({
     key: "",
     teamId: "",
     isPublic: false,
-    avatarUrl: ""
+    avatarUrl: "",
+    clientName: "",
+    startDate: "",
+    endDate: ""
   });
   const [adminTeams, setAdminTeams] = useState<Team[]>([]);
   const [loadingTeams, setLoadingTeams] = useState(true);
@@ -49,14 +52,14 @@ const CreateProjectDialog: React.FC<CreateProjectDialogProps> = ({
 
   const handleSubmit = () => {
     onSubmit(formData);
-    setFormData({ name: "", description: "", key: "", teamId: "", isPublic: false, avatarUrl: "" });
+    setFormData({ name: "", description: "", key: "", teamId: "", isPublic: false, avatarUrl: "", clientName: "", startDate: "", endDate: "" });
     setIsOpen(false);
   };
 
   const handleOpenChange = (open: boolean) => {
     setIsOpen(open);
     if (!open) {
-      setFormData({ name: "", description: "", key: "", teamId: "", isPublic: false, avatarUrl: "" });
+      setFormData({ name: "", description: "", key: "", teamId: "", isPublic: false, avatarUrl: "", clientName: "", startDate: "", endDate: "" });
     }
   };
 
@@ -68,7 +71,7 @@ const CreateProjectDialog: React.FC<CreateProjectDialogProps> = ({
           Tạo dự án
         </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
           <DialogTitle>Tạo dự án mới</DialogTitle>
           <DialogDescription>
@@ -130,6 +133,37 @@ const CreateProjectDialog: React.FC<CreateProjectDialogProps> = ({
               onChange={(e) => setFormData({ ...formData, description: e.target.value })}
               placeholder="Nhập mô tả dự án"
             />
+          </div>
+          
+          <div className="grid gap-2">
+            <Label htmlFor="clientName">Tên khách hàng</Label>
+            <Input
+              id="clientName"
+              value={formData.clientName}
+              onChange={(e) => setFormData({ ...formData, clientName: e.target.value })}
+              placeholder="Nhập tên khách hàng (tùy chọn)"
+            />
+          </div>
+          
+          <div className="grid grid-cols-2 gap-4">
+            <div className="grid gap-2">
+              <Label htmlFor="startDate">Ngày bắt đầu</Label>
+              <Input
+                id="startDate"
+                type="date"
+                value={formData.startDate}
+                onChange={(e) => setFormData({ ...formData, startDate: e.target.value })}
+              />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="endDate">Ngày kết thúc</Label>
+              <Input
+                id="endDate"
+                type="date"
+                value={formData.endDate}
+                onChange={(e) => setFormData({ ...formData, endDate: e.target.value })}
+              />
+            </div>
           </div>
           <div className="grid gap-2">
             <Label htmlFor="teamId">Nhóm (chỉ hiện nhóm bạn là admin)</Label>

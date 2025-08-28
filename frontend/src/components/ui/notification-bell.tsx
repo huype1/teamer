@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from "react";
-import { Bell, Check, Trash2, ExternalLink } from "lucide-react";
+import { Bell, Check, Trash2, ExternalLink, Volume2, VolumeX } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -13,16 +14,19 @@ import { useSelector } from "react-redux";
 import type { RootState } from "@/store";
 import type { NotificationRecipient, NotificationMessage } from "@/types/notification";
 import notificationService from "@/service/notificationService";
-import notificationWebSocketService from "@/service/notificationWebSocketService";
+import websocketService from "@/service/websocketService";
+import { useNotificationSound } from "@/hooks/useNotificationSound";
 import { formatDistanceToNow } from "date-fns";
 import { vi } from "date-fns/locale";
 
 const NotificationBell = () => {
   const { user } = useSelector((state: RootState) => state.auth);
+  const navigate = useNavigate();
   const [notifications, setNotifications] = useState<NotificationRecipient[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [isOpen, setIsOpen] = useState(false);
   const [loading, setLoading] = useState(false);
+  const { isEnabled: soundEnabled, toggleSound, playSound } = useNotificationSound();
 
   // Fetch notifications
   const fetchNotifications = useCallback(async () => {
@@ -109,13 +113,16 @@ const NotificationBell = () => {
     
     // Navigate to link if exists
     if (notification.link) {
-      window.open(notification.link, '_blank');
+      navigate(notification.link);
     }
   };
 
   // WebSocket notification handler
   const handleNewNotification = useCallback((message: NotificationMessage) => {
     if (message.type === 'CREATE') {
+      // Phát âm thanh thông báo đơn giản
+      playSound();
+
       // Tự động fetch lại danh sách + số lượng unread để đồng bộ với server
       fetchNotifications();
       fetchUnreadCount();
@@ -125,11 +132,17 @@ const NotificationBell = () => {
         description: message.content,
         action: message.link ? {
           label: "Xem",
-          onClick: () => window.open(message.link, '_blank')
+          onClick: () => navigate(message.link)
         } : undefined
       });
     }
-  }, [fetchNotifications, fetchUnreadCount]);
+  }, [fetchNotifications, fetchUnreadCount, playSound]);
+
+  // Handle sound toggle
+  const handleToggleSound = () => {
+    toggleSound();
+    toast.success(soundEnabled ? "Đã tắt âm thanh thông báo" : "Đã bật âm thanh thông báo");
+  };
 
   // Setup WebSocket subscription
   useEffect(() => {
@@ -137,8 +150,8 @@ const NotificationBell = () => {
 
     const setupWebSocket = async () => {
       try {
-        await notificationWebSocketService.connect();
-        notificationWebSocketService.subscribeToUserNotifications(user.id, handleNewNotification);
+        await websocketService.connect();
+        websocketService.subscribeToUserNotifications(user.id, handleNewNotification);
       } catch (error) {
         console.error("Error setting up WebSocket:", error);
       }
@@ -147,7 +160,7 @@ const NotificationBell = () => {
     setupWebSocket();
 
     return () => {
-      notificationWebSocketService.unsubscribeFromUserNotifications(user.id);
+      websocketService.unsubscribeFromUserNotifications(user.id);
     };
   }, [user?.id, handleNewNotification]);
 
@@ -191,7 +204,14 @@ const NotificationBell = () => {
   };
 
   return (
-    <DropdownMenu open={isOpen} onOpenChange={setIsOpen}>
+    <DropdownMenu open={isOpen} onOpenChange={(open) => {
+      setIsOpen(open);
+      // Fetch lại notifications khi mở dropdown
+      if (open) {
+        fetchNotifications();
+        fetchUnreadCount();
+      }
+    }}>
       <DropdownMenuTrigger asChild>
         <Button variant="ghost" size="icon" className="relative">
           <Bell className="h-5 w-5" />
@@ -208,16 +228,31 @@ const NotificationBell = () => {
       <DropdownMenuContent className="w-80 max-h-96" align="end">
         <div className="flex items-center justify-between p-2 border-b">
           <h3 className="font-semibold">Thông báo</h3>
-          {unreadCount > 0 && (
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              onClick={handleMarkAllAsRead}
-              className="text-xs"
+          <div className="flex items-center gap-2">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleToggleSound}
+              className="h-8 w-8 p-0"
+              title={soundEnabled ? "Tắt âm thanh" : "Bật âm thanh"}
             >
-              Đánh dấu đã đọc
+              {soundEnabled ? (
+                <Volume2 className="h-4 w-4" />
+              ) : (
+                <VolumeX className="h-4 w-4" />
+              )}
             </Button>
-          )}
+            {unreadCount > 0 && (
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                onClick={handleMarkAllAsRead}
+                className="text-xs"
+              >
+                Đánh dấu đã đọc
+              </Button>
+            )}
+          </div>
         </div>
         
         <ScrollArea className="h-80">
@@ -269,19 +304,19 @@ const NotificationBell = () => {
                         </span>
                         
                         <div className="flex items-center gap-1">
-                          {notification.link && (
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="h-6 w-6 p-0"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                window.open(notification.link, '_blank');
-                              }}
-                            >
-                              <ExternalLink className="h-3 w-3" />
-                            </Button>
-                          )}
+                                                     {notification.link && (
+                             <Button
+                               variant="ghost"
+                               size="sm"
+                               className="h-6 w-6 p-0"
+                               onClick={(e) => {
+                                 e.stopPropagation();
+                                 navigate(notification.link);
+                               }}
+                             >
+                               <ExternalLink className="h-3 w-3" />
+                             </Button>
+                           )}
                           
                           {!notification.isRead && (
                             <Button

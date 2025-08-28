@@ -2,9 +2,10 @@ import React, {useState, useEffect} from "react";
 import {useParams, Link} from "react-router-dom";
 import {Button} from "@/components/ui/button";
 import ProjectService from "@/service/projectService";
-import type {Project} from "@/types/project";
+import type {Project, ProjectUpdateRequest} from "@/types/project";
 import {toastError} from "@/utils/toast";
 import {ProjectHeader, ProjectNavigation} from "@/components/project";
+import EditProjectDialog from "@/components/project/EditProjectDialog";
 import {
     Dialog,
     DialogContent,
@@ -13,11 +14,9 @@ import {
     DialogHeader,
     DialogTitle
 } from "@/components/ui/dialog";
-import {Input} from "@/components/ui/input";
-import {Label} from "@/components/ui/label";
 import {useSelector} from "react-redux";
 import type {RootState} from "@/store";
-import {isCurrentUserManager, isCurrentUserNonViewer} from "@/utils/projectHelpers";
+import {isCurrentUserManager} from "@/utils/projectHelpers";
 import {toastSuccess} from "@/utils/toast";
 import ChatModal from "@/components/project/ChatModal";
 import {MessageSquare, FileText} from "lucide-react";
@@ -33,7 +32,6 @@ const ProjectOverviewPage: React.FC = () => {
     const [isChatModalOpen, setIsChatModalOpen] = useState(false);
     const [chatId, setChatId] = useState<string>("");
     const [chatName, setChatName] = useState<string>("");
-    const [formData, setFormData] = useState({name: "", description: ""});
 
     useEffect(() => {
         if (projectId) {
@@ -41,11 +39,7 @@ const ProjectOverviewPage: React.FC = () => {
         }
     }, [projectId]);
 
-    useEffect(() => {
-        if (project) {
-            setFormData({name: project.name, description: project.description || ""});
-        }
-    }, [project]);
+
 
     const fetchProject = async () => {
         try {
@@ -73,13 +67,9 @@ const ProjectOverviewPage: React.FC = () => {
         }
     };
 
-    const handleUpdateProject = async () => {
-        if (!project) return;
+    const handleUpdateProject = async (projectId: string, data: ProjectUpdateRequest) => {
         try {
-            await ProjectService.updateProject(project.id, {
-                name: formData.name,
-                description: formData.description,
-            });
+            await ProjectService.updateProject(projectId, data);
             toastSuccess("Cập nhật dự án thành công!");
             setIsEditDialogOpen(false);
             fetchProject();
@@ -149,8 +139,9 @@ const ProjectOverviewPage: React.FC = () => {
                         <p><span className="font-medium">Tên:</span> {project.name}</p>
                         <p><span className="font-medium">Mô tả:</span> {project.description || "Không có mô tả"}</p>
                         <p><span className="font-medium">Key:</span> {project.key}</p>
+                        
                         <p><span
-                            className="font-medium">Ngày tạo:</span> {new Date(project.createdAt).toLocaleDateString()}
+                            className="font-medium">Ngày tạo:</span> {new Date(project.createdAt).toLocaleDateString('vi-VN')}
                         </p>
                     </div>
                 </div>
@@ -160,6 +151,18 @@ const ProjectOverviewPage: React.FC = () => {
                     <div className="space-y-2">
                         <p><span className="font-medium">Tổng thành viên:</span> {project.members?.length || 0}</p>
                         <p><span className="font-medium">Key:</span> {project.key}</p>
+                        {project.clientName && (
+                            <p><span className="font-medium">Khách hàng:</span> {project.clientName}</p>
+                        )}
+                        {project.startDate && (
+                            <p><span className="font-medium">Ngày bắt đầu:</span> {new Date(project.startDate).toLocaleDateString('vi-VN')}</p>
+                        )}
+                        {project.endDate && (
+                            <p><span className="font-medium">Ngày kết thúc:</span> {new Date(project.endDate).toLocaleDateString('vi-VN')}</p>
+                        )}
+                        {project.startDate && project.endDate && (
+                            <p><span className="font-medium">Tổng số ngày:</span> {Math.ceil((new Date(project.endDate).getTime() - new Date(project.startDate).getTime()) / (1000 * 60 * 60 * 24))} ngày</p>
+                        )}
                     </div>
                 </div>
 
@@ -168,7 +171,7 @@ const ProjectOverviewPage: React.FC = () => {
                     <div className="space-y-3">
                         <Button asChild className="w-full">
                             <Link to={`/projects/${projectId}/issues`}>
-                                Xem danh sách issues
+                                Xem danh sách công việc
                             </Link>
                         </Button>
                         <Button asChild variant="outline" className="w-full">
@@ -202,40 +205,12 @@ const ProjectOverviewPage: React.FC = () => {
                     </div>
                 </div>
             </div>
-            <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-                <DialogContent>
-                    <DialogHeader>
-                        <DialogTitle>Chỉnh sửa dự án</DialogTitle>
-                        <DialogDescription>Cập nhật thông tin dự án</DialogDescription>
-                    </DialogHeader>
-                    <div className="space-y-4">
-                        <div className="space-y-2">
-                            <Label htmlFor="name">Tên dự án</Label>
-                            <Input
-                                id="name"
-                                value={formData.name}
-                                onChange={e => setFormData({...formData, name: e.target.value})}
-                            />
-                        </div>
-                        <div className="space-y-2">
-                            <Label htmlFor="description">Mô tả</Label>
-                            <Input
-                                id="description"
-                                value={formData.description}
-                                onChange={e => setFormData({...formData, description: e.target.value})}
-                            />
-                        </div>
-                    </div>
-                    <DialogFooter>
-                        <Button variant="outline" onClick={() => setIsEditDialogOpen(false)}>
-                            Hủy
-                        </Button>
-                        <Button onClick={handleUpdateProject}>
-                            Cập nhật dự án
-                        </Button>
-                    </DialogFooter>
-                </DialogContent>
-            </Dialog>
+            <EditProjectDialog
+                isOpen={isEditDialogOpen}
+                onOpenChange={setIsEditDialogOpen}
+                project={project}
+                onSubmit={handleUpdateProject}
+            />
             <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
                 <DialogContent>
                     <DialogHeader>

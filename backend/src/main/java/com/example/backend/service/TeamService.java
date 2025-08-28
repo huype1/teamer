@@ -130,7 +130,13 @@ public class TeamService {
         if (!teamMemberRepository.existsByTeamIdAndUserId(teamId, userId)) {
             throw new AppException(ErrorCode.NOT_FOUND);
         }
-        
+        // 1) Remove project memberships for all projects under this team to avoid FK leftovers
+        List<Project> teamProjects = projectRepository.findByTeamId(teamId);
+        for (Project p : teamProjects) {
+            projectMemberRepository.deleteByProjectIdAndUserId(p.getId(), userId);
+        }
+
+        // 2) Remove team membership
         teamMemberRepository.deleteByTeamIdAndUserId(teamId, userId);
     }
     public void updateMemberRole(UUID teamId, UUID userId, String role) {

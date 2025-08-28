@@ -9,6 +9,7 @@ import {
   Users,
   FileText
 } from "lucide-react";
+import { CalendarClock } from "lucide-react";
 
 interface ProjectNavigationProps {
   projectId: string;
@@ -26,7 +27,7 @@ const navigationItems = [
   {
     key: "issues",
     href: (id: string) => `/projects/${id}/issues`,
-    label: "Danh sách Issues",
+    label: "Danh sách",
     icon: ListTodo,
     match: (pathname: string, id: string) => pathname === `/projects/${id}/issues`
   },
@@ -36,6 +37,13 @@ const navigationItems = [
     label: "Kanban",
     icon: Kanban,
     match: (pathname: string, id: string) => pathname === `/projects/${id}/kanban`
+  },
+  {
+    key: "timeline",
+    href: (id: string) => `/projects/${id}/timeline`,
+    label: "Timeline",
+    icon: CalendarClock,
+    match: (pathname: string, id: string) => pathname === `/projects/${id}/timeline`
   },
   {
     key: "documents",

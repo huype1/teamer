@@ -7,6 +7,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
+import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -33,6 +34,15 @@ public class Project {
     String avatarUrl = "https://images.icon-icons.com/2699/PNG/512/atlassian_jira_logo_icon_170511.png";
 
     String key;
+
+    @Column(name = "client_name")
+    String clientName;
+
+    @Column(name = "start_date")
+    LocalDate startDate;
+
+    @Column(name = "end_date")
+    LocalDate endDate;
 
     @Column(name = "is_public")
     Boolean isPublic = false;
