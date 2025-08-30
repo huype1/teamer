@@ -1,9 +1,9 @@
 import React, { useCallback, useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import Quill from "quill";
-import hljs from "highlight.js";
+// import * as hljs from "highlight.js";
 import "quill/dist/quill.snow.css";
-import "highlight.js/styles/github.css";
+// import "highlight.js/styles/github.css";
 import { saveAs } from "file-saver";
 import { Document as DocxDocument, Packer, Paragraph, HeadingLevel, TextRun, ImageRun } from "docx";
 
@@ -127,7 +127,7 @@ const DocumentEditorPage = () => {
       theme: "snow",
       modules: { 
         toolbar: canEdit ? TOOLBAR_OPTIONS : false, // Disable toolbar nếu không có quyền edit
-        syntax: { hljs } 
+        // syntax: { hljs } 
       },
       readOnly: !canEdit, // Chỉ đọc nếu không có quyền edit
     });

@@ -38,5 +38,8 @@ export default defineConfig({
   optimizeDeps: {
     exclude: ['highlight.js'],
   },
+  ssr: {
+    noExternal: ['highlight.js']
+  }
 });
 

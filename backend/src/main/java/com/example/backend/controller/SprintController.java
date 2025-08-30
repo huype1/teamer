@@ -275,7 +275,7 @@ public class SprintController {
                 .build();
     }
 
-    @GetMapping("/project/{projectId}/issues/backlog")
+    @GetMapping("/project/{projectId}/backlog")
     public ApiResponse<List<IssueResponse>> getBacklogIssues(@PathVariable UUID projectId) {
         UUID userId = JwtUtils.getSubjectFromJwt();
         log.info("Fetching backlog issues for project: {} by user: {}", projectId, userId);
