@@ -350,7 +350,7 @@ const ProjectDocumentsPage: React.FC = () => {
   return (
     <div className="min-h-screen bg-background">
       <ProjectHeader 
-        title={`${project.name} - Tài liệu`}
+        title={`${project?.name} - Tài liệu`}
         showBackButton
       />
       <ProjectNavigation projectId={projectId!} activeTab="documents" />
@@ -426,12 +426,12 @@ const ProjectDocumentsPage: React.FC = () => {
                     <div className="space-y-2">
                       <div className="flex items-center text-xs text-muted-foreground">
                         <User className="h-3 w-3 mr-1" />
-                        <span className="truncate">{attachment.uploader.name}</span>
+                        <span className="truncate">{attachment?.uploader.name}</span>
                       </div>
                       
                       <div className="flex items-center text-xs text-muted-foreground">
                         <Calendar className="h-3 w-3 mr-1" />
-                        <span>{formatDate(attachment.uploadedAt)}</span>
+                        <span>{formatDate(attachment?.uploadedAt)}</span>
                       </div>
                     </div>
                     
@@ -505,16 +505,16 @@ const ProjectDocumentsPage: React.FC = () => {
                     <div className="flex items-start justify-between">
                       <div className="flex-1 min-w-0">
                         <h3 className="font-medium text-sm truncate mb-2">
-                          {document.title}
+                          {document?.title}
                         </h3>
                         <div className="flex items-center text-xs text-muted-foreground space-x-4">
                           <span className="flex items-center">
                             <User className="h-3 w-3 mr-1" />
-                            {document.creator?.name || "Unknown"}
+                            {document?.creator?.name || "Unknown"}
                           </span>
                           <span className="flex items-center">
                             <Calendar className="h-3 w-3 mr-1" />
-                            {new Date(document.createdAt).toLocaleDateString('vi-VN')}
+                            {new Date(document?.createdAt).toLocaleDateString('vi-VN')}
                           </span>
                         </div>
                       </div>
