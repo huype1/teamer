@@ -33,7 +33,7 @@ public class InvitationService {
     UserRepository userRepository;
 
     @Value("${app.frontend.url:http://localhost:5173}")
-    private String frontendUrl;
+    private String frontendUrl = "http://localhost:5173"; // Default fallback
 
     public void sendInvitation(String email, UUID projectId, String role) throws AppException, MessagingException {
         Invitation invitation = new Invitation();

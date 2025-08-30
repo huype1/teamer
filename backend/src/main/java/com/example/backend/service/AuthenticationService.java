@@ -62,7 +62,7 @@ public class AuthenticationService {
     protected long REFRESHABLE_DURATION;
 
     @Value("${app.frontend.url:http://localhost:5173}")
-    private String frontendUrl;
+    private String frontendUrl = "http://localhost:5173"; // Default fallback
 
     public IntrospectResponse introspect(IntrospectRequest request) throws JOSEException, ParseException {
         var token = request.getToken();
