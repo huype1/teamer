@@ -43,18 +43,15 @@ import lombok.extern.slf4j.Slf4j;
 @RequiredArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class AuthenticationService {
+    
+    UserRepository userRepository;
+    InvalidatedTokenRepository invalidatedTokenRepository;
+    UserMapper userMapper;
+    PasswordEncoder passwordEncoder;
+
     @NonFinal
     @Value("${jwt.signerKey}")
     protected String SIGNER_KEY;
-
-    UserRepository userRepository;
-    InvalidatedTokenRepository invalidatedTokenRepository;
-
-    @Autowired
-    UserMapper userMapper;
-
-    @Autowired
-    PasswordEncoder passwordEncoder = new BCryptPasswordEncoder(10);
 
     @NonFinal
     @Value("${jwt.valid-duration}")
