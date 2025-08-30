@@ -61,8 +61,9 @@ public class AuthenticationService {
     @Value("${jwt.refreshable-duration}")
     protected long REFRESHABLE_DURATION;
 
+    @NonFinal
     @Value("${app.frontend.url:http://localhost:5173}")
-    private String frontendUrl = "http://localhost:5173"; // Default fallback
+    private String frontendUrl;
 
     public IntrospectResponse introspect(IntrospectRequest request) throws JOSEException, ParseException {
         var token = request.getToken();
