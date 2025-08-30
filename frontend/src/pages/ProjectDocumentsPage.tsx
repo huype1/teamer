@@ -426,7 +426,7 @@ const ProjectDocumentsPage: React.FC = () => {
                     <div className="space-y-2">
                       <div className="flex items-center text-xs text-muted-foreground">
                         <User className="h-3 w-3 mr-1" />
-                        <span className="truncate">{attachment?.uploader.name}</span>
+                        <span className="truncate">{attachment?.uploader?.name ?? "undefined uploader"}</span>
                       </div>
                       
                       <div className="flex items-center text-xs text-muted-foreground">
