@@ -1,8 +1,9 @@
 import axios from "axios";
 import addReqToken from "@/utils/addReqToken";
-import type { Document, DocumentCreationRequest, DocumentUpdateRequest } from "@/types/document";
+import { config } from "@/config/env";
+import type { DocumentCreationRequest, DocumentUpdateRequest } from "@/types/document";
 
-const baseUrl = "http://localhost:8080/api/documents";
+const baseUrl = `${config.getApiBaseUrl()}/documents`;
 
 // Get documents by project (without content for performance)
 export const getDocumentsByProject = async (projectId: string) => {

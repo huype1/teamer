@@ -1,12 +1,13 @@
 import axios from "axios";
 import addReqToken from "@/utils/addReqToken";
+import { config } from "@/config/env";
 import type { 
   NotificationListResponse, 
   NotificationCountResponse,
-  NotificationResponse 
+  NotificationResponse
 } from "@/types/notification";
 
-const baseUrl = "http://localhost:8080/api/notifications";
+const baseUrl = `${config.getApiBaseUrl()}/notifications`;
 
 // Lấy danh sách notifications
 export const getNotifications = async () => {

@@ -141,7 +141,7 @@ export function TopNav({
              <div className="hidden md:flex flex-1 max-w-sm mx-4 lg:mx-8">
                <form onSubmit={handleSearch} className="relative w-full flex gap-2">
                  <div className="relative flex-1">
-                   <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+                   {/* <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" /> */}
                    <Input
                      type="text"
                      placeholder="Tìm kiếm..."
@@ -166,7 +166,7 @@ export function TopNav({
                  <div className="absolute top-14 left-0 right-0 p-2 bg-background border-b z-40">
                    <form onSubmit={handleSearch} className="relative flex gap-2">
                      <div className="relative flex-1">
-                       <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+                       {/* <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" /> */}
                        <Input
                          type="text"
                          placeholder="Tìm kiếm..."

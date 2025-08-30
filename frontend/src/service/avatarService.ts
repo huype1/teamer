@@ -1,7 +1,8 @@
 import axios from "axios";
+import { config } from "@/config/env";
 import addReqToken from "@/utils/addReqToken";
 
-const baseUrl = "http://localhost:8080/api/avatars";
+const baseUrl = `${config.getApiBaseUrl()}/avatars`;
 
 export const uploadAvatar = async (file: File) => {
   const formData = new FormData();

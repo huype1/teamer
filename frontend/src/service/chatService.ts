@@ -1,35 +1,9 @@
 import axios from "axios";
 import addReqToken from "@/utils/addReqToken";
-import type { AttachmentMeta } from "./attachmentService";
+import { config } from "@/config/env";
+import type { Chat, ChatMessage, CreateChatMessageRequest } from "@/types/chat";
 
-const baseUrl = "http://localhost:8080/api/chats";
-
-export interface Chat {
-  id: string;
-  name: string;
-  createdAt: string;
-  updatedAt: string;
-}
-
-export interface ChatMessage {
-  id: string;
-  content: string;
-  chatId: string;
-  createdAt: string;
-  updatedAt: string;
-  sender: {
-    id: string;
-    name: string;
-    email: string;
-    avatarUrl?: string;
-  };
-}
-
-export interface CreateChatMessageRequest {
-  content: string;
-  chatId: string;
-  attachments?: AttachmentMeta[];
-}
+const baseUrl = `${config.getApiBaseUrl()}/chats`;
 
 // Get all chats
 export const getAllChats = async (): Promise<Chat[]> => {

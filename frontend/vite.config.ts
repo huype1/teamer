@@ -8,8 +8,7 @@ export default defineConfig({
   server: {
     proxy: {
       "/api": {
-        // target: process.env.API_BASE_URL || "http://localhost:8080/",
-        target: "http://localhost:8080/",
+        target: process.env.VITE_API_BASE_URL?.replace('/api', '') || "http://localhost:8080/",
         changeOrigin: true,
       },
     },
@@ -22,6 +21,22 @@ export default defineConfig({
   },
   define: {
     global: 'globalThis',
+  },
+  build: {
+    outDir: 'dist',
+    sourcemap: false,
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          vendor: ['react', 'react-dom'],
+          ui: ['@radix-ui/react-dialog', '@radix-ui/react-dropdown-menu', '@radix-ui/react-select'],
+          utils: ['axios', 'clsx', 'tailwind-merge'],
+        },
+      },
+    },
+  },
+  optimizeDeps: {
+    exclude: ['highlight.js'],
   },
 });
 

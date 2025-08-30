@@ -26,6 +26,11 @@ spring:
       mail.smtp.starttls.enable: true
       mail.smtp.ssl.trust: smtp.gmail.com
 
+# Frontend URL configuration for production
+app:
+  frontend:
+    url: ${FRONTEND_URL:https://your-app-name.netlify.app}
+
 jwt:
   signerKey: ${JWT_SIGNER_KEY}
   valid-duration: 86400 #seconds

@@ -1,8 +1,9 @@
 import axios from "axios";
 import addReqToken from "@/utils/addReqToken";
+import { config } from "@/config/env";
 import type { TeamCreationRequest, TeamUpdateRequest } from "@/types/team";
 
-const baseUrl = "http://localhost:8080/api/teams";
+const baseUrl = `${config.getApiBaseUrl()}/teams`;
 
 export const getTeams = async (name: string) => {
   const res = await axios.get(`${baseUrl}?name=${name}`, addReqToken(localStorage.getItem("token")));

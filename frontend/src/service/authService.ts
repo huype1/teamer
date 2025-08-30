@@ -1,8 +1,9 @@
 import axios from "axios";
-import type {GoogleCredentials, LoginRequest, RegisterRequest} from "@/types/auth.ts";
+import { config } from "@/config/env";
+import type { GoogleCredentials, LoginRequest, RegisterRequest } from "@/types/auth";
 import { processPendingInvitation } from "@/utils/invitation";
 
-const baseUrl = "http://localhost:8080/api/auth";
+const baseUrl = `${config.getApiBaseUrl()}/auth`;
 
 const register = async (body: RegisterRequest) => {
     const response = await axios.post(`${baseUrl}/register`, {provider: "EMAIL_PASSWORD", ...body});

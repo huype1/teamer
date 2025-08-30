@@ -1,8 +1,9 @@
 import axios from "axios";
 import addReqToken from "@/utils/addReqToken";
-import type { Issue, CreateIssueRequest, UpdateIssueRequest } from "@/types/issue";
+import { config } from "@/config/env";
+import type { CreateIssueRequest, Issue, UpdateIssueRequest } from "@/types/issue";
 
-const baseUrl = "http://localhost:8080/api/issues";
+const baseUrl = `${config.getApiBaseUrl()}/issues`;
 
 // Get all issues by project ID
 export const getIssuesByProjectId = async (projectId: string) => {

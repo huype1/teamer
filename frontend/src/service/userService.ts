@@ -1,8 +1,9 @@
 import axios from "axios";
 import addReqToken from "@/utils/addReqToken";
+import { config } from "@/config/env";
 import type { UserResponse, UserUpdateRequest } from "@/types/user";
 
-const baseUrl = "http://localhost:8080/api/users";
+const baseUrl = `${config.getApiBaseUrl()}/users`;
 
 export const getMyInfo = async (): Promise<UserResponse> => {
     const res = await axios.get(

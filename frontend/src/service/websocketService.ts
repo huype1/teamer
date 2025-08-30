@@ -1,6 +1,7 @@
 import SockJS from 'sockjs-client';
 import { Client } from '@stomp/stompjs';
 import type { StompSubscription } from '@stomp/stompjs';
+import { config } from "@/config/env";
 
 export interface CommentMessage {
   type: 'CREATE' | 'UPDATE' | 'DELETE';
@@ -75,9 +76,9 @@ class WebSocketService {
       }
 
       try {
-        const baseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/api';
+        const baseUrl = config.getWsBaseUrl();
         this.stompClient = new Client({
-          webSocketFactory: () => new SockJS(`${baseUrl}/ws`),
+          webSocketFactory: () => new SockJS(`${baseUrl}`),
           debug: () => {
             // Disable debug logging
           },

@@ -156,7 +156,7 @@ export function RegisterForm({
                   useOneTap
                   shape="rectangular"
                   size="large"
-                  text="signin_with"
+                  text="register_with"
                   theme="outline"
                   width="100%"
               />

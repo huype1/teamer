@@ -1,7 +1,8 @@
 import axios from "axios";
+import { config } from "@/config/env";
 import addReqToken from "@/utils/addReqToken";
 
-const baseUrl = "http://localhost:8080/api/comments";
+const baseUrl = `${config.getApiBaseUrl()}/comments`;
 
 export interface Comment {
   id: string;

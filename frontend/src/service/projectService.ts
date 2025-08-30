@@ -1,8 +1,9 @@
 import axios from "axios";
 import addReqToken from "@/utils/addReqToken";
+import { config } from "@/config/env";
 import type { ProjectCreationRequest, ProjectUpdateRequest } from "@/types/project";
 
-const baseUrl = "http://localhost:8080/api/projects";
+const baseUrl = `${config.getApiBaseUrl()}/projects`;
 
 export const getProjects = async () => {
   const res = await axios.get(baseUrl, addReqToken(localStorage.getItem("token")));

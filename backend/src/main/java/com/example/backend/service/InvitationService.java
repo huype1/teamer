@@ -15,6 +15,7 @@ import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
@@ -31,6 +32,9 @@ public class InvitationService {
     EmailService emailService;
     UserRepository userRepository;
 
+    @Value("${app.frontend.url:http://localhost:5173}")
+    private String frontendUrl;
+
     public void sendInvitation(String email, UUID projectId, String role) throws AppException, MessagingException {
         Invitation invitation = new Invitation();
 
@@ -45,7 +49,7 @@ public class InvitationService {
 
         Invitation result = invitationRepository.save(invitation);
 
-        String invitationLink = "http://localhost:5173/invitation/accept_invitation?token=" + result.getId();
+        String invitationLink = frontendUrl + "/invitation/accept_invitation?token=" + result.getId();
         emailService.sendEmailWithToken(email, invitationLink, project, role);
 
     }

@@ -34,7 +34,10 @@ spring:
       mail.smtp.starttls.enable: true
       mail.smtp.ssl.trust: smtp.gmail.com
 
-
+# Frontend URL configuration
+app:
+  frontend:
+    url: ${FRONTEND_URL:http://localhost:5173}
 
 jwt:
   signerKey: ${JWT_SIGNER_KEY}
@@ -45,8 +48,6 @@ springdoc:
   api-docs:
     enabled: true
     path: /api-docs
-
-
 
 aws:
   s3:

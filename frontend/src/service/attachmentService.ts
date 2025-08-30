@@ -1,14 +1,9 @@
 import axios from "axios";
+import { config } from "@/config/env";
 import addReqToken from "@/utils/addReqToken";
+import type { AttachmentMeta } from "@/types/attachment";
 
-const baseUrl = "http://localhost:8080/api/attachments";
-
-export interface AttachmentMeta {
-  fileName: string;
-  fileType: string;
-  fileSize: number;
-  filePath: string;
-}
+const baseUrl = `${config.getApiBaseUrl()}/attachments`;
 
 export interface Attachment {
   id: string;
@@ -45,6 +40,7 @@ export const getDownloadUrl = async (filePath: string) => {
 };
 
 // Get download URL for file (sync version for direct use in components)
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 export const getDownloadUrlSync = (filePath: string) => {
   // For now, we'll construct the URL directly since we know the pattern
   // In production, you might want to cache presigned URLs or use a different approach
