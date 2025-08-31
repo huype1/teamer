@@ -1,16 +1,12 @@
 import React, { useState, useEffect, useRef } from "react";
-import { useForm } from "react-hook-form";
-import { z } from "zod";
-import { zodResolver } from "@hookform/resolvers/zod";
 import { useSelector } from "react-redux";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Trash2, Send, MessageSquare, Paperclip } from "lucide-react";
+import { Trash2, MessageSquare } from "lucide-react";
 import { toastError } from "@/utils/toast";
 import chatService, { type ChatMessage } from "@/service/chatService";
-import attachmentService, { type Attachment, type AttachmentMeta } from "@/service/attachmentService";
+import attachmentService, { type Attachment } from "@/service/attachmentService";
 import { AttachmentList } from "@/components/ui/attachment-list";
 import websocketService, { type AttachmentInfo } from "@/service/websocketService";
 import { useWebSocketContext } from "@/components/WebSocketProvider";
@@ -18,41 +14,22 @@ import type { RootState } from "@/store";
 import { LoadingSpinner } from "../ui/loading-spinner";
 import MessageComposer from "@/components/ui/message-composer";
 
-const messageSchema = z.object({
-  content: z.string().min(1, "Tin nhắn không được để trống"),
-});
-
-type MessageFormData = z.infer<typeof messageSchema>;
-
 interface ChatModalProps {
   isOpen: boolean;
   onClose: () => void;
   chatId: string;
   chatName: string;
+  projectId?: string; // Add projectId support
 }
 
-const ChatModal: React.FC<ChatModalProps> = ({ isOpen, onClose, chatId, chatName }) => {
+const ChatModal: React.FC<ChatModalProps> = ({ isOpen, onClose, chatId, chatName, projectId }) => {
   const { user } = useSelector((state: RootState) => state.auth);
   const { isConnected } = useWebSocketContext();
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [loading, setLoading] = useState(true);
-  const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
-  const [uploading, setUploading] = useState(false);
   const [messageAttachments, setMessageAttachments] = useState<Record<string, Attachment[]>>({});
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
-
-  const {
-    register,
-    handleSubmit,
-    reset,
-    formState: { errors, isSubmitting },
-  } = useForm<MessageFormData>({
-    resolver: zodResolver(messageSchema),
-    defaultValues: {
-      content: "",
-    },
-  });
 
   // Auto-scroll to bottom when new messages arrive
   const scrollToBottom = () => {
@@ -170,23 +147,6 @@ const ChatModal: React.FC<ChatModalProps> = ({ isOpen, onClose, chatId, chatName
     }
   };
 
-  // Upload files to S3 and get metadata
-  const uploadFilesToS3 = async (files: File[]) => {
-    setUploading(true);
-    const uploaded: AttachmentMeta[] = [];
-    for (const file of files) {
-      try {
-        const attachmentMeta = await attachmentService.uploadFile(file);
-        uploaded.push(attachmentMeta);
-      } catch (error) {
-        console.error("Lỗi khi upload file:", error);
-        toastError(`Không thể upload file ${file.name}`);
-      }
-    }
-    setUploading(false);
-    return uploaded;
-  };
-
   // Fetch attachments for messages
   const fetchAttachmentsForMessages = async (messages: ChatMessage[]) => {
     const result: Record<string, Attachment[]> = {};
@@ -207,28 +167,6 @@ const ChatModal: React.FC<ChatModalProps> = ({ isOpen, onClose, chatId, chatName
       fetchAttachmentsForMessages(messages);
     }
   }, [messages]);
-
-  const onSubmitMessage = async (data: MessageFormData) => {
-    if (!user) return;
-    
-    let attachments: AttachmentMeta[] = [];
-    if (selectedFiles.length > 0) {
-      attachments = await uploadFilesToS3(selectedFiles);
-    }
-    
-    try {
-      await chatService.createChatMessage({
-        content: data.content,
-        chatId: chatId,
-        attachments: attachments,
-      });
-      reset();
-      setSelectedFiles([]);
-    } catch (error) {
-      toastError("Gửi tin nhắn thất bại!");
-      console.error("Error sending message:", error);
-    }
-  };
 
   const handleDeleteMessage = async (messageId: string) => {
     try {
@@ -251,62 +189,6 @@ const ChatModal: React.FC<ChatModalProps> = ({ isOpen, onClose, chatId, chatName
       return date.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' });
     }
   };
-
-  // File upload component
-  function FileUploadInput({
-    selectedFiles,
-    setSelectedFiles,
-    uploading
-  }: {
-    selectedFiles: File[];
-    setSelectedFiles: (files: File[]) => void;
-    uploading: boolean;
-  }) {
-    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-      setSelectedFiles(Array.from(e.target.files || []));
-    };
-
-    const removeFile = (index: number) => {
-      setSelectedFiles(selectedFiles.filter((_, i) => i !== index));
-    };
-
-    return (
-      <div className="mt-2">
-        <label className="flex items-center gap-2 cursor-pointer">
-          <Paperclip className="w-4 h-4" />
-          <span className="text-sm text-muted-foreground">Đính kèm file</span>
-          <input
-            type="file"
-            multiple
-            className="hidden"
-            onChange={handleFileChange}
-            disabled={uploading}
-          />
-        </label>
-        {selectedFiles.length > 0 && (
-          <ul className="mt-2 space-y-1">
-            {selectedFiles.map((file, idx) => (
-              <li key={idx} className="flex items-center gap-2 text-sm bg-muted rounded px-2 py-1">
-                <span className="truncate max-w-xs">{file.name}</span>
-                <span className="text-xs text-muted-foreground">({Math.round(file.size / 1024)} KB)</span>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon"
-                  className="h-5 w-5"
-                  onClick={() => removeFile(idx)}
-                  disabled={uploading}
-                >
-                  <Trash2 className="w-4 h-4 text-destructive" />
-                </Button>
-              </li>
-            ))}
-          </ul>
-        )}
-        {uploading && <div className="text-xs text-blue-500 mt-1">Đang upload file...</div>}
-      </div>
-    );
-  }
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>

@@ -186,6 +186,10 @@ public class AttachmentService {
             Issue issue = issueRepository.findById(request.getIssueId())
                     .orElseThrow(() -> new RuntimeException("Issue not found"));
             attachment.setIssue(issue);
+            // Set project from issue if not already set
+            if (attachment.getProject() == null) {
+                attachment.setProject(issue.getProject());
+            }
         }
 
         // Set comment if provided
@@ -193,6 +197,10 @@ public class AttachmentService {
             Comment comment = commentRepository.findById(request.getCommentId())
                     .orElseThrow(() -> new RuntimeException("Comment not found"));
             attachment.setComment(comment);
+            // Set project from comment's issue if not already set
+            if (attachment.getProject() == null) {
+                attachment.setProject(comment.getIssue().getProject());
+            }
         }
 
         // Set message if provided
@@ -200,6 +208,13 @@ public class AttachmentService {
             Message message = messageRepository.findById(request.getMessageId())
                     .orElseThrow(() -> new RuntimeException("Message not found"));
             attachment.setMessage(message);
+            // Set project from message's chat if not already set
+            if (attachment.getProject() == null) {
+                var projectOpt = projectRepository.findByChatId(message.getChat().getId());
+                if (projectOpt.isPresent()) {
+                    attachment.setProject(projectOpt.get());
+                }
+            }
         }
 
         return attachmentRepository.save(attachment);

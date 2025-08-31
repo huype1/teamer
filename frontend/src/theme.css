@@ -1,31 +1,31 @@
-/* Sour Purple Hover Effects - Black/White Theme */
+/* Purple Hover Effects - Pink/Purple Theme */
 
 /* Subtle hover effects for secondary buttons and cards */
-.hover\:sour-purple:hover {
+.hover\:purple:hover {
   background-color: var(--primary) !important;
   color: white !important;
   border-color: var(--primary) !important;
 }
 
-.hover\:sour-purple-light:hover {
+.hover\:purple-light:hover {
   background-color: var(--primary) !important;
   color: white !important;
   border-color: var(--primary) !important;
 }
 
-/* Focus states with Sour purple */
-.focus\:sour-purple:focus {
+/* Focus states with Purple */
+.focus\:purple:focus {
   border-color: var(--primary) !important;
   box-shadow: 0 0 0 2px var(--ring) !important;
 }
 
 /* Active states */
-.active\:sour-purple:active {
+.active\:purple:active {
   background-color: var(--primary) !important;
   color: white !important;
 }
 
-/* Issue type badges with Sour purple */
+/* Issue type badges with Purple */
 .issue-type-epic {
   background: var(--primary);
   color: white;
@@ -51,26 +51,26 @@
   color: var(--muted-foreground);
 }
 
-/* Navigation active state with Sour purple */
-.nav-active-sour {
+/* Navigation active state with Purple */
+.nav-active-purple {
   background-color: var(--primary) !important;
   color: white !important;
 }
 
 /* Card hover effects */
-.card-hover-sour:hover {
+.card-hover-purple:hover {
   border-color: var(--primary) !important;
   box-shadow: 0 4px 12px rgba(139, 92, 246, 0.15) !important;
 }
 
-/* Input focus with Sour purple */
-.input-focus-sour:focus {
+/* Input focus with Purple */
+.input-focus-purple:focus {
   border-color: var(--primary) !important;
   box-shadow: 0 0 0 2px var(--ring) !important;
 }
 
 /* Subtle hover for primary buttons (already purple) */
-.hover\:sour-dark:hover {
+.hover\:purple-dark:hover {
   background-color: var(--primary) !important;
   border-color: var(--primary) !important;
 } 

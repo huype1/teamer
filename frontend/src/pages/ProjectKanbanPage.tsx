@@ -254,7 +254,7 @@ const ProjectKanbanPage: React.FC = () => {
                       const s = sprints.find(s => s.id === selectedScope);
                       if (!s) return null;
                       const text = s.status === "ACTIVE"
-                        ? "Đang chạy"
+                        ? "Đang diễn ra"
                         : s.status === "COMPLETED"
                         ? "Đã kết thúc"
                         : s.status === "PLANNING"

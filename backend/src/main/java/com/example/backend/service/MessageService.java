@@ -20,6 +20,7 @@ import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
+import com.example.backend.entity.Project;
 
 @Slf4j
 @Service
@@ -46,6 +47,13 @@ public class MessageService {
 
         // Save attachments if provided
         if (attachments != null && !attachments.isEmpty()) {
+            // Get project from chat
+            var projectOpt = projectRepository.findByChatId(chatId);
+            Project project = null;
+            if (projectOpt.isPresent()) {
+                project = projectOpt.get();
+            }
+            
             for (AttachmentMeta meta : attachments) {
                 Attachment att = Attachment.builder()
                         .message(savedMessage)
@@ -54,6 +62,7 @@ public class MessageService {
                         .fileSize(meta.getFileSize())
                         .filePath(meta.getFilePath())
                         .uploader(sender)
+                        .project(project) // Add project reference
                         .build();
                 attachmentRepository.save(att);
             }

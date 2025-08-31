@@ -19,8 +19,10 @@ export interface MessageComposerSubmission {
 interface MessageComposerProps {
   placeholder?: string;
   submitLabel?: string;
-  onSubmit: (data: MessageComposerSubmission) => Promise<void> | void;
+  onSubmit: (data: { content: string; attachments: AttachmentMeta[] }) => Promise<void>;
   disabled?: boolean;
+  projectId?: string; // Add projectId support
+  useDirectUpload?: boolean; // Whether to use direct upload or just metadata
 }
 
 // Component to show selected files before upload
@@ -68,6 +70,8 @@ export const MessageComposer: React.FC<MessageComposerProps> = ({
   submitLabel = "Gửi",
   onSubmit,
   disabled = false,
+  projectId,
+  useDirectUpload = false, // Default to false for backward compatibility
 }) => {
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [uploading, setUploading] = useState(false);
@@ -85,14 +89,31 @@ export const MessageComposer: React.FC<MessageComposerProps> = ({
   const uploadFilesToS3 = async (files: File[]) => {
     setUploading(true);
     const uploaded: AttachmentMeta[] = [];
+    
     for (const file of files) {
       try {
-        const meta = await attachmentService.uploadFile(file);
-        uploaded.push(meta);
+        if (useDirectUpload && projectId) {
+          // Use direct upload with project_id when available
+          const attachment = await attachmentService.uploadFileWithAttachment(file, {
+            projectId,
+          });
+          // Convert to AttachmentMeta format
+          uploaded.push({
+            fileName: attachment.fileName,
+            fileType: attachment.fileType,
+            fileSize: attachment.fileSize,
+            filePath: attachment.filePath,
+          });
+        } else {
+          // Use traditional upload (just metadata)
+          const meta = await attachmentService.uploadFile(file);
+          uploaded.push(meta);
+        }
       } catch (error) {
         console.error("Lỗi khi upload file:", error);
       }
     }
+    
     setUploading(false);
     return uploaded;
   };

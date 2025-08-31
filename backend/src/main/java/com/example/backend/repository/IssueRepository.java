@@ -38,4 +38,10 @@ public interface IssueRepository extends JpaRepository<Issue, UUID>{
     List<Issue> findActiveSprintIssues(@Param("projectId") UUID projectId);
     @Query("SELECT i FROM Issue i WHERE i.sprint.status = 'PLANNED' AND i.project.id = :projectId")
     List<Issue> findUpcomingSprintIssues(@Param("projectId") UUID projectId);
+
+    @Query("SELECT i FROM Issue i JOIN i.project p JOIN p.projectMembers pm WHERE pm.user.id = :userId AND (LOWER(i.title) LIKE LOWER(CONCAT('%', :keyword, '%')) OR LOWER(i.description) LIKE LOWER(CONCAT('%', :keyword, '%'))) ORDER BY i.createdAt DESC")
+    List<Issue> findByUserAccess(@Param("userId") UUID userId, @Param("keyword") String keyword);
+
+    @Query("SELECT i FROM Issue i JOIN i.project p JOIN p.projectMembers pm WHERE pm.user.id = :userId AND p.id = :projectId AND (LOWER(i.title) LIKE LOWER(CONCAT('%', :keyword, '%')) OR LOWER(i.description) LIKE LOWER(CONCAT('%', :keyword, '%')))")
+    List<Issue> findByProjectIdAndUserAccess(@Param("projectId") UUID projectId, @Param("userId") UUID userId, @Param("keyword") String keyword);
 }

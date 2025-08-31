@@ -75,9 +75,9 @@ const ProjectNavigation: React.FC<ProjectNavigationProps> = ({ projectId, active
     navigationItems.find(item => item.match(location.pathname, projectId))?.key || "overview";
 
   return (
-    <div className="border-b bg-background">
+    <div className="border-b bg-muted">
       <Tabs value={activeTab} className="w-full">
-        <TabsList className="grid w-full" style={{ gridTemplateColumns: `repeat(${navigationItems.length}, 1fr)` }}>
+        <TabsList className="grid w-full bg-secondary" style={{ gridTemplateColumns: `repeat(${navigationItems.length}, 1fr)` }}>
           {navigationItems.map((item) => {
             const Icon = item.icon;
             return (

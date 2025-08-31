@@ -132,6 +132,7 @@ export const createAttachment = async (attachmentData: {
   issueId?: string;
   commentId?: string;
   messageId?: string;
+  uploaderId?: string; // Add uploader ID
 }): Promise<Attachment> => {
   const res = await axios.post(
     `${baseUrl}`,
@@ -139,6 +140,37 @@ export const createAttachment = async (attachmentData: {
     addReqToken(localStorage.getItem("token"))
   );
   return res.data.result;
+};
+
+// Upload file with automatic attachment creation
+export const uploadFileWithAttachment = async (
+  file: File, 
+  options: {
+    projectId?: string;
+    issueId?: string;
+    commentId?: string;
+    messageId?: string;
+    uploaderId?: string;
+  }
+): Promise<Attachment> => {
+  // 1. Upload file to S3
+  const metadata = await uploadFile(file);
+  
+  // 2. Create attachment record in database
+  const attachment = await createAttachment({
+    ...metadata,
+    ...options,
+  });
+  
+  return attachment;
+};
+
+// Delete attachment
+export const deleteAttachment = async (attachmentId: string): Promise<void> => {
+  await axios.delete(
+    `${baseUrl}/${attachmentId}`,
+    addReqToken(localStorage.getItem("token"))
+  );
 };
 
 export default {
@@ -151,5 +183,7 @@ export default {
   getByMessageId,
   getAllAttachmentsByProjectId,
   createAttachment,
+  uploadFileWithAttachment,
+  deleteAttachment,
   downloadFile,
 }; 

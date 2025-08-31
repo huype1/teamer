@@ -747,3 +747,11 @@ GET http://localhost:8080/api/users/210f3b58-3e9f-46eb-a833-10e9ee7a1bc5/minimal
 Authorization: Bearer {{authToken}}
 
 ###
+
+### Search API Tests
+
+# Search issues
+GET {{baseUrl}}/api/search/issues?keyword=bug
+Authorization: Bearer {{token}}
+
+###

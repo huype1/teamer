@@ -147,7 +147,7 @@ public class UserService {
     }
 
     public UserResponse updateUser(UUID userId, UserUpdateRequest request) {
-        User user = userRepository.findById(userId).orElseThrow(() -> new AppException(ErrorCode.NOT_FOUND));
+        User user = userRepository.findById(userId).orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
         userMapper.updateUser(user, request);
         // Note: UserUpdateRequest không có password field, chỉ có name, bio, avatarUrl
         return userMapper.toUserResponse(userRepository.save(user));

@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader } from "@/components/ui/dialog";
 import { Paperclip, Download, Image, X, ChevronLeft, ChevronRight, FileImage } from "lucide-react";
 import attachmentService, { type Attachment } from "@/service/attachmentService";
 
@@ -246,10 +246,7 @@ export const AttachmentList: React.FC<AttachmentListProps> = ({
           onKeyDown={handleKeyDown}
           tabIndex={0}
         >
-          <DialogHeader className="absolute top-4 left-4 right-4 z-10 flex items-center justify-between">
-            <DialogTitle className="text-white text-sm font-medium truncate">
-              {selectedImage?.fileName}
-            </DialogTitle>
+          <DialogHeader className="absolute top-4 right-4 z-10 flex items-center justify-end">
             <Button
               variant="ghost"
               size="sm"

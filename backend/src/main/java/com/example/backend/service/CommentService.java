@@ -65,6 +65,7 @@ public class CommentService {
                           .fileSize(meta.getFileSize())
                           .filePath(meta.getFilePath())
                           .uploader(user.get())
+                          .project(issue.get().getProject()) // Add project reference
                           .build();
                   attachmentRepository.save(att);
               }

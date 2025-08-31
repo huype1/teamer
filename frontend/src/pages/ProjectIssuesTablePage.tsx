@@ -547,7 +547,6 @@ const ProjectIssuesTablePage: React.FC = () => {
                     sprintReloadKey={sprintReloadKey}
                     canManageSprint={canManageSprint()}
                     onOpenCreateIssue={() => setIsCreateIssueDialogOpen(true)}
-                    canCreateIssue={canCreateIssue()}
                     onEditIssue={openEditIssueDialog}
                     onDeleteIssue={openDeleteIssueDialog}
                   />

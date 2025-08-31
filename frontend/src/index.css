@@ -40,41 +40,48 @@
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
+  --color-topnav: var(--sidebar);
+  --color-topnav-foreground: var(--sidebar-foreground);
 }
 
 :root {
   --radius: 0.625rem;
-  --background: oklch(1 0 0); /* Pure white */
-  --foreground: oklch(0.1 0 0); /* Pure black */
-  --card: oklch(1 0 0); /* Pure white */
-  --card-foreground: oklch(0.1 0 0);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.1 0 0);
-  --primary: oklch(0.6 0.25 300); /* Sour purple for buttons */
-  --primary-foreground: oklch(1 0 0);
-  --secondary: oklch(0.95 0.01 0); /* Very light gray */
-  --secondary-foreground: oklch(0.1 0 0);
-  --muted: oklch(0.96 0.01 0); /* Light gray */
-  --muted-foreground: oklch(0.45 0.01 0);
-  --accent: oklch(0.95 0.01 0); /* Very light gray */
-  --accent-foreground: oklch(0.1 0 0);
-  --destructive: oklch(0.65 0.25 25); /* Red */
-  --border: oklch(0.85 0.02 300); /* Light purple border - Sour signature */
-  --input: oklch(0.9 0.01 0);
-  --ring: oklch(0.6 0.25 300); /* Sour purple ring for focus */
-  --chart-1: oklch(0.6 0.25 300); /* Sour purple */
-  --chart-2: oklch(0.1 0 0); /* Black */
-  --chart-3: oklch(0.7 0.1 0); /* Gray */
-  --chart-4: oklch(0.65 0.25 25); /* Red */
-  --chart-5: oklch(0.5 0.2 280); /* Dark purple */
-  --sidebar: oklch(0.98 0.01 0); /* Very light gray */
-  --sidebar-foreground: oklch(0.1 0 0);
-  --sidebar-primary: oklch(0.6 0.25 300); /* Sour purple */
-  --sidebar-primary-foreground: oklch(1 0 0);
-  --sidebar-accent: oklch(0.95 0.01 0); /* Very light gray */
-  --sidebar-accent-foreground: oklch(0.1 0 0);
-  --sidebar-border: oklch(0.85 0.02 300); /* Light purple border */
-  --sidebar-ring: oklch(0.6 0.25 300);
+  /* Light gray-blue background with subtle gray tint */
+  --background: #F1F5F9; /* Light gray-blue with subtle gray */
+  --foreground: #1E293B; /* Dark slate for contrast */
+  /* Clean card backgrounds */
+  --card: #FFFFFF; /* Pure white */
+  --card-foreground: #1E293B;
+  --popover: #FFFFFF;
+  --popover-foreground: #1E293B;
+  --primary: #4B49AC; /* Deep blue primary */
+  --primary-foreground: #FFFFFF;
+  /* Professional secondary palette - bright baby blue */
+  --secondary: #B3D9FF; /* Bright baby blue - more vibrant */
+  --secondary-foreground: #1E293B;
+  --muted: #F1F5F9; /* Light gray */
+  --muted-foreground: #64748B;
+  --accent: #7DA0FA; /* Medium blue */
+  --accent-foreground: #1E293B;
+  --destructive: #F3797E; /* Coral red */
+  /* Enhanced borders for better visibility */
+  --border: #CBD5E1; /* Medium gray border - more visible */
+  --input: #F1F5F9;
+  --ring: #4B49AC; /* Primary ring */
+  --chart-1: #4B49AC; /* Primary */
+  --chart-2: #98BDFF; /* Secondary */
+  --chart-3: #7DA0FA; /* Accent */
+  --chart-4: #7978E9; /* Purple */
+  --chart-5: #F3797E; /* Coral */
+  /* Light blue sidebar and topnav for better contrast */
+  --sidebar: #7DA0FA; /* Light blue - matches accent color */
+  --sidebar-foreground: #FFFFFF;
+  --sidebar-primary: #4B49AC; /* Primary */
+  --sidebar-primary-foreground: #FFFFFF;
+  --sidebar-accent: #98BDFF; /* Secondary */
+  --sidebar-accent-foreground: #1E293B;
+  --sidebar-border: #98BDFF; /* Light blue border */
+  --sidebar-ring: #4B49AC;
 }
 
 .dark {

@@ -22,5 +22,15 @@ public interface UserMapper {
     // Minimal response for better performance
     UserMinimalResponse toUserMinimalResponse(User user);
 
-    void updateUser(@MappingTarget User user, UserUpdateRequest request);
+    default void updateUser(@MappingTarget User user, UserUpdateRequest request) {
+        if (request.getName() != null) {
+            user.setName(request.getName());
+        }
+        if (request.getBio() != null) {
+            user.setBio(request.getBio());
+        }
+        if (request.getAvatarUrl() != null) {
+            user.setAvatarUrl(request.getAvatarUrl());
+        }
+    }
 }

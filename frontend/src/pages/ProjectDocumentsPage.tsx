@@ -25,7 +25,8 @@ import {
   Calendar,
   User,
   Search,
-  MoreHorizontal
+  MoreHorizontal,
+  Trash2
 } from "lucide-react";
 import { useSelector } from "react-redux";
 import type { RootState } from "@/store";
@@ -273,6 +274,22 @@ const ProjectDocumentsPage: React.FC = () => {
     }
   };
 
+  // Handle attachment delete
+  const handleDeleteAttachment = async (attachmentId: string) => {
+    if (!window.confirm("Bạn có chắc chắn muốn xóa tệp đính kèm này?")) {
+      return;
+    }
+
+    try {
+      await attachmentService.deleteAttachment(attachmentId);
+      toastSuccess("Xóa tệp đính kèm thành công!");
+      await fetchData();
+    } catch (error) {
+      console.error("Error deleting attachment:", error);
+      toastError("Xóa tệp đính kèm thất bại!");
+    }
+  };
+
   // Get file icon based on file type
   const getFileIcon = (fileType: string) => {
     if (fileType.startsWith('image/')) return <Image className="h-4 w-4" />;
@@ -408,7 +425,7 @@ const ProjectDocumentsPage: React.FC = () => {
             ) : (
               currentAttachments.map((attachment) => (
                 <Card key={attachment.id} className="hover:shadow-md transition-shadow">
-                  <CardContent className="p-4">
+                  <CardContent className="p-4 overflow-hidden">
                     <div className="flex items-start justify-between mb-3">
                       <div className="flex items-center space-x-2">
                         {getFileIcon(attachment.fileType)}
@@ -446,6 +463,21 @@ const ProjectDocumentsPage: React.FC = () => {
                         Tải xuống
                       </Button>
                     </div>
+                    
+                    {/* Delete button for uploaders */}
+                    {canUpload && (
+                      <div className="flex justify-end mt-2">
+                        <Button
+                          variant="destructive"
+                          size="sm"
+                          onClick={() => handleDeleteAttachment(attachment.id)}
+                          className="w-full"
+                        >
+                          <Trash2 className="h-3 w-3 mr-1" />
+                          Xóa
+                        </Button>
+                      </div>
+                    )}
                   </CardContent>
                 </Card>
               ))

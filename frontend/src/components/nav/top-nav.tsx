@@ -1,5 +1,5 @@
 import { useState } from "react"
-import { Search, Moon, Sun, GanttChartSquare, Menu, X } from "lucide-react"
+import { Search, Moon, Sun, SquareDashedKanban, Menu, X } from "lucide-react"
 import NotificationBell from "@/components/ui/notification-bell"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -125,12 +125,12 @@ export function TopNav({
   )
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 px-2 sm:px-3">
+    <header className="sticky top-0 z-99 w-full border-b bg-card  px-2 sm:px-3">
       <div className="flex h-14 items-center justify-between w-full max-w-screen-2xl mx-auto">
         {/* Logo - Always visible */}
         <div className="flex items-center">
           <div onClick={() => navigate("/")} className="flex items-center space-x-2 flex-shrink-0">
-            <GanttChartSquare className="h-5 w-5 sm:h-6 sm:w-6" />
+            <SquareDashedKanban className="h-5 w-5 sm:h-6 sm:w-6"/>
             <h1>Teamer</h1>
           </div>
         </div>
@@ -152,7 +152,7 @@ export function TopNav({
                  </div>
                  <Button 
                    type="submit" 
-                   className="bg-purple-600 hover:bg-purple-700 text-white px-3"
+                   className="bg-primary hover:bg-primary/90 text-primary-foreground px-3"
                    disabled={!searchQuery.trim()}
                  >
                    <Search className="h-4 w-4" />
@@ -178,7 +178,7 @@ export function TopNav({
                      </div>
                      <Button 
                        type="submit" 
-                       className="bg-purple-600 hover:bg-purple-700 text-white px-3"
+                       className="bg-primary hover:bg-primary/90 text-primary-foreground px-3"
                        disabled={!searchQuery.trim()}
                      >
                        <Search className="h-4 w-4" />
@@ -264,7 +264,7 @@ export function TopNav({
                   <Button variant="ghost" onClick={() => navigate("/login")} className="text-sm">
                     Đăng nhập
                   </Button>
-                  <Button onClick={() => navigate("/register")} className="text-sm">
+                  <Button onClick={() => navigate("/register")} className="text-sm bg-primary hover:bg-primary/90 text-primary-foreground">
                     Đăng ký
                   </Button>
                 </>
@@ -315,7 +315,7 @@ export function TopNav({
                       <Button
                         size="sm"
                         onClick={() => navigate("/register")}
-                        className="w-full justify-start"
+                        className="w-full justify-start bg-primary hover:bg-primary/90 text-primary-foreground"
                       >
                         Đăng ký
                       </Button>

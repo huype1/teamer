@@ -120,7 +120,7 @@ const ProjectOverviewPage: React.FC = () => {
             >
                 {user && project && isCurrentUserManager(user, project.id) && (
                     <div className="flex gap-2">
-                        <Button variant="outline" onClick={() => setIsEditDialogOpen(true)}>
+                        <Button variant="default" onClick={() => setIsEditDialogOpen(true)}>
                             Chỉnh sửa dự án
                         </Button>
                         <Button variant="destructive" onClick={() => setIsDeleteDialogOpen(true)}>
@@ -174,25 +174,25 @@ const ProjectOverviewPage: React.FC = () => {
                                 Xem danh sách công việc
                             </Link>
                         </Button>
-                        <Button asChild variant="outline" className="w-full">
+                        <Button asChild variant="secondary" className="w-full">
                             <Link to={`/projects/${projectId}/kanban`}>
                                 Xem Kanban
                             </Link>
                         </Button>
-                        <Button asChild variant="outline" className="w-full">
+                        <Button asChild variant="secondary" className="w-full">
                             <Link to={`/projects/${projectId}/documents`}>
                                 <FileText className="w-4 h-4 mr-2"/>
                                 Quản lý tài liệu
                             </Link>
                         </Button>
-                        <Button asChild variant="outline" className="w-full">
+                        <Button asChild variant="secondary" className="w-full">
                             <Link to={`/projects/${projectId}/members`}>
                                 Quản lý thành viên
                             </Link>
                         </Button> {
                         user && (
                             <Button
-                                variant="outline"
+                                variant="secondary"
                                 className="w-full"
                                 onClick={handleOpenChat}
                             >
@@ -219,7 +219,7 @@ const ProjectOverviewPage: React.FC = () => {
                             tác.</DialogDescription>
                     </DialogHeader>
                     <DialogFooter>
-                        <Button variant="outline" onClick={() => setIsDeleteDialogOpen(false)}>
+                        <Button variant="secondary" onClick={() => setIsDeleteDialogOpen(false)}>
                             Hủy
                         </Button>
                         <Button variant="destructive" onClick={handleDeleteProject}>

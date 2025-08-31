@@ -229,7 +229,7 @@ const NotificationBell = () => {
         <div className="flex items-center justify-between p-2 border-b">
           <h3 className="font-semibold">Thông báo</h3>
           <div className="flex items-center gap-2">
-            <Button
+            {/* <Button
               variant="ghost"
               size="sm"
               onClick={handleToggleSound}
@@ -241,7 +241,7 @@ const NotificationBell = () => {
               ) : (
                 <VolumeX className="h-4 w-4" />
               )}
-            </Button>
+            </Button> */}
             {unreadCount > 0 && (
               <Button 
                 variant="ghost" 

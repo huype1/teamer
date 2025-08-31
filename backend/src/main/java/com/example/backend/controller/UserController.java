@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.UUID;
 
 import org.springframework.web.bind.annotation.*;
+import jakarta.validation.Valid;
 
 import com.example.backend.dto.request.UserUpdateRequest;
 import com.example.backend.dto.response.ApiResponse;
@@ -54,7 +55,7 @@ public class UserController {
     }
 
     @PutMapping("/me")
-    public ApiResponse<UserResponse> updateMyInfo(@RequestBody UserUpdateRequest request) {
+    public ApiResponse<UserResponse> updateMyInfo(@RequestBody @Valid UserUpdateRequest request) {
         log.info("Updating current user info");
         return ApiResponse.<UserResponse>builder()
                 .message("User info updated successfully")
