@@ -5,7 +5,6 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { User, Lock } from "lucide-react";
 import type { User as UserType } from "@/types/user";
@@ -40,15 +39,10 @@ const UserDetailPage: React.FC = () => {
     handleSubmit,
     setValue,
     watch,
-    formState: { errors },
-    reset
+    formState: { errors }
   } = useForm<UserFormData>();
 
-  useEffect(() => {
-    fetchUserInfo();
-  }, []);
-
-  const fetchUserInfo = async () => {
+  const loadUserInfo = React.useCallback(async () => {
     try {
       setLoading(true);
       const response = await getMyInfo();
@@ -61,12 +55,15 @@ const UserDetailPage: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [setValue]);
+
+  useEffect(() => {
+    loadUserInfo();
+  }, [loadUserInfo]);
 
   const onSubmit = async (data: UserFormData) => {
     try {
       setUpdating(true);
-      // Chỉ gửi những field có thể update
       const updateData = {
         name: data.name,
         bio: data.bio,
@@ -74,12 +71,10 @@ const UserDetailPage: React.FC = () => {
       };
       const response = await updateMyInfo(updateData);
       
-      // Cập nhật local state
       setUserInfo(response.result);
       setAvatarUrl(response.result.avatarUrl || "");
       
-      // Cập nhật Redux state
-      await dispatch(fetchUserInfo() as any).unwrap();
+      await dispatch(fetchUserInfo());
       
       toastSuccess("Cập nhật thông tin thành công!");
     } catch (error) {
@@ -93,7 +88,6 @@ const UserDetailPage: React.FC = () => {
   const handleAvatarChange = (newAvatarUrl: string) => {
     setAvatarUrl(newAvatarUrl);
     setValue("avatarUrl", newAvatarUrl);
-    // Update userInfo state
     if (userInfo) {
       setUserInfo({
         ...userInfo,
@@ -102,9 +96,7 @@ const UserDetailPage: React.FC = () => {
     }
   };
 
-  const handleCancel = () => {
-    reset();
-  };
+  
 
   const handleDeleteAccount = async () => {
     if (!confirm("Bạn có chắc chắn muốn xóa tài khoản? Hành động này không thể hoàn tác.")) {
@@ -115,7 +107,7 @@ const UserDetailPage: React.FC = () => {
       toastSuccess("Tài khoản đã được xóa thành công!");
       dispatch(logout());
       navigate("/");
-    } finally {
+    } catch {
       toastError("Xóa tài khoản thất bại!");
     }
   };
@@ -161,7 +153,6 @@ const UserDetailPage: React.FC = () => {
         </CardHeader>
         <Separator />
         <CardContent className="pt-6">
-          {/* Hiển thị thông tin hiện tại */}
           <div className="mb-6 p-4 bg-muted/50 rounded-lg">
             <h3 className="font-medium mb-3">Thông tin hiện tại</h3>
             <div className="space-y-2 text-sm">
@@ -251,7 +242,6 @@ const UserDetailPage: React.FC = () => {
         isOpen={isPasswordModalOpen}
         onClose={() => setIsPasswordModalOpen(false)}
         onSuccess={() => {
-          // Optionally refetch user info after password update
         }}
       />
     </div>

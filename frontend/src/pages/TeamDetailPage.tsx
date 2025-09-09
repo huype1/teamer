@@ -26,7 +26,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useSelector } from "react-redux";
 import type { RootState } from "@/store";
-import { getCurrentUserRole, isCurrentUserTeamAdmin } from "@/utils/projectHelpers";
+import { getCurrentUserRoleTeam, isCurrentUserTeamAdmin } from "@/utils/projectHelpers";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
 
 const teamEditSchema = z.object({
@@ -75,11 +75,10 @@ const TeamDetailPage: React.FC = () => {
         teamService.getTeamUsers(teamId!),
         projectService.getProjectsByTeam(teamId!)
       ]);
-      console.log("Team data fetched:", teamRes, membersRes, projectsRes);
+      console.log("hey this is team message:", user, getCurrentUserRoleTeam(user,  teamId!));
       
       setTeam(teamRes.result);
       
-      // Handle members data - API trả về thông tin đầy đủ
       if (membersRes.result && Array.isArray(membersRes.result)) {
         setMembers(membersRes.result);
       } else {
@@ -89,7 +88,6 @@ const TeamDetailPage: React.FC = () => {
       
       setProjects(projectsRes.result || []);
       
-      // Set form default values
       reset({
         name: teamRes.result.name,
         description: teamRes.result.description,
@@ -97,7 +95,6 @@ const TeamDetailPage: React.FC = () => {
     } catch (error) {
       console.error("Error fetching team data:", error);
       setError("Failed to load team data");
-      // Set empty arrays to prevent further errors
       setMembers([]);
       setProjects([]);
     } finally {
@@ -184,7 +181,7 @@ const TeamDetailPage: React.FC = () => {
         </div>
         
         <div className="flex gap-2">
-          {user && getCurrentUserRole(user, teamId!) === "ADMIN" && (
+          {user && getCurrentUserRoleTeam(user, teamId!) === "ADMIN" && (
             <>
               <Dialog open={editDialogOpen} onOpenChange={handleEditDialogChange}>
                 <DialogTrigger asChild>

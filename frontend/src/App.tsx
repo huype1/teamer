@@ -49,10 +49,9 @@ function App() {
       dispatch(fetchUserInfo());
     }
 
-    // Check for pending invitation token
     const pendingInvitationToken = localStorage.getItem("pendingInvitationToken");
     if (isAuthenticated && pendingInvitationToken) {
-      window.location.href = "/invitation/accept_invitation";
+      window.location.href = `/invitation/accept_invitation?token=${pendingInvitationToken}`;
       return;
     }
 

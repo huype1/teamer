@@ -26,6 +26,14 @@ import { isCurrentUserManager } from "@/utils/projectHelpers";
 import { IssueForm, type IssueFormValues } from "@/components/project/IssueForm";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
+import { 
+  handleAssigneeChange as handleAssigneeChangeHelper,
+  handleStatusChange as handleStatusChangeHelper,
+  handlePriorityChange as handlePriorityChangeHelper,
+  handleIssueTypeChange as handleIssueTypeChangeHelper,
+  handleSprintChange as handleSprintChangeHelper,
+  mapIssue
+} from "@/utils/issueHelpers";
 
 const ProjectIssuesTablePage: React.FC = () => {
   const { projectId } = useParams<{ projectId: string }>();
@@ -75,35 +83,20 @@ const ProjectIssuesTablePage: React.FC = () => {
     }
   }, [projectId]);
 
-  // mapIssue
-  const mapIssue = useCallback((issue: Record<string, unknown>): Issue => {
-    return {
-      ...(issue as unknown as Issue),
-      sprintId: issue.sprintId ? String(issue.sprintId) : undefined,
-      reporter: issue.reporterId ? {
-        id: String(issue.reporterId),
-        name: String(issue.reporterName),
-        email: String(issue.reporterEmail),
-      } : undefined,
-      assignee: issue.assigneeId ? {
-        id: String(issue.assigneeId),
-        name: String(issue.assigneeName),
-        email: String(issue.assigneeEmail),
-      } : undefined,
-    };
-  }, []);
 
   // fetchBacklogIssues
   const fetchBacklogIssues = useCallback(async () => {
     try {
       const response = await sprintService.getBacklogIssues(projectId!);
-      const mappedIssues = (response.result || []).map(mapIssue);
+      const mappedIssues = (response.result || [])
+        .map(mapIssue)
+        .filter((issue): issue is Issue => issue !== null);
       setBacklogIssues(mappedIssues);
     } catch (error) {
       console.error("Error fetching backlog:", error);
       toastError("Không thể tải backlog!");
     }
-  }, [projectId, mapIssue]);
+  }, [projectId]);
 
   // fetchProjectMembers
   const fetchProjectMembers = useCallback(async () => {
@@ -224,71 +217,39 @@ const ProjectIssuesTablePage: React.FC = () => {
   };
 
   const handleStatusChange = async (issueId: string, newStatus: string) => {
-    try {
-      await issueService.updateIssueStatus(issueId, newStatus);
-      toastSuccess("Cập nhật trạng thái thành công!");
+    await handleStatusChangeHelper(issueId, newStatus, () => {
       fetchBacklogIssues();
-      setSprintReloadKey(prev => prev + 1); 
-    } catch (error) {
-      console.error("Error updating status:", error);
-      toastError("Cập nhật trạng thái thất bại!");
-    }
+      setSprintReloadKey(prev => prev + 1);
+    });
   };
 
   const handlePriorityChange = async (issueId: string, newPriority: string) => {
-    try {
-      await issueService.updateIssue(issueId, { priority: newPriority });
-      toastSuccess("Cập nhật độ ưu tiên thành công!");
+    await handlePriorityChangeHelper(issueId, newPriority, () => {
       fetchBacklogIssues();
-      setSprintReloadKey(prev => prev + 1); 
-    } catch (error) {
-      console.error("Error updating priority:", error);
-      toastError("Cập nhật độ ưu tiên thất bại!");
-    }
+      setSprintReloadKey(prev => prev + 1);
+    });
   };
 
   const handleIssueTypeChange = async (issueId: string, newIssueType: string) => {
-    try {
-      await issueService.updateIssue(issueId, { issueType: newIssueType });
-      toastSuccess("Cập nhật loại issue thành công!");
+    await handleIssueTypeChangeHelper(issueId, newIssueType, () => {
       fetchBacklogIssues();
-      setSprintReloadKey(prev => prev + 1); 
-    } catch (error) {
-      console.error("Error updating issue type:", error);
-      toastError("Cập nhật loại issue thất bại!");
-    }
+      setSprintReloadKey(prev => prev + 1);
+    });
   };
 
   const handleAssigneeChange = async (issueId: string, assigneeId: string) => {
-    try {
-      if (assigneeId === "unassigned") {
-        await issueService.unassignIssue(issueId);
-      } else {
-        await issueService.setAssignee(issueId, assigneeId);
-      }
-      toastSuccess("Cập nhật người phụ trách thành công!");
+    await handleAssigneeChangeHelper(issueId, assigneeId, () => {
       fetchBacklogIssues();
-      setSprintReloadKey(prev => prev + 1); 
-    } catch (error) {
-      console.error("Error updating assignee:", error);
-      toastError("Cập nhật người phụ trách thất bại!");
-    }
+      setSprintReloadKey(prev => prev + 1);
+    });
   };
 
   const handleSprintChange = async (issueId: string, sprintId: string) => {
-    try {
-      if (sprintId === "backlog") {
-        await issueService.updateIssue(issueId, { sprintId: null as unknown as string });
-      } else {
-        await issueService.updateIssue(issueId, { sprintId });
-      }
-      toastSuccess("Cập nhật sprint thành công!");
+    await handleSprintChangeHelper(issueId, sprintId, () => {
       fetchBacklogIssues();
       fetchSprints();
-      setSprintReloadKey(prev => prev + 1); 
-    } catch {
-      toastError("Cập nhật sprint thất bại!");
-    }
+      setSprintReloadKey(prev => prev + 1);
+    });
   };
 
 
@@ -300,7 +261,6 @@ const ProjectIssuesTablePage: React.FC = () => {
     return result;
   };
 
-  // Thêm hàm kiểm tra quyền quản lý sprint
   const canManageSprint = () => {
     if (!user || !projectId) return false;
     const currentUserMember = getCurrentUserProjectMember();
@@ -338,7 +298,6 @@ const ProjectIssuesTablePage: React.FC = () => {
     return result;
   };
 
-  // Tạo issue mới
   const onCreateIssue = async (data: import("@/components/project/IssueForm").IssueFormValues) => {
     try {
       const requestBody: CreateIssueRequest = {
@@ -364,26 +323,22 @@ const ProjectIssuesTablePage: React.FC = () => {
     }
   };
 
-  // Phân quyền tạo issue - chỉ PM và ADMIN mới được tạo
   const canCreateIssue = () => {
     if (!user || !projectId) return false;
     const currentUserMember = getCurrentUserProjectMember();
     return !!(currentUserMember && (currentUserMember.role === "ADMIN" || currentUserMember.role === "PM"));
   };
 
-  // State cho popup edit/delete
   const [editIssue, setEditIssue] = useState<Issue | null>(null);
   const [deleteIssue, setDeleteIssue] = useState<Issue | null>(null);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
 
-  // Mở popup edit
   const openEditIssueDialog = (issue: Issue) => {
     setEditIssue(issue);
     setIsEditDialogOpen(true);
   };
 
-  // Chuẩn hoá dữ liệu Issue sang InitialValues cho IssueForm khi chỉnh sửa
   const toIssueFormInitialValues = (issue: Issue): Partial<IssueFormValues> => ({
     title: issue.title,
     description: issue.description || "",
@@ -396,13 +351,11 @@ const ProjectIssuesTablePage: React.FC = () => {
     dueDate: issue.dueDate || "",
     parentId: issue.parentId || "",
   });
-  // Mở popup xác nhận xoá
   const openDeleteIssueDialog = (issue: Issue) => {
     setDeleteIssue(issue);
     setIsDeleteDialogOpen(true);
   };
 
-  // Xử lý cập nhật issue
   const onEditIssueSubmit = async (data: import("@/components/project/IssueForm").IssueFormValues) => {
     if (!editIssue) return;
     try {
@@ -430,7 +383,6 @@ const ProjectIssuesTablePage: React.FC = () => {
     }
   };
 
-  // Xử lý xoá issue
   const onDeleteIssueConfirm = async () => {
     if (!deleteIssue) return;
     try {
@@ -445,8 +397,6 @@ const ProjectIssuesTablePage: React.FC = () => {
     }
   };
 
-  // Filter out EPIC and SUBTASK for IssuesTable
-  const filteredBacklogIssues = backlogIssues.filter(issue => issue.issueType !== "EPIC" && issue.issueType !== "SUBTASK");
 
   if (loading) {
     return (
@@ -469,12 +419,10 @@ const ProjectIssuesTablePage: React.FC = () => {
     );
   }
 
-  // Filter out COMPLETED and CANCELLED sprints
   const visibleSprints = sprints.filter(sprint => 
     sprint.status !== "COMPLETED" && sprint.status !== "CANCELLED"
   );
   
-  // Backend now handles sorting, so we can use sprints directly
   const activeSprint = visibleSprints.find(s => s.status === "ACTIVE");
 
   return (
@@ -487,7 +435,6 @@ const ProjectIssuesTablePage: React.FC = () => {
       <ProjectNavigation projectId={projectId!} activeTab="issues" />
 
       <div className="space-y-6">
-        {/* Sprint Section: chỉ render nếu có sprint hoặc có quyền quản lý */}
         {(canManageSprint() || visibleSprints.length > 0) && (
           <div className="space-y-4">
             <div className="flex items-center justify-between">
@@ -499,7 +446,6 @@ const ProjectIssuesTablePage: React.FC = () => {
                 </Button>
               )}
             </div>
-            {/* Sprint Management Section */}
             {visibleSprints.length > 0 && (
               <div className="space-y-4" style={{ maxWidth: '100%' }}>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -523,7 +469,6 @@ const ProjectIssuesTablePage: React.FC = () => {
               </div>
             )}
 
-            {/* Sprint Issues Section */}
             {visibleSprints.length > 0 && (
               <div className="space-y-4" style={{ maxWidth: '100%' }}>
                 <h3 className="text-lg font-semibold">Issues trong Sprint</h3>
@@ -556,7 +501,6 @@ const ProjectIssuesTablePage: React.FC = () => {
           </div>
         )}
 
-        {/* Backlog Section */}
         <div className="w-full max-w-full">
           <Card>
             <CardHeader>
@@ -564,7 +508,7 @@ const ProjectIssuesTablePage: React.FC = () => {
             </CardHeader>
             <CardContent>
               <IssuesTable
-                issues={filteredBacklogIssues}
+                issues={backlogIssues}
                 allIssues={backlogIssues}
                 projectMembers={projectMembers}
                 sprints={visibleSprints}

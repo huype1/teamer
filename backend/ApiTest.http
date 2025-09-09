@@ -712,6 +712,11 @@ Authorization: Bearer {{authToken}}
 
 ###
 
+### Delete Attachment
+DELETE http://localhost:8080/api/attachments/d594a7f6-dcb4-4e40-bec9-726e858a3a58
+Authorization: Bearer {{token}}
+
+###
 
 
 # Test Project API Performance

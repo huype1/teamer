@@ -5,6 +5,8 @@ import { TopNav } from "@/components/nav/top-nav";
 import { useDispatch } from "react-redux";
 import { logout } from "@/store/authReducer";
 import type { AppDispatch } from "@/store";
+import dashboard1Image from "@/assets/dashboard_1.png";
+import dashboard2Image from "@/assets/dashboard_2.png";
 
 const useAppDispatch: () => AppDispatch = useDispatch;
 
@@ -42,7 +44,7 @@ const LandingPage = () => {
               <img
                 alt="Hero"
                 className="mx-auto aspect-video overflow-hidden rounded-xl object-cover sm:w-full lg:order-last lg:aspect-square"
-                src="https://placehold.co/600x400/png"
+                src={dashboard2Image}
               />
             </div>
           </div>
@@ -137,7 +139,7 @@ const LandingPage = () => {
               <img
                 alt="Why Choose Us"
                 className="mx-auto aspect-video overflow-hidden rounded-xl object-cover object-center sm:w-full lg:order-last"
-                src="https://placehold.co/600x400/png"
+                src={dashboard1Image}
               />
             </div>
           </div>

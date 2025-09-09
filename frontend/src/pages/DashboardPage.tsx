@@ -55,9 +55,7 @@ export default function DashboardPage() {
           issueService.getIssuesByAssigneeId(user.id),
           projectService.getProjects(),
         ]);
-        // Map lại để đảm bảo mỗi issue có projectId, project
         const projectsArr = projectRes.result || [];
-        // Khi map issueArr, dùng Partial<Issue> để tránh lỗi thiếu trường project
         const issuesArr = (issueRes.result || []).map((issue: Partial<Issue>) => ({
           ...issue,
           status: issue.status === "TO_DO" ? "TO_DO" : issue.status,
@@ -76,7 +74,6 @@ export default function DashboardPage() {
     fetchData();
   }, [user?.id]);
 
-  // Chuẩn bị dữ liệu cho PieChart trạng thái issue
   const statusColors: Record<Issue["status"], string> = {
     TO_DO: "#6B7280",
     IN_PROGRESS: "#3B82F6",
@@ -89,15 +86,12 @@ export default function DashboardPage() {
     IN_REVIEW: "Đang review",
     DONE: "Hoàn thành"
   };
-  // Sửa lại statusData mapping cho PieChart
   const statusKeys: Issue["status"][] = ["TO_DO", "IN_PROGRESS", "IN_REVIEW", "DONE"];
   const statusData = statusKeys.map(status => ({
     name: statusLabels[status],
     value: issues.filter(i => i.status === status).length,
     color: statusColors[status]
   }));
-
-  // Chuẩn bị dữ liệu cho BarChart priority
   const priorityColors: Record<string, string> = {
     P0: "#B91C1C",
     P1: "#EF4444",
@@ -112,7 +106,6 @@ export default function DashboardPage() {
     color: priorityColors[priority]
   }));
 
-  // Định nghĩa lại getStatusBadge, getPriorityBadge đúng chuẩn type Issue
   const getStatusBadge = (status: Issue["status"]) => {
     switch (status) {
       case "DONE":
@@ -166,7 +159,6 @@ export default function DashboardPage() {
 
   return (
     <div className="space-y-6 w-full">
-      {/* Header cá nhân hóa */}
       <div className="flex items-center justify-between w-full">
         <div className="flex items-center space-x-3">
           <Avatar className="h-12 w-12">
@@ -180,11 +172,10 @@ export default function DashboardPage() {
       </div>
 
 
-      {/* Issue của tôi */}
       <Card>
         <CardHeader>
           <CardTitle>Issue của tôi</CardTitle>
-          <CardDescription>Các issue bạn được giao</CardDescription>
+          <CardDescription>Các issue được giao</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="overflow-x-auto">
@@ -232,9 +223,7 @@ export default function DashboardPage() {
         </CardContent>
       </Card>
 
-      {/* Biểu đồ cá nhân hóa */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {/* PieChart trạng thái issue */}
         <Card>
           <CardHeader>
             <CardTitle>Trạng thái Issue của tôi</CardTitle>
@@ -263,7 +252,6 @@ export default function DashboardPage() {
             </div>
           </CardContent>
         </Card>
-        {/* BarChart priority issue */}
         <Card>
           <CardHeader>
             <CardTitle>Mức độ ưu tiên Issue</CardTitle>
@@ -288,7 +276,6 @@ export default function DashboardPage() {
         </Card>
       </div>
 
-      {/* Thông báo cá nhân */}
       <NotificationList maxItems={5} showActions={true} />
     </div>
   );

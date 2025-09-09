@@ -6,7 +6,7 @@ import { Badge } from "../ui/badge";
 import { Button } from "../ui/button";
 import { DndContext, useDraggable, useDroppable, PointerSensor, useSensor, useSensors, closestCorners } from '@dnd-kit/core';
 import type { DragEndEvent } from '@dnd-kit/core';
-import { Bug, FileText, Target, Zap, Plus, AlertCircle, CheckCircle2, Clock, Eye } from "lucide-react";
+import { Bug, FileText, Target, Plus, AlertCircle, CheckCircle2, Clock, Eye } from "lucide-react";
 import { Link } from "react-router-dom";
 
 interface KanbanBoardProps {
@@ -15,7 +15,6 @@ interface KanbanBoardProps {
   onOpenCreateIssue?: () => void;
   canCreateIssue?: boolean;
   onStatusChange?: (issueId: string, newStatus: string) => void;
-  onCreateSubtask?: (issue: Issue) => void;
 }
 
 interface ColumnConfig {
@@ -94,14 +93,7 @@ const getIssueTypeConfig = (issueType: string) => {
         label: "Bug",
         emoji: "🐛"
       };
-    case "SUBTASK":
-      return {
-        icon: Zap,
-        gradient: "from-yellow-600 to-orange-600",
-        textColor: "text-white",
-        label: "Subtask",
-        emoji: "⚡"
-      };
+
     default:
       return {
         icon: Target,
@@ -193,7 +185,7 @@ function DroppableColumn({ status, children, columnConfig }: { status: string; c
   );
 }
 
-const KanbanBoard: React.FC<KanbanBoardProps> = ({ issues, onOpenCreateIssue, canCreateIssue, onStatusChange, onCreateSubtask }) => {
+const KanbanBoard: React.FC<KanbanBoardProps> = ({ issues, onOpenCreateIssue, canCreateIssue, onStatusChange }) => {
   const sensors = useSensors(
     useSensor(PointerSensor, {
       activationConstraint: {
@@ -249,20 +241,7 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({ issues, onOpenCreateIssue, ca
                           >
                             {issue.priority}
                           </Badge>
-                          {onCreateSubtask && issue.issueType !== "SUBTASK" && (
-                            <Button 
-                              size="sm" 
-                              variant="ghost" 
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                onCreateSubtask(issue);
-                              }}
-                              title="Tạo subtask"
-                              className="h-7 w-7 p-0 opacity-0 group-hover:opacity-100 transition-opacity bg-gradient-to-r from-yellow-400 to-orange-400 hover:from-yellow-500 hover:to-orange-500 text-white rounded-full shadow-lg"
-                            >
-                              <Zap className="h-3 w-3" />
-                            </Button>
-                          )}
+
                         </div>
                         
                         <Link 

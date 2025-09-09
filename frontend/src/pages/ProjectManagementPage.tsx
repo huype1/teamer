@@ -1,21 +1,26 @@
 import React, { useState, useEffect } from "react";
 import ProjectService from "@/service/projectService";
-import type { Project, ProjectCreationRequest } from "@/types/project";
+import type { Project, ProjectCreationRequest, ProjectUpdateRequest } from "@/types/project";
 import {
   ProjectCard,
   ProjectHeader,
   ProjectSearch,
-  CreateProjectDialog,
 } from "@/components/project";
+import ProjectDialog from "@/components/project/ProjectDialog";
 import { toastSuccess, toastError } from "@/utils/toast";
 import { useNavigate } from "react-router-dom";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
+import { Button } from "@/components/ui/button";
+import { Plus } from "lucide-react";
 
 const ProjectManagementPage: React.FC = () => {
   const navigate = useNavigate();
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
+  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+  const [editingProject, setEditingProject] = useState<Project | null>(null);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
 
   useEffect(() => {
     fetchProjects();
@@ -35,17 +40,36 @@ const ProjectManagementPage: React.FC = () => {
 
   const handleCreateProject = async (formData: ProjectCreationRequest) => {
     try {
-      await ProjectService.createProject(formData);
+      const response = await ProjectService.createProject(formData);
       toastSuccess("Tạo dự án thành công!");
       fetchProjects();
+      return response; // Return response để ProjectDialog có thể sử dụng
     } catch (error) {
       toastError("Tạo dự án thất bại!");
       console.error("Error creating project:", error);
+      throw error; // Re-throw để ProjectDialog có thể handle
     }
   };
 
-  const handleEditProject = (project: Project) => {
-    navigate(`/projects/${project.id}`);
+  const handleEditProject = async (formData: ProjectUpdateRequest) => {
+    if (!editingProject) return;
+    
+    try {
+      await ProjectService.updateProject(editingProject.id, formData);
+      toastSuccess("Cập nhật dự án thành công!");
+      fetchProjects();
+      setEditingProject(null);
+      setIsEditDialogOpen(false);
+    } catch (error) {
+      toastError("Cập nhật dự án thất bại!");
+      console.error("Error updating project:", error);
+      throw error;
+    }
+  };
+
+  const handleEditClick = (project: Project) => {
+    setEditingProject(project);
+    setIsEditDialogOpen(true);
   };
 
   const handleDeleteProject = async (projectId: string) => {
@@ -85,7 +109,10 @@ const ProjectManagementPage: React.FC = () => {
     <div className="p-6 space-y-6">
       {/* Header */}
       <ProjectHeader>
-        <CreateProjectDialog onSubmit={handleCreateProject} />
+        <Button onClick={() => setIsCreateDialogOpen(true)}>
+          <Plus className="mr-2 h-4 w-4" />
+          Tạo dự án
+        </Button>
       </ProjectHeader>
 
       {/* Search and Filters */}
@@ -100,12 +127,29 @@ const ProjectManagementPage: React.FC = () => {
           <ProjectCard
             key={project.id}
             project={project}
-            onEdit={handleEditProject}
-            onDelete={handleDeleteProject}
-            onManageMembers={handleManageMembers}
+            onEdit={() => handleEditClick(project)}
+            onDelete={() => handleDeleteProject(project.id)}
+            onManageMembers={() => handleManageMembers(project)}
           />
         ))}
       </div>
+
+      {/* Create Project Dialog */}
+      <ProjectDialog
+        mode="create"
+        isOpen={isCreateDialogOpen}
+        onOpenChange={setIsCreateDialogOpen}
+        onSubmit={handleCreateProject}
+      />
+
+      {/* Edit Project Dialog */}
+      <ProjectDialog
+        mode="edit"
+        isOpen={isEditDialogOpen}
+        onOpenChange={setIsEditDialogOpen}
+        project={editingProject}
+        onSubmit={handleEditProject}
+      />
     </div>
   );
 };

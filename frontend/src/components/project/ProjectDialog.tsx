@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Plus } from "lucide-react";
+import { Plus, Edit } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -27,26 +27,28 @@ import { toastError, toastSuccess } from "@/utils/toast";
 import { useDispatch } from "react-redux";
 import { refreshUserInfo } from "@/store/authReducer";
 import type { Team } from "@/types/team";
+import type { ProjectCreationRequest, ProjectUpdateRequest, Project } from "@/types/project";
 
-interface CreateProjectDialogProps {
-  onSubmit: (data: {
-    name: string;
-    description: string;
-    key: string;
-    teamId: string;
-    isPublic: boolean;
-    avatarUrl: string;
-    clientName: string;
-    startDate: string;
-    endDate: string;
-  }) => Promise<{ result: { id: string } }>;
+interface ProjectDialogProps {
+  mode: 'create' | 'edit';
+  isOpen: boolean;
+  onOpenChange: (open: boolean) => void;
+  project?: Project | null;
+  onSubmit: (data: ProjectCreationRequest | ProjectUpdateRequest) => Promise<{ result: { id: string } }>;
+  trigger?: React.ReactNode;
 }
 
-const CreateProjectDialog: React.FC<CreateProjectDialogProps> = ({
+const ProjectDialog: React.FC<ProjectDialogProps> = ({
+  mode,
+  isOpen,
+  onOpenChange,
+  project,
   onSubmit,
+  trigger
 }) => {
   const dispatch = useDispatch();
-  const [isOpen, setIsOpen] = useState(false);
+  const isEditMode = mode === 'edit';
+  
   const [formData, setFormData] = useState({
     name: "",
     description: "",
@@ -58,10 +60,11 @@ const CreateProjectDialog: React.FC<CreateProjectDialogProps> = ({
     startDate: "",
     endDate: ""
   });
+  
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [adminTeams, setAdminTeams] = useState<Team[]>([]);
   const [loadingTeams, setLoadingTeams] = useState(true);
-  const [creating, setCreating] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
     if (isOpen) {
@@ -73,50 +76,69 @@ const CreateProjectDialog: React.FC<CreateProjectDialogProps> = ({
     }
   }, [isOpen]);
 
+  useEffect(() => {
+    if (isEditMode && project) {
+      setFormData({
+        name: project.name || "",
+        description: project.description || "",
+        key: project.key || "",
+        teamId: project.team?.id || "",
+        isPublic: project.isPublic || false,
+        avatarUrl: project.avatarUrl || "",
+        clientName: project.clientName || "",
+        startDate: project.startDate || "",
+        endDate: project.endDate || ""
+      });
+    }
+  }, [isEditMode, project]);
+
   const handleSubmit = async () => {
     try {
-      setCreating(true);
+      setSubmitting(true);
       
-      // Prepare form data - convert "none" to empty string for teamId
       const submitData = {
         ...formData,
         teamId: formData.teamId === "none" ? "" : formData.teamId
       };
       
-      // Submit project data first
-      const response = await onSubmit(submitData);
-      
-      // Refresh user info để cập nhật projectMembers
-      await dispatch(refreshUserInfo());
-      
-      // If there's a selected file, upload it after project creation
-      if (selectedFile && response?.result?.id) {
-        try {
-          await uploadProjectAvatar(response.result.id, selectedFile);
-          toastSuccess("Dự án đã được tạo và ảnh đại diện đã được cập nhật!");
-        } catch (error) {
-          console.error("Error uploading avatar:", error);
-          toastError("Dự án đã được tạo nhưng không thể cập nhật ảnh đại diện!");
-        }
+      if (isEditMode && project) {
+        await onSubmit(submitData);
+        toastSuccess("Dự án đã được cập nhật thành công!");
       } else {
-        toastSuccess("Dự án đã được tạo thành công!");
+        const response = await onSubmit(submitData);
+        
+        await dispatch(refreshUserInfo());
+        
+        if (selectedFile && response?.result?.id) {
+          try {
+            await uploadProjectAvatar(response.result.id, selectedFile);
+            toastSuccess("Dự án đã được tạo và ảnh đại diện đã được cập nhật!");
+          } catch (error) {
+            console.error("Error uploading avatar:", error);
+            toastError("Dự án đã được tạo nhưng không thể cập nhật ảnh đại diện!");
+          }
+        } else {
+          toastSuccess("Dự án đã được tạo thành công!");
+        }
       }
       
-      // Reset form
-      setFormData({ name: "", description: "", key: "", teamId: "", isPublic: false, avatarUrl: "", clientName: "", startDate: "", endDate: "" });
-      setSelectedFile(null);
-      setIsOpen(false);
+      // Reset form and close dialog
+      if (!isEditMode) {
+        setFormData({ name: "", description: "", key: "", teamId: "", isPublic: false, avatarUrl: "", clientName: "", startDate: "", endDate: "" });
+        setSelectedFile(null);
+      }
+      onOpenChange(false);
     } catch (error) {
-      console.error("Error creating project:", error);
-      toastError("Không thể tạo dự án!");
+      console.error("Error submitting project:", error);
+      toastError(isEditMode ? "Không thể cập nhật dự án!" : "Không thể tạo dự án!");
     } finally {
-      setCreating(false);
+      setSubmitting(false);
     }
   };
 
   const handleOpenChange = (open: boolean) => {
-    setIsOpen(open);
-    if (!open) {
+    onOpenChange(open);
+    if (!open && !isEditMode) {
       setFormData({ name: "", description: "", key: "", teamId: "", isPublic: false, avatarUrl: "", clientName: "", startDate: "", endDate: "" });
       setSelectedFile(null);
     }
@@ -148,20 +170,25 @@ const CreateProjectDialog: React.FC<CreateProjectDialogProps> = ({
     }
   };
 
+  const title = isEditMode ? 'Chỉnh sửa dự án' : 'Tạo dự án mới';
+  const description = isEditMode 
+    ? 'Cập nhật thông tin và cài đặt dự án của bạn.'
+    : 'Tạo một dự án mới để tổ chức công việc và cộng tác với nhóm của bạn.';
+  const submitText = isEditMode ? 'Cập nhật dự án' : 'Tạo dự án';
+  const submittingText = isEditMode ? 'Đang cập nhật...' : 'Đang tạo...';
+
   return (
     <Dialog open={isOpen} onOpenChange={handleOpenChange}>
-      <DialogTrigger asChild>
-        <Button>
-          <Plus className="mr-2 h-4 w-4" />
-          Tạo dự án
-        </Button>
-      </DialogTrigger>
+      {trigger ? (
+        <DialogTrigger asChild>
+          {trigger}
+        </DialogTrigger>
+      ) : (null
+      )}
       <DialogContent className="sm:max-w-[500px] h-[80vh] overflow-y-scroll">
         <DialogHeader>
-          <DialogTitle>Tạo dự án mới</DialogTitle>
-          <DialogDescription>
-            Tạo một dự án mới để tổ chức công việc và cộng tác với nhóm của bạn.
-          </DialogDescription>
+          <DialogTitle>{title}</DialogTitle>
+          <DialogDescription>{description}</DialogDescription>
         </DialogHeader>
         <div className="grid gap-4 py-4">
           <div className="grid gap-2">
@@ -173,16 +200,20 @@ const CreateProjectDialog: React.FC<CreateProjectDialogProps> = ({
               placeholder="Nhập tên dự án"
             />
           </div>
-          <div className="grid gap-2">
-            <Label htmlFor="key">Mã dự án</Label>
-            <Input
-              id="key"
-              value={formData.key}
-              onChange={(e) => setFormData({ ...formData, key: e.target.value.toUpperCase() })}
-              placeholder="VD: PROJ"
-              maxLength={6}
-            />
-          </div>
+          
+          {!isEditMode && (
+            <div className="grid gap-2">
+              <Label htmlFor="key">Mã dự án</Label>
+              <Input
+                id="key"
+                value={formData.key}
+                onChange={(e) => setFormData({ ...formData, key: e.target.value.toUpperCase() })}
+                placeholder="VD: PROJ"
+                maxLength={6}
+              />
+            </div>
+          )}
+          
           <div className="grid gap-2">
             <Label htmlFor="isPublic">Dự án cộng đồng</Label>
             <Switch
@@ -191,6 +222,7 @@ const CreateProjectDialog: React.FC<CreateProjectDialogProps> = ({
               onCheckedChange={(checked: boolean) => setFormData({ ...formData, isPublic: checked })}
             />
           </div>
+          
           <div className="grid gap-2">
             <Label htmlFor="avatarUrl">Ảnh đại diện</Label>
             <Input
@@ -206,6 +238,7 @@ const CreateProjectDialog: React.FC<CreateProjectDialogProps> = ({
               </p>
             )}
           </div>
+          
           <div className="grid gap-2">
             <Label htmlFor="description">Mô tả</Label>
             <Textarea
@@ -272,11 +305,11 @@ const CreateProjectDialog: React.FC<CreateProjectDialogProps> = ({
           </div>
         </div>
         <DialogFooter>
-          <Button type="button" variant="outline" onClick={() => setIsOpen(false)} disabled={creating}>
+          <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={submitting}>
             Hủy
           </Button>
-          <Button type="button" onClick={handleSubmit} disabled={creating}>
-            {creating ? "Đang tạo..." : "Tạo dự án"}
+          <Button type="button" onClick={handleSubmit} disabled={submitting}>
+            {submitting ? submittingText : submitText}
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -284,4 +317,5 @@ const CreateProjectDialog: React.FC<CreateProjectDialogProps> = ({
   );
 };
 
-export default CreateProjectDialog; 
+export default ProjectDialog;
+

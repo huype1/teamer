@@ -47,7 +47,6 @@ export const SprintIssuesCombinedTable: React.FC<SprintIssuesCombinedTableProps>
   onStartSprint,
   onEndSprint,
   onCancelSprint,
-  activeSprintId,
   sprintReloadKey,
   canManageSprint,
   onOpenCreateIssue,
@@ -135,34 +134,6 @@ export const SprintIssuesCombinedTable: React.FC<SprintIssuesCombinedTableProps>
     }
   };
 
-  const getIssueTypeConfig = (issueType: string) => {
-    switch (issueType) {
-      case "STORY":
-        return {
-          icon: FileText,
-          color: "issue-type-story",
-          label: "Story"
-        };
-      case "TASK":
-        return {
-          icon: Target,
-          color: "issue-type-task",
-          label: "Task"
-        };
-      case "BUG":
-        return {
-          icon: Bug,
-          color: "issue-type-bug",
-          label: "Bug"
-        };
-      default:
-        return {
-          icon: Target,
-          color: "issue-type-task",
-          label: "Task"
-        };
-    }
-  };
 
   if (loading) {
     return <div className="text-center py-4">Đang tải...</div>;

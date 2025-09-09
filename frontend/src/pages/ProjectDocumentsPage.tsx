@@ -66,23 +66,20 @@ const ProjectDocumentsPage: React.FC = () => {
   const [isCreateDocumentDialogOpen, setIsCreateDocumentDialogOpen] = useState(false);
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [canUpload, setCanUpload] = useState(false);
+  const [isPM, setIsPM] = useState(false);
   
-  // Document creation state
   const [documentTitle, setDocumentTitle] = useState("");
   const [documentDescription, setDocumentDescription] = useState("");
   const [creatingDocument, setCreatingDocument] = useState(false);
   
-  // Document edit state
   const [editingDocument, setEditingDocument] = useState<Document | null>(null);
   const [isEditDocumentDialogOpen, setIsEditDocumentDialogOpen] = useState(false);
   const [deletingDocument, setDeletingDocument] = useState<string | null>(null);
   
-  // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(10);
   const [searchTerm, setSearchTerm] = useState("");
 
-  // Fetch project, attachments and documents
   const fetchData = useCallback(async () => {
     if (!projectId) return;
     
@@ -109,25 +106,22 @@ const ProjectDocumentsPage: React.FC = () => {
     fetchData();
   }, [fetchData]);
 
-  // Check if user can upload files
   useEffect(() => {
     if (!user || !project) {
       setCanUpload(false);
       return;
     }
     
-    // Check if user is project member with appropriate role
     const userMember = user.projectMembers?.find(m => m.projectId === projectId);
-    setCanUpload(!!(userMember && (userMember.role === "ADMIN" || userMember.role === "PM")));
+    setCanUpload(!!(userMember && (userMember.role !== "VIEWER")));
+    setIsPM(!!(userMember && (userMember.role === "PM" || userMember.role === "ADMIN")));
   }, [user, project, projectId]);
 
-  // Handle file selection
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(event.target.files || []);
     setSelectedFiles(files);
   };
 
-  // Handle file upload
   const handleUpload = async () => {
     if (selectedFiles.length === 0) return;
     
@@ -136,10 +130,8 @@ const ProjectDocumentsPage: React.FC = () => {
       
       for (const file of selectedFiles) {
         try {
-          // Upload file to S3
           const metadata = await attachmentService.uploadFile(file);
           
-          // Create attachment record in database with project_id
           await attachmentService.createAttachment({
             fileName: metadata.fileName,
             fileType: metadata.fileType,
@@ -155,10 +147,8 @@ const ProjectDocumentsPage: React.FC = () => {
         }
       }
       
-      // Refresh attachments list
       await fetchData();
       
-      // Reset form
       setSelectedFiles([]);
       setIsUploadDialogOpen(false);
     } catch (error) {
@@ -169,7 +159,6 @@ const ProjectDocumentsPage: React.FC = () => {
     }
   };
 
-  // Handle document creation
   const handleCreateDocument = async () => {
     if (!documentTitle.trim()) {
       toastError("Vui lòng nhập tên tài liệu!");
@@ -190,7 +179,6 @@ const ProjectDocumentsPage: React.FC = () => {
       setDocumentDescription("");
       setIsCreateDocumentDialogOpen(false);
       
-      // Refresh documents list
       await fetchData();
     } catch (error) {
       console.error("Error creating document:", error);
@@ -200,14 +188,12 @@ const ProjectDocumentsPage: React.FC = () => {
     }
   };
 
-  // Handle document edit
   const handleEditDocument = async (document: Document) => {
     setEditingDocument(document);
     setDocumentTitle(document.title);
     setIsEditDocumentDialogOpen(true);
   };
 
-  // Handle document update
   const handleUpdateDocument = async () => {
     if (!editingDocument || !documentTitle.trim()) {
       toastError("Vui lòng nhập tên tài liệu!");
@@ -227,7 +213,6 @@ const ProjectDocumentsPage: React.FC = () => {
       setIsEditDocumentDialogOpen(false);
       setEditingDocument(null);
       
-      // Refresh documents list
       await fetchData();
     } catch (error) {
       console.error("Error updating document:", error);
@@ -237,7 +222,6 @@ const ProjectDocumentsPage: React.FC = () => {
     }
   };
 
-  // Handle document delete
   const handleDeleteDocument = async (documentId: string) => {
     if (!window.confirm("Bạn có chắc chắn muốn xóa tài liệu này?")) {
       return;
@@ -248,7 +232,6 @@ const ProjectDocumentsPage: React.FC = () => {
       await documentService.deleteDocument(documentId);
       toastSuccess("Xóa tài liệu thành công!");
       
-      // Refresh documents list
       await fetchData();
     } catch (error) {
       console.error("Error deleting document:", error);
@@ -258,13 +241,10 @@ const ProjectDocumentsPage: React.FC = () => {
     }
   };
 
-  // Handle document view
   const handleViewDocument = (document: Document) => {
-    // Navigate to document editor page
     navigate(`/documents/${document.id}/edit`);
   };
 
-  // Handle file download
   const handleDownload = async (attachment: Attachment) => {
     try {
       await attachmentService.downloadFile(attachment);
@@ -274,7 +254,6 @@ const ProjectDocumentsPage: React.FC = () => {
     }
   };
 
-  // Handle attachment delete
   const handleDeleteAttachment = async (attachmentId: string) => {
     if (!window.confirm("Bạn có chắc chắn muốn xóa tệp đính kèm này?")) {
       return;
@@ -290,7 +269,6 @@ const ProjectDocumentsPage: React.FC = () => {
     }
   };
 
-  // Get file icon based on file type
   const getFileIcon = (fileType: string) => {
     if (fileType.startsWith('image/')) return <Image className="h-4 w-4" />;
     if (fileType.startsWith('video/')) return <Video className="h-4 w-4" />;
@@ -300,7 +278,6 @@ const ProjectDocumentsPage: React.FC = () => {
     return <File className="h-4 w-4" />;
   };
 
-  // Format file size
   const formatFileSize = (bytes: number) => {
     if (bytes === 0) return '0 Bytes';
     const k = 1024;
@@ -308,8 +285,6 @@ const ProjectDocumentsPage: React.FC = () => {
     const i = Math.floor(Math.log(bytes) / Math.log(k));
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
   };
-
-  // Format date
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('vi-VN', {
       year: 'numeric',
@@ -319,13 +294,10 @@ const ProjectDocumentsPage: React.FC = () => {
       minute: '2-digit'
     });
   };
-
-  // Filter attachments based on search term
   const filteredAttachments = attachments.filter(attachment =>
     attachment.fileName.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  // Pagination
   const totalPages = Math.ceil(filteredAttachments.length / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
   const endIndex = startIndex + itemsPerPage;
@@ -373,7 +345,6 @@ const ProjectDocumentsPage: React.FC = () => {
       <ProjectNavigation projectId={projectId!} activeTab="documents" />
 
       <div className="p-6 space-y-8">
-        {/* Section 1: File Management */}
         <div className="space-y-4">
           <div className="flex items-center justify-between">
             <div>
@@ -391,7 +362,6 @@ const ProjectDocumentsPage: React.FC = () => {
             )}
           </div>
 
-          {/* Search and Filter */}
           <div className="flex items-center space-x-4">
             <div className="relative flex-1 max-w-sm">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -404,7 +374,6 @@ const ProjectDocumentsPage: React.FC = () => {
             </div>
           </div>
 
-          {/* Attachments Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
             {currentAttachments.length === 0 ? (
               <div className="col-span-full text-center py-12">
@@ -464,8 +433,7 @@ const ProjectDocumentsPage: React.FC = () => {
                       </Button>
                     </div>
                     
-                    {/* Delete button for uploaders */}
-                    {canUpload && (
+                    {attachment.uploader?.id === user?.id || isPM && (
                       <div className="flex justify-end mt-2">
                         <Button
                           variant="destructive"

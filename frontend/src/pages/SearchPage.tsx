@@ -184,7 +184,7 @@ const SearchPage: React.FC = () => {
               Không tìm thấy kết quả
             </h3>
             <p className="text-muted-foreground">
-              Không có công việc nào phù hợp với từ khóa "{keyword}"
+              Không có công việc nào phù hợp với từ khóa
             </p>
           </div>
         ) : null}

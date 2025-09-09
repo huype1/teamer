@@ -12,6 +12,7 @@ import org.springframework.stereotype.Service;
 
 import com.example.backend.dto.request.UserCreationRequest;
 import com.example.backend.dto.request.UserUpdateRequest;
+import com.example.backend.dto.request.PasswordChangeRequest;
 import com.example.backend.dto.response.UserResponse;
 import com.example.backend.dto.response.UserMinimalResponse;
 import com.example.backend.dto.response.ProjectMemberResponse;
@@ -48,7 +49,7 @@ public class UserService {
             user.setAvatarUrl(
                     "https://media.istockphoto.com/id/1495088043/vector/user-profile-icon-avatar-or-person-icon-profile-picture-portrait-symbol-default-portrait.jpg?s=612x612&w=0&k=20&c=dhV2p1JwmloBTOaGAtaA3AW1KSnjsdMt7-U_3EZElZ0=");
         }
-        // Bio field sẽ được set tự động từ UserCreationRequest thông qua mapper
+
 
         try {
             user = userRepository.save(user);
@@ -73,26 +74,44 @@ public class UserService {
         UUID userId = JwtUtils.getSubjectFromJwt();
         userRepository.deleteById(userId);
     }
+
+    public void changePassword(PasswordChangeRequest request) {
+        UUID userId = JwtUtils.getSubjectFromJwt();
+        
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
+        
+        // Verify current password
+        if (!passwordEncoder.matches(request.getCurrentPassword(), user.getPassword())) {
+            throw new AppException(ErrorCode.INVALID_PASSWORD);
+        }
+        
+        // Update with new password
+        user.setPassword(passwordEncoder.encode(request.getNewPassword()));
+        userRepository.save(user);
+        
+        log.info("Password changed successfully for user: {}", userId);
+    }
     
     private UserResponse getMyInfoOptimized(UUID userId) {
         long startTime = System.currentTimeMillis();
         
-        // Fetch user cơ bản
+
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
         log.info("Fetch user took: {}ms", System.currentTimeMillis() - startTime);
         
         long teamStart = System.currentTimeMillis();
-        // Fetch team memberships tối ưu - chỉ select những field cần thiết
+
         var teamMemberData = teamMemberRepository.findMinimalByUserId(userId);
         log.info("Fetch team memberships took: {}ms", System.currentTimeMillis() - teamStart);
         
         long projectStart = System.currentTimeMillis();
-        // Fetch project members tối ưu - chỉ select những field cần thiết
+
         var projectMemberData = projectMemberRepository.findMinimalByUserId(userId);
         log.info("Fetch project members took: {}ms", System.currentTimeMillis() - projectStart);
         
-        // Map data tối ưu
+
         List<TeamMemberResponse> teamMembers = teamMemberData.stream()
                 .map(data -> TeamMemberResponse.builder()
                         .teamId((UUID) data[0])
@@ -111,7 +130,7 @@ public class UserService {
                          .build())
                 .toList();
         
-        // Tạo response tối ưu
+
         UserResponse response = UserResponse.builder()
                 .id(user.getId())
                 .email(user.getEmail())
@@ -131,15 +150,12 @@ public class UserService {
     
 
     private User getUserWithMemberships(UUID userId) {
-        // Fetch user cơ bản
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
         
-        // Fetch team memberships tối ưu
         var teamMemberships = teamMemberRepository.findByUserIdWithTeam(userId);
         user.setTeamMemberships(teamMemberships);
         
-        // Fetch project members tối ưu
         var projectMembers = projectMemberRepository.findByUserIdWithProject(userId);
         user.setProjectMembers(projectMembers);
         

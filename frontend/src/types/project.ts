@@ -43,6 +43,9 @@ export interface ProjectCreationRequest {
 export interface ProjectUpdateRequest {
   name?: string;
   description?: string;
+  teamId?: string;
+  avatarUrl?: string;
+  isPublic?: boolean;
   clientName?: string;
   startDate?: string;
   endDate?: string;

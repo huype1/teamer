@@ -27,6 +27,8 @@ public class ProjectUpdateRequest {
     
     private Boolean isPublic;
     
+    private String teamId;
+    
     private String clientName;
     
     private LocalDate startDate;

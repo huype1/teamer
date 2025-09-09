@@ -1,9 +1,14 @@
 import type { User } from '@/types/user';
 
-// Helper function để lấy role của user hiện tại trong project
 export const getCurrentUserRole = (user: User | null, projectId: string, teamId?: string): string | null => {
   if (!user || !projectId) return null;
   const projectMember = user.projectMembers.find(pm => pm.projectId === projectId);
+  return projectMember?.role || null;
+};
+
+export const getCurrentUserRoleTeam = (user: User | null, teamId: string): string | null => {
+  if (!user || !teamId) return null;
+  const projectMember = user.teamMembers.find(pm => pm.teamId === teamId);
   return projectMember?.role || null;
 };
 

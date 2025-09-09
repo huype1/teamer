@@ -1,7 +1,7 @@
 import axios from "axios";
 import { config } from "@/config/env";
 import type { GoogleCredentials, LoginRequest, RegisterRequest } from "@/types/auth";
-import { processPendingInvitation } from "@/utils/invitation";
+import { processPendingInvitation, navigateToPendingInvitation } from "@/utils/invitation";
 
 const baseUrl = `${config.getApiBaseUrl()}/auth`;
 
@@ -9,6 +9,12 @@ const register = async (body: RegisterRequest) => {
     const response = await axios.post(`${baseUrl}/register`, {provider: "EMAIL_PASSWORD", ...body});
     
     if (response.data.result?.token) {
+        // Check if there's a pending invitation and navigate
+        if (navigateToPendingInvitation()) {
+            return response.data; // Don't process invitation here, let the page handle it
+        }
+        
+        // If no pending invitation, process any existing one
         await processPendingInvitation();
     }
     
@@ -19,6 +25,12 @@ const login = async (body: LoginRequest) => {
   const response = await axios.post(`${baseUrl}/login`, body);
   
   if (response.data.result?.token) {
+      // Check if there's a pending invitation and navigate
+      if (navigateToPendingInvitation()) {
+          return response.data; // Don't process invitation here, let the page handle it
+      }
+      
+      // If no pending invitation, process any existing one
       await processPendingInvitation();
   }
   
@@ -29,6 +41,12 @@ const googleLogin = async (credentials: GoogleCredentials) => {
   const response = await axios.post(`${baseUrl}/login/google`, credentials);
   
   if (response.data.result?.token) {
+      // Check if there's a pending invitation and navigate
+      if (navigateToPendingInvitation()) {
+          return response.data; // Don't process invitation here, let the page handle it
+      }
+      
+      // If no pending invitation, process any existing one
       await processPendingInvitation();
   }
   

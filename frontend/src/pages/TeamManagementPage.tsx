@@ -62,14 +62,16 @@ const TeamManagementPage: React.FC = () => {
 
   const onSubmit = async (data: TeamFormData) => {
     try {
-      await teamService.createTeam(data);
+      const response = await teamService.createTeam(data);
       toastSuccess("Tạo nhóm thành công!");
       reset();
       fetchTeams();
+      return response; 
     } catch (e: unknown) {
       const error = e as { message?: string };
       toastError(error.message || "Tạo nhóm thất bại!");
       setError(error.message || "Failed to save team");
+      throw error;
     }
   };
 
@@ -83,7 +85,6 @@ const TeamManagementPage: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
       <div className="flex justify-between items-center">
           <div>
             <h1 className="text-3xl font-bold tracking-tight">Nhóm</h1>
@@ -94,7 +95,6 @@ const TeamManagementPage: React.FC = () => {
         <CreateTeamDialog onSubmit={onSubmit} />
       </div>
 
-      {/* Search Input */}
       <div className="mb-4">
         <Input
           type="text"
@@ -105,26 +105,20 @@ const TeamManagementPage: React.FC = () => {
         />
       </div>
 
-      {/* Error Message */}
       {error && (
         <div className="bg-destructive/15 text-destructive px-4 py-3 rounded-lg">
           {error}
         </div>
       )}
 
-      {/* Teams Grid */}
       {teams.length === 0 ? (
         <Card className="text-center py-12">
           <CardContent>
             <Users className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
-            <h3 className="text-lg font-semibold mb-2">No teams yet</h3>
+            <h3 className="text-lg font-semibold mb-2">Chưa có nhóm nào</h3>
             <p className="text-muted-foreground mb-4">
-              Create your first team to start collaborating with others
+              Tạo nhóm đầu tiên để bắt đầu hợp tác và quản lý thành viên
             </p>
-            <Button onClick={handleOpenCreate} className="gap-2">
-              <Plus className="w-4 h-4" />
-              Create Team
-            </Button>
           </CardContent>
         </Card>
       ) : (

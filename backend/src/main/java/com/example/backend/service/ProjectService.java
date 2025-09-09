@@ -20,6 +20,7 @@ import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import com.example.backend.repository.AttachmentRepository;
 
 @Slf4j
 @Service
@@ -32,6 +33,7 @@ public class ProjectService {
     TeamService teamService;
     ProjectMapper projectMapper;
     SprintRepository sprintRepository;
+    AttachmentRepository attachmentRepository;
 
     public Project createProject(Project project, User creator, UUID teamId) throws AppException {
         // Validate project key uniqueness
@@ -85,6 +87,11 @@ public class ProjectService {
 
     public void deleteProject(UUID projectId) throws AppException {
         Project project = getProjectById(projectId);
+        
+        // Delete all attachments for this project first
+        List<Attachment> attachments = attachmentRepository.findByProjectId(projectId);
+        attachmentRepository.deleteAll(attachments);
+        
         projectRepository.deleteById(projectId);
     }
 
@@ -134,11 +141,11 @@ public class ProjectService {
             try {
                 if (!teamService.isUserTeamMember(project.getTeam().getId(), userId)) {
                     teamService.addMemberToTeam(project.getTeam().getId(), userId, "VIEWER");
-                    log.info("Automatically added user {} to team {} when added to project {}", 
+                    log.info("Automatically added user {} to team {} when added to project {}",
                             userId, project.getTeam().getId(), projectId);
                 }
             } catch (Exception e) {
-                log.warn("Failed to automatically add user {} to team {}: {}", 
+                log.warn("Failed to automatically add user {} to team {}: {}",
                         userId, project.getTeam().getId(), e.getMessage());
             }
         }
@@ -151,7 +158,7 @@ public class ProjectService {
             log.error("User with id: {} is not a member of project with id: {}", userId, projectId);
             throw new AppException(ErrorCode.NOT_FOUND);
         }
-        
+
         projectMemberRepository.deleteById(new ProjectMemberId(projectId, userId));
         log.info("User with id: {} removed from project with id: {}", userId, projectId);
     }
@@ -159,12 +166,12 @@ public class ProjectService {
     public Chat getChatByProjectId(UUID projectId) throws AppException {
         Project project = getProjectById(projectId);
         Chat chat = project.getChat();
-        
+
         if (chat == null) {
             log.error("Chat not found for project: {}", projectId);
             throw new AppException(ErrorCode.NOT_FOUND);
         }
-        
+
         return chat;
     }
 
@@ -208,29 +215,48 @@ public class ProjectService {
     }
 
 
-    public boolean isUserProjectManager (UUID projectId, UUID userId) {
+    public boolean isUserAdmin(UUID projectId, UUID userId) {
         Project project = getProjectById(projectId);
-        
+
         if (project.getCreator().getId().equals(userId)) {
             return true;
         }
-        
+
+        Optional<ProjectMember> member = projectMemberRepository.findByProjectIdAndUserId(projectId, userId);
+        if (member.isPresent() && ("ADMIN".equals(member.get().getRole()))) {
+            return true;
+        }
+
+        if (project.getTeam() != null && teamService.isUserTeamAdmin(project.getTeam().getId(), userId)) {
+            return true;
+        }
+
+        return false;
+    }
+
+    public boolean isUserProjectManager(UUID projectId, UUID userId) {
+        Project project = getProjectById(projectId);
+
+        if (project.getCreator().getId().equals(userId)) {
+            return true;
+        }
+
         Optional<ProjectMember> member = projectMemberRepository.findByProjectIdAndUserId(projectId, userId);
         if (member.isPresent() && ("ADMIN".equals(member.get().getRole()) || "PM".equals(member.get().getRole()))) {
             return true;
         }
-        
+
         if (project.getTeam() != null && teamService.isUserTeamAdmin(project.getTeam().getId(), userId)) {
             return true;
         }
-        
+
         return false;
     }
 
     public void updateUserRole(UUID projectId, UUID userId, String newRole) throws AppException {
         ProjectMember member = projectMemberRepository.findByProjectIdAndUserId(projectId, userId)
                 .orElseThrow(() -> new AppException(ErrorCode.NOT_FOUND));
-        
+
         member.setRole(newRole);
         projectMemberRepository.save(member);
         log.info("Updated role for user {} in project {} to {}", userId, projectId, newRole);
@@ -297,7 +323,7 @@ public class ProjectService {
     public List<User> getProjectUsers(UUID projectId) {
         List<ProjectMember> members = projectMemberRepository.findByProjectId(projectId);
         return members.stream()
-            .map(member -> member.getUser())
-            .toList();
+                .map(member -> member.getUser())
+                .toList();
     }
 }

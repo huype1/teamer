@@ -7,11 +7,11 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toastSuccess, toastError } from "@/utils/toast";
-import { updateMyInfo } from "@/service/userService";
+import { changePassword } from "@/service/userService";
 
 const passwordUpdateSchema = z.object({
   currentPassword: z.string().min(1, "Mật khẩu hiện tại không được để trống"),
-  newPassword: z.string().min(6, "Mật khẩu mới phải có ít nhất 6 ký tự"),
+  newPassword: z.string().min(8, "Mật khẩu mới phải có ít nhất 8 ký tự"),
   confirmPassword: z.string().min(1, "Xác nhận mật khẩu không được để trống"),
 }).refine((data) => data.newPassword === data.confirmPassword, {
   message: "Mật khẩu xác nhận không khớp",
@@ -42,13 +42,31 @@ export const PasswordUpdateModal: React.FC<PasswordUpdateModalProps> = ({
 
   const onSubmit = async (data: PasswordUpdateFormData) => {
     try {
-      // Tạm thời bỏ qua password update vì backend chưa support
-      toastError("Tính năng đổi mật khẩu chưa được hỗ trợ!");
+      await changePassword({
+        currentPassword: data.currentPassword,
+        newPassword: data.newPassword,
+      });
+      
+      toastSuccess("Đổi mật khẩu thành công!");
       reset();
       onClose();
-    } catch (error) {
-      toastError("Cập nhật mật khẩu thất bại!");
+      onSuccess?.();
+    } catch (error: unknown) {
       console.error("Error updating password:", error);
+      
+      // Handle specific error messages from backend
+      if (error && typeof error === 'object' && 'response' in error) {
+        const axiosError = error as { response?: { data?: { message?: string }; status?: number } };
+        if (axiosError.response?.data?.message) {
+          toastError(axiosError.response.data.message);
+        } else if (axiosError.response?.status === 400) {
+          toastError("Mật khẩu hiện tại không đúng!");
+        } else {
+          toastError("Cập nhật mật khẩu thất bại!");
+        }
+      } else {
+        toastError("Cập nhật mật khẩu thất bại!");
+      }
     }
   };
 

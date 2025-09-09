@@ -2,7 +2,7 @@ import React, { useState, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Camera, X, Upload } from "lucide-react";
-import { uploadAvatar, deleteAvatar } from "@/service/avatarService";
+import { uploadAvatar, deleteAvatar, uploadTeamAvatar, uploadProjectAvatar, deleteTeamAvatar, deleteProjectAvatar } from "@/service/avatarService";
 import { toastError, toastSuccess } from "@/utils/toast";
 
 interface AvatarUploadProps {
@@ -11,6 +11,8 @@ interface AvatarUploadProps {
   onAvatarChange: (newAvatarUrl: string) => void;
   size?: "sm" | "md" | "lg";
   className?: string;
+  type?: "user" | "team" | "project";
+  entityId?: string;
 }
 
 export const AvatarUpload: React.FC<AvatarUploadProps> = ({
@@ -19,6 +21,8 @@ export const AvatarUpload: React.FC<AvatarUploadProps> = ({
   onAvatarChange,
   size = "md",
   className = "",
+  type = "user",
+  entityId,
 }) => {
   const [uploading, setUploading] = useState(false);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
@@ -60,7 +64,28 @@ export const AvatarUpload: React.FC<AvatarUploadProps> = ({
 
     try {
       setUploading(true);
-      const response = await uploadAvatar(file);
+      let response;
+      
+      switch (type) {
+        case "team":
+          if (!entityId) {
+            toastError("Team ID không được cung cấp!");
+            return;
+          }
+          response = await uploadTeamAvatar(entityId, file);
+          break;
+        case "project":
+          if (!entityId) {
+            toastError("Project ID không được cung cấp!");
+            return;
+          }
+          response = await uploadProjectAvatar(entityId, file);
+          break;
+        default:
+          response = await uploadAvatar(file);
+          break;
+      }
+      
       onAvatarChange(response.result);
       setPreviewUrl(null);
       toastSuccess("Cập nhật ảnh đại diện thành công!");
@@ -75,7 +100,27 @@ export const AvatarUpload: React.FC<AvatarUploadProps> = ({
   const handleDelete = async () => {
     try {
       setUploading(true);
-      await deleteAvatar();
+      
+      switch (type) {
+        case "team":
+          if (!entityId) {
+            toastError("Team ID không được cung cấp!");
+            return;
+          }
+          await deleteTeamAvatar(entityId);
+          break;
+        case "project":
+          if (!entityId) {
+            toastError("Project ID không được cung cấp!");
+            return;
+          }
+          await deleteProjectAvatar(entityId);
+          break;
+        default:
+          await deleteAvatar();
+          break;
+      }
+      
       onAvatarChange("");
       setPreviewUrl(null);
       toastSuccess("Đã xóa ảnh đại diện!");
@@ -133,9 +178,9 @@ export const AvatarUpload: React.FC<AvatarUploadProps> = ({
             size="sm"
             onClick={handleUpload}
             disabled={uploading}
-            className="flex items-center gap-2"
+            className="flex items-center gap-1"
           >
-            <Upload className="h-4 w-4" />
+            <Upload className="h-3 w-3" />
             {uploading ? "Đang tải..." : "Lưu"}
           </Button>
           <Button
@@ -144,21 +189,21 @@ export const AvatarUpload: React.FC<AvatarUploadProps> = ({
             onClick={handleCancel}
             disabled={uploading}
           >
-            Hủy
+            <X className="h-3 w-3" />
           </Button>
         </div>
       )}
 
-      {currentAvatarUrl && !previewUrl && (
+      {!previewUrl && currentAvatarUrl && (
         <Button
           size="sm"
           variant="destructive"
           onClick={handleDelete}
           disabled={uploading}
-          className="flex items-center gap-2"
+          className="flex items-center gap-1"
         >
-          <X className="h-4 w-4" />
-          Xóa ảnh
+          <X className="h-3 w-3" />
+          Xóa
         </Button>
       )}
     </div>

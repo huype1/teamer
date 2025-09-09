@@ -50,28 +50,12 @@ import websocketService from "@/service/websocketService";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { AttachmentList } from "@/components/ui/attachment-list";
 import MessageComposer from "@/components/ui/message-composer";
+import { handleAssigneeChange as handleAssigneeChangeHelper, mapIssueAllTypes } from "@/utils/issueHelpers";
 
 // Comment handled by MessageComposer
 
-// Map API response to FE Issue type
-const mapIssue = (issue: Record<string, unknown>): Issue => ({
-  ...(issue as unknown as Issue),
-  sprintId: issue.sprintId ? String(issue.sprintId) : undefined,
-  reporter: issue.reporterId
-    ? {
-        id: issue.reporterId as string,
-        name: issue.reporterName as string,
-        email: issue.reporterEmail as string,
-      }
-    : undefined,
-  assignee: issue.assigneeId
-    ? {
-        id: issue.assigneeId as string,
-        name: issue.assigneeName as string,
-        email: issue.assigneeEmail as string,
-      }
-    : undefined,
-});
+// Use helper function for mapping issues
+const mapIssue = mapIssueAllTypes;
 
 const IssueDetailPage: React.FC = () => {
   const { issueId } = useParams<{ issueId: string }>();
@@ -93,7 +77,6 @@ const IssueDetailPage: React.FC = () => {
   const [updating, setUpdating] = useState(false);
   const [projectMembers, setProjectMembers] = useState<ProjectMember[]>([]);
   console.log('subtasks', subtasks);
-  // Removed inline upload states (handled in MessageComposer)
 
   // State for comment attachments
   const [commentAttachments, setCommentAttachments] = useState<Record<string, Attachment[]>>({});
@@ -204,7 +187,7 @@ const IssueDetailPage: React.FC = () => {
       const commentsRes = await commentService.getCommentsByIssueId(issueId!);
       setComments(commentsRes.result || []);
       
-      if (issueRes.result.subtasks && issueRes.result.subtasks.length > 0) {
+      if (issueRes.result.subtasks) {
         const mappedSubtasks = issueRes.result.subtasks.map(mapIssue);
         console.log('Raw subtasks from API:', issueRes.result.subtasks);
         console.log('Mapped subtasks:', mappedSubtasks);
@@ -283,8 +266,7 @@ const IssueDetailPage: React.FC = () => {
   const handleAssigneeChange = async (assigneeId: string) => {
     if (!issue || !user) return;
     
-    try {
-      await issueService.setAssignee(issue.id, assigneeId === "unassigned" ? '' : assigneeId);
+    await handleAssigneeChangeHelper(issue.id, assigneeId, () => {
       const assignee = assigneeId === "unassigned" ? undefined : projectUsers.find(u => u.id === assigneeId);
       setIssue(prev => prev ? { 
         ...prev, 
@@ -294,11 +276,7 @@ const IssueDetailPage: React.FC = () => {
           email: assignee.email
         } : undefined
       } : null);
-      toastSuccess("Cập nhật người được giao thành công!");
-    } catch (error) {
-      toastError("Cập nhật người được giao thất bại!");
-      console.error("Lỗi khi cập nhật người được giao issue:", error);
-    }
+    });
   };
 
   const handleDelete = async () => {
@@ -314,7 +292,6 @@ const IssueDetailPage: React.FC = () => {
     }
   };
 
-  // Removed local submit in favor of MessageComposer
 
   const getPriorityColor = (priority: string) => {
     switch (priority) {
@@ -388,7 +365,6 @@ const IssueDetailPage: React.FC = () => {
     }
   };
 
-  // Fetch attachments for comments
   const fetchAttachmentsForComments = async (comments: Comment[]) => {
     const result: Record<string, Attachment[]> = {};
     for (const c of comments) {
@@ -402,7 +378,6 @@ const IssueDetailPage: React.FC = () => {
     setCommentAttachments(result);
   };
 
-  // Fetch attachments when comments change
   useEffect(() => {
     if (comments.length > 0) {
       fetchAttachmentsForComments(comments);
@@ -410,8 +385,6 @@ const IssueDetailPage: React.FC = () => {
   }, [comments]);
 
 
-
-  // Removed old FileUploadInput (MessageComposer has its own)
 
   if (loading) {
     return (
@@ -618,14 +591,9 @@ const IssueDetailPage: React.FC = () => {
                         }
                       }}
                       onAssigneeChange={async (issueId, assigneeId) => {
-                        try {
-                          await issueService.setAssignee(issueId, assigneeId === "unassigned" ? '' : assigneeId);
-                          toastSuccess("Cập nhật người được giao subtask thành công!");
+                        await handleAssigneeChangeHelper(issueId, assigneeId, () => {
                           fetchIssueData(); // Refresh data
-                        } catch (error) {
-                          toastError("Cập nhật người được giao subtask thất bại!");
-                          console.error("Lỗi khi cập nhật người được giao subtask:", error);
-                        }
+                        });
                       }}
                       canEditIssue={(subtask) => {
                         if (!user || !project) return false;
@@ -804,7 +772,6 @@ const IssueDetailPage: React.FC = () => {
                   </div>
                 </div>
 
-                {/* Assignee */}
                 <div>
                   <Label className="text-sm font-medium">Người được giao</Label>
                   {canEditIssue() ? (
@@ -813,10 +780,10 @@ const IssueDetailPage: React.FC = () => {
                       onValueChange={handleAssigneeChange}
                     >
                       <SelectTrigger className="mt-1">
-                        <SelectValue placeholder="Unassigned" />
+                        <SelectValue placeholder="Chưa phân công" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="unassigned">Unassigned</SelectItem>
+                        <SelectItem value="unassigned">Chưa phân công</SelectItem>
                         {projectUsers.map((user) => (
                           <SelectItem key={user.id} value={user.id}>
                             {user.name}
@@ -839,7 +806,7 @@ const IssueDetailPage: React.FC = () => {
                           </div>
                         </>
                       ) : (
-                        <span className="text-sm text-muted-foreground">Unassigned</span>
+                        <span className="text-sm text-muted-foreground">Chưa phân công</span>
                       )}
                     </div>
                   )}
@@ -849,7 +816,6 @@ const IssueDetailPage: React.FC = () => {
           </div>
         </div>
 
-        {/* Edit Issue Dialog */}
         <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
           <DialogContent>
             <DialogHeader>
@@ -878,7 +844,6 @@ const IssueDetailPage: React.FC = () => {
           </DialogContent>
         </Dialog>
 
-        {/* Delete Confirmation Dialog */}
         <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
           <DialogContent>
             <DialogHeader>
@@ -896,7 +861,6 @@ const IssueDetailPage: React.FC = () => {
           </DialogContent>
         </Dialog>
 
-        {/* Create Subtask Dialog */}
         <Dialog open={isCreateSubtaskOpen} onOpenChange={setIsCreateSubtaskOpen}>
           <DialogContent>
             <DialogHeader>

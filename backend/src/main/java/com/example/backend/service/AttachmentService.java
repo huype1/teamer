@@ -14,6 +14,8 @@ import com.example.backend.repository.ProjectRepository;
 import com.example.backend.repository.IssueRepository;
 import com.example.backend.repository.CommentRepository;
 import com.example.backend.repository.MessageRepository;
+import com.example.backend.repository.ProjectMemberRepository;
+import com.example.backend.utils.JwtUtils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.beans.factory.annotation.Value;
@@ -44,6 +46,7 @@ public class AttachmentService {
     private final IssueRepository issueRepository;
     private final CommentRepository commentRepository;
     private final MessageRepository messageRepository;
+    private final ProjectMemberRepository projectMemberRepository;
 
     @Value("${aws.s3.bucket}")
     private String bucketName;
@@ -163,6 +166,32 @@ public class AttachmentService {
     }
 
     public void deleteAttachment(UUID attachmentId) {
+        // Find attachment first
+        Attachment attachment = attachmentRepository.findById(attachmentId)
+                .orElseThrow(() -> new RuntimeException("Attachment not found"));
+        
+        // Check if user is project member
+        if (attachment.getProject() != null) {
+            UUID currentUserId = JwtUtils.getSubjectFromJwt();
+            var projectMember = projectMemberRepository.findByProjectIdAndUserId(
+                attachment.getProject().getId(), currentUserId);
+            if (projectMember.isEmpty()) {
+                throw new RuntimeException("Unauthorized to delete this attachment");
+            }
+        }
+        
+        // Delete file from S3
+        try {
+            s3Client.deleteObject(builder -> builder
+                    .bucket(bucketName)
+                    .key(attachment.getFilePath())
+                    .build());
+        } catch (Exception e) {
+            // Log error but don't fail the operation
+            System.err.println("Failed to delete file from S3: " + e.getMessage());
+        }
+        
+        // Delete from database
         attachmentRepository.deleteById(attachmentId);
     }
 

@@ -1,7 +1,7 @@
 import axios from "axios";
 import addReqToken from "@/utils/addReqToken";
 import { config } from "@/config/env";
-import type { UserResponse, UserUpdateRequest } from "@/types/user";
+import type { UserResponse, UserUpdateRequest, PasswordChangeRequest } from "@/types/user";
 
 const baseUrl = `${config.getApiBaseUrl()}/users`;
 
@@ -17,6 +17,15 @@ export const updateMyInfo = async (userData: UserUpdateRequest): Promise<UserRes
     const res = await axios.put(
         `${baseUrl}/me`,
         userData,
+        addReqToken(localStorage.getItem("token")),
+    );
+    return res.data;
+};
+
+export const changePassword = async (passwordData: PasswordChangeRequest): Promise<void> => {
+    const res = await axios.put(
+        `${baseUrl}/me/change-password`,
+        passwordData,
         addReqToken(localStorage.getItem("token")),
     );
     return res.data;
@@ -54,4 +63,4 @@ export const searchUsers = async (query: string): Promise<{ result: UserResponse
     return res.data;
 };
 
-export default { getMyInfo, updateMyInfo, deleteMyAccount, getUserById, getUsers, searchUsers };
+export default { getMyInfo, updateMyInfo, changePassword, deleteMyAccount, getUserById, getUsers, searchUsers };

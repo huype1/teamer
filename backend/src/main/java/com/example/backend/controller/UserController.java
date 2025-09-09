@@ -7,6 +7,7 @@ import org.springframework.web.bind.annotation.*;
 import jakarta.validation.Valid;
 
 import com.example.backend.dto.request.UserUpdateRequest;
+import com.example.backend.dto.request.PasswordChangeRequest;
 import com.example.backend.dto.response.ApiResponse;
 import com.example.backend.dto.response.UserResponse;
 import com.example.backend.dto.response.UserMinimalResponse;
@@ -68,6 +69,13 @@ public class UserController {
         log.info("Deleting current user account");
         userService.deleteMyAccount();
         return ApiResponse.<Void>builder().message("Account deleted successfully").build();
+    }
+
+    @PutMapping("/me/change-password")
+    public ApiResponse<Void> changePassword(@RequestBody @Valid PasswordChangeRequest request) {
+        log.info("Changing password for current user");
+        userService.changePassword(request);
+        return ApiResponse.<Void>builder().message("Password changed successfully").build();
     }
 
     @GetMapping("/{userId}")

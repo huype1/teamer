@@ -64,7 +64,7 @@ export const NotificationList: React.FC<NotificationListProps> = ({
         )
       );
       setUnreadCount(prev => Math.max(0, prev - 1));
-      toastSuccess("Đã đánh dấu đã đọc!");
+      toastSuccess("Đã đánh dấu thông báo đã đọc!");
     } catch (error) {
       console.error("Error marking as read:", error);
       toastError("Không thể đánh dấu đã đọc!");

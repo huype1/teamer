@@ -35,7 +35,8 @@ public enum ErrorCode {
     FORBIDDEN(HttpStatus.FORBIDDEN, 15, "Access forbidden"),
     INVALID_FILE_TYPE(HttpStatus.BAD_REQUEST, 17, "Invalid file type"),
     FILE_TOO_LARGE(HttpStatus.BAD_REQUEST, 18, "File size too large"),
-    UPLOAD_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, 19, "File upload failed");
+    UPLOAD_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, 19, "File upload failed"),
+    INVALID_PASSWORD(HttpStatus.BAD_REQUEST, 20, "Current password is incorrect");
 
     HttpStatusCode httpStatusCode;
     int code;

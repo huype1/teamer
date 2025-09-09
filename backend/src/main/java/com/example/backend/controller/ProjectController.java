@@ -178,7 +178,7 @@ public class ProjectController {
         log.info("Deleting project: {} by user: {}", projectId, userId);
 
         // Check if user is admin of this project
-        if (!projectService.isUserProjectManager(projectId, userId)) {
+        if (!projectService.isUserAdmin(projectId, userId)) {
             throw new AppException(com.example.backend.exception.ErrorCode.UNAUTHORIZED);
         }
 

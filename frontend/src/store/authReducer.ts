@@ -83,6 +83,22 @@ export const fetchUserInfo = createAsyncThunk(
   }
 );
 
+// Action để refresh user info sau khi tạo project/team mới
+export const refreshUserInfo = createAsyncThunk(
+  "auth/refreshUserInfo",
+  async (_, { rejectWithValue }) => {
+    try {
+      const response = await UserService.getMyInfo();
+      console.log("refreshUserInfo - Response from backend:", response);
+      return response.result;
+    } catch (error: unknown) {
+      console.error("refreshUserInfo - Error:", error);
+      const errorMessage = error instanceof Error ? error.message : "Failed to refresh user info";
+      return rejectWithValue(errorMessage);
+    }
+  }
+);
+
 const authSlice = createSlice({
   name: "auth",
   initialState,
@@ -157,6 +173,18 @@ const authSlice = createSlice({
         state.loading = false;
         state.error = action.payload as string;
         // Don't remove token or auth state on fetchUserInfo failure
+      })
+      .addCase(refreshUserInfo.pending, (state) => {
+        // Không set loading = true để tránh UI bị block
+        state.error = null;
+      })
+      .addCase(refreshUserInfo.fulfilled, (state, action) => {
+        state.user = action.payload;
+        // Không set loading = false vì không set loading = true
+      })
+      .addCase(refreshUserInfo.rejected, (state, action) => {
+        state.error = action.payload as string;
+        // Don't remove token or auth state on refreshUserInfo failure
       });
   },
 });

@@ -31,6 +31,11 @@ export interface UserUpdateRequest {
   avatarUrl?: string;
 }
 
+export interface PasswordChangeRequest {
+  currentPassword: string;
+  newPassword: string;
+}
+
 export interface UserResponse {
   code: number;
   message: string;

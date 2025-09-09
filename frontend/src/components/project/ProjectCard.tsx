@@ -54,9 +54,9 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, onEdit, onDelete, on
           <div className="flex items-start gap-2">
             <div className="flex items-center space-x-3 min-w-0 flex-1">
               <div className="h-10 w-10 rounded-lg bg-primary flex items-center justify-center flex-shrink-0">
-                <span className="text-primary-foreground font-bold text-sm">
+                {project.avatarUrl ? <img src={project.avatarUrl} alt={project.name} className="h-full w-full object-cover rounded-lg" /> : <span className="text-primary-foreground font-bold text-sm">
                   {project.key}
-                </span>
+                </span>}
               </div>
               <div className="min-w-0 flex-1">
                 <CardTitle className="text-md group-hover:text-primary transition-colors truncate">

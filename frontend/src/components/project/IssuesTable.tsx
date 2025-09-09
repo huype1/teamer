@@ -253,10 +253,10 @@ export const IssuesTable: React.FC<IssuesTableProps> = ({
                             onValueChange={(value) => onAssigneeChange(issue.id, value)}
                           >
                             <SelectTrigger className="w-28 h-6 text-xs">
-                              <SelectValue placeholder="Chưa giao" />
+                              <SelectValue placeholder="Chưa phân công" />
                             </SelectTrigger>
                             <SelectContent>
-                              <SelectItem value="unassigned">Chưa giao</SelectItem>
+                              <SelectItem value="unassigned">Chưa phân công</SelectItem>
                               {projectMembers?.filter(member => member.role !== "VIEWER" && member.user).map((member) => (
                                 <SelectItem key={member.userId} value={member.userId}>
                                   {member.user!.name}
@@ -266,7 +266,7 @@ export const IssuesTable: React.FC<IssuesTableProps> = ({
                           </Select>
                         ) : (
                           <span className="text-xs truncate">
-                            {issue.assignee?.name || "Chưa giao"}
+                            {issue.assignee?.name || "Chưa phân công"}
                           </span>
                         )}
                       </td>
