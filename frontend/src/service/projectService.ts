@@ -67,6 +67,16 @@ export const getProjectsByTeam = async (teamId: string) => {
   return res.data;
 };
 
+export const addProjectToTeam = async (projectId: string, teamId: string) => {
+  const res = await axios.put(`${baseUrl}/${projectId}/team/${teamId}`, {}, addReqToken(localStorage.getItem("token")));
+  return res.data;
+};
+
+export const removeProjectFromTeam = async (projectId: string) => {
+  const res = await axios.delete(`${baseUrl}/${projectId}/team`, addReqToken(localStorage.getItem("token")));
+  return res.data;
+};
+
 export const getProjectUsers = async (projectId: string) => {
     const res = await axios.get(
         `${baseUrl}/${projectId}/users`,
@@ -95,6 +105,8 @@ export default {
   updateMemberRole,
   acceptProjectInvitation,
   getProjectsByTeam,
+  addProjectToTeam,
+  removeProjectFromTeam,
   getProjectUsers,
   getProjectChat
 }; 

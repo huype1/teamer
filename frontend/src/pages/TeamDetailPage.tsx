@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -9,14 +9,16 @@ import {
   DialogHeader, 
   DialogTitle, 
   DialogTrigger,
-  DialogFooter
+  DialogFooter,
+  DialogDescription
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Edit, Trash2, Users, Calendar, FolderOpen, ArrowLeft } from "lucide-react";
+import { Edit, Trash2, Users, Calendar, FolderOpen, ArrowLeft, Plus, Upload, X } from "lucide-react";
 import teamService from "@/service/teamService";
 import projectService from "@/service/projectService";
+import avatarService from "@/service/avatarService";
 import { TeamMemberManagement } from "@/components/team";
 import type { Team, TeamUser } from "@/types/team";
 import type { Project } from "@/types/project";
@@ -47,6 +49,12 @@ const TeamDetailPage: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [addProjectDialogOpen, setAddProjectDialogOpen] = useState(false);
+  const [deleteProjectDialogOpen, setDeleteProjectDialogOpen] = useState(false);
+  const [projectToDelete, setProjectToDelete] = useState<Project | null>(null);
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
+  const [availableProjects, setAvailableProjects] = useState<Project[]>([]);
+  const [loadingAvailableProjects, setLoadingAvailableProjects] = useState(false);
 
   const {
     register,
@@ -61,13 +69,7 @@ const TeamDetailPage: React.FC = () => {
     },
   });
 
-  useEffect(() => {
-    if (teamId) {
-      fetchTeamData();
-    }
-  }, [teamId]);
-
-  const fetchTeamData = async () => {
+  const fetchTeamData = useCallback(async () => {
     try {
       setLoading(true);
       const [teamRes, membersRes, projectsRes] = await Promise.all([
@@ -100,7 +102,13 @@ const TeamDetailPage: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [teamId, reset, user]);
+
+  useEffect(() => {
+    if (teamId) {
+      fetchTeamData();
+    }
+  }, [teamId, fetchTeamData]);
 
   const handleEditSubmit = async (data: TeamEditFormData) => {
     try {
@@ -135,6 +143,70 @@ const TeamDetailPage: React.FC = () => {
     }
   };
 
+  const fetchAvailableProjects = async () => {
+    try {
+      setLoadingAvailableProjects(true);
+      const response = await projectService.getProjects();
+      // Filter out projects that are already in a team
+      const available = response.result.filter((project: Project) => !project.teamId);
+      setAvailableProjects(available);
+    } catch (error) {
+      console.error("Error fetching available projects:", error);
+      toastError("Không thể tải danh sách dự án!");
+    } finally {
+      setLoadingAvailableProjects(false);
+    }
+  };
+
+  const handleAddProjectToTeam = async (projectId: string) => {
+    try {
+      await projectService.addProjectToTeam(projectId, teamId!);
+      toastSuccess("Thêm dự án vào nhóm thành công!");
+      setAddProjectDialogOpen(false);
+      fetchTeamData();
+    } catch (error) {
+      toastError("Thêm dự án vào nhóm thất bại!");
+      console.error("Error adding project to team:", error);
+    }
+  };
+
+  const handleDeleteProjectClick = (project: Project) => {
+    setProjectToDelete(project);
+    setDeleteProjectDialogOpen(true);
+  };
+
+  const handleRemoveProjectFromTeam = async () => {
+    if (!projectToDelete) return;
+    
+    try {
+      await projectService.removeProjectFromTeam(projectToDelete.id);
+      toastSuccess("Xóa dự án khỏi nhóm thành công!");
+      setDeleteProjectDialogOpen(false);
+      setProjectToDelete(null);
+      fetchTeamData();
+    } catch (error) {
+      toastError("Xóa dự án khỏi nhóm thất bại!");
+      console.error("Error removing project from team:", error);
+    }
+  };
+
+  const handleAvatarUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    try {
+      setUploadingAvatar(true);
+      await avatarService.uploadTeamAvatar(teamId!, file);
+      toastSuccess("Cập nhật avatar thành công!");
+      fetchTeamData();
+    } catch (error) {
+      toastError("Cập nhật avatar thất bại!");
+      console.error("Error uploading avatar:", error);
+    } finally {
+      setUploadingAvatar(false);
+    }
+  };
+
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('vi-VN');
   };
@@ -160,6 +232,34 @@ const TeamDetailPage: React.FC = () => {
               <ArrowLeft className="h-4 w-4" />
             </Link>
           </Button>
+          
+          {/* Team Avatar */}
+          <div className="relative">
+            <div className="w-16 h-16 rounded-lg overflow-hidden bg-muted flex items-center justify-center">
+              {team.avatarUrl ? (
+                <img 
+                  src={team.avatarUrl} 
+                  alt={team.name}
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <Users className="w-8 h-8 text-muted-foreground" />
+              )}
+            </div>
+            {user && getCurrentUserRoleTeam(user, teamId!) === "ADMIN" && (
+              <label className="absolute -bottom-1 -right-1 bg-primary text-primary-foreground rounded-full p-1 cursor-pointer hover:bg-primary/90 transition-colors">
+                <Upload className="w-3 h-3" />
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={handleAvatarUpload}
+                  disabled={uploadingAvatar}
+                  className="hidden"
+                />
+              </label>
+            )}
+          </div>
+          
           <div>
             <h1 className="text-3xl font-bold mb-2">{team.name}</h1>
             <p className="text-muted-foreground mb-4">{team.description}</p>
@@ -183,6 +283,19 @@ const TeamDetailPage: React.FC = () => {
         <div className="flex gap-2">
           {user && getCurrentUserRoleTeam(user, teamId!) === "ADMIN" && (
             <>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={() => {
+                  setAddProjectDialogOpen(true);
+                  fetchAvailableProjects();
+                }}
+                className="gap-2"
+              >
+                <Plus className="w-4 h-4" />
+                Thêm dự án
+              </Button>
+              
               <Dialog open={editDialogOpen} onOpenChange={handleEditDialogChange}>
                 <DialogTrigger asChild>
                   <Button variant="outline" size="sm" className="gap-2">
@@ -254,6 +367,89 @@ const TeamDetailPage: React.FC = () => {
         </div>
       </div>
 
+      {/* Add Project Dialog */}
+      <Dialog open={addProjectDialogOpen} onOpenChange={setAddProjectDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Thêm dự án vào nhóm</DialogTitle>
+            <DialogDescription>
+              Chọn dự án để thêm vào nhóm {team.name}
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4">
+            {loadingAvailableProjects ? (
+              <div className="flex items-center justify-center py-8">
+                <LoadingSpinner />
+                <span className="ml-2">Đang tải danh sách dự án...</span>
+              </div>
+            ) : availableProjects.length === 0 ? (
+              <div className="text-center py-8 text-muted-foreground">
+                <FolderOpen className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                <p>Không có dự án nào có thể thêm vào nhóm</p>
+                <p className="text-sm">Tất cả dự án đã được gán cho nhóm khác</p>
+              </div>
+            ) : (
+              <div className="max-h-60 overflow-y-auto space-y-2">
+                {availableProjects.map((project) => (
+                  <div
+                    key={project.id}
+                    className="flex items-center justify-between p-3 border rounded-lg hover:bg-muted/50 transition-colors"
+                  >
+                    <div className="flex-1">
+                      <h4 className="font-medium">{project.name}</h4>
+                      <p className="text-sm text-muted-foreground">{project.description}</p>
+                      <div className="flex items-center gap-2 mt-1">
+                        <span className="text-xs bg-secondary px-2 py-1 rounded">Key: {project.key}</span>
+                        <Badge variant={project.isPublic ? "default" : "secondary"}>
+                          {project.isPublic ? "Công khai" : "Riêng tư"}
+                        </Badge>
+                      </div>
+                    </div>
+                    <Button
+                      size="sm"
+                      onClick={() => handleAddProjectToTeam(project.id)}
+                    >
+                      <Plus className="w-4 h-4 mr-1" />
+                      Thêm
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+          
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setAddProjectDialogOpen(false)}
+            >
+              Đóng
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Remove Project Dialog */}
+      <Dialog open={deleteProjectDialogOpen} onOpenChange={setDeleteProjectDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Xóa dự án khỏi nhóm</DialogTitle>
+            <DialogDescription>
+              Bạn có chắc chắn muốn xóa dự án "{projectToDelete?.name}" khỏi nhóm? Dự án sẽ trở thành dự án độc lập.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="secondary" onClick={() => setDeleteProjectDialogOpen(false)}>
+              Hủy
+            </Button>
+            <Button variant="destructive" onClick={handleRemoveProjectFromTeam}>
+              Xóa khỏi nhóm
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       {/* Team Member Management */}
       <div className="mb-6">
         {(() => {
@@ -306,6 +502,17 @@ const TeamDetailPage: React.FC = () => {
                     <span className="text-sm text-muted-foreground">
                       Tạo {formatDate(project.createdAt)}
                     </span>
+                    {user && getCurrentUserRoleTeam(user, teamId!) === "ADMIN" && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleDeleteProjectClick(project)}
+                        className="text-destructive hover:text-destructive"
+                        title="Xóa dự án khỏi nhóm"
+                      >
+                        <X className="w-4 h-4" />
+                      </Button>
+                    )}
                   </div>
                 </div>
               ))}

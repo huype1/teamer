@@ -6,7 +6,15 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Separator } from "@/components/ui/separator";
-import { User, Lock } from "lucide-react";
+import { 
+  Dialog, 
+  DialogContent, 
+  DialogHeader, 
+  DialogTitle, 
+  DialogDescription,
+  DialogFooter
+} from "@/components/ui/dialog";
+import { User, Lock, Trash2 } from "lucide-react";
 import type { User as UserType } from "@/types/user";
 import { getMyInfo, updateMyInfo, deleteMyAccount } from "@/service/userService";
 import { toastError, toastSuccess } from "@/utils/toast";
@@ -32,6 +40,7 @@ const UserDetailPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState(false);
   const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [avatarUrl, setAvatarUrl] = useState<string>("");
 
   const {
@@ -99,9 +108,6 @@ const UserDetailPage: React.FC = () => {
   
 
   const handleDeleteAccount = async () => {
-    if (!confirm("Bạn có chắc chắn muốn xóa tài khoản? Hành động này không thể hoàn tác.")) {
-      return;
-    }
     try {
       await deleteMyAccount();
       toastSuccess("Tài khoản đã được xóa thành công!");
@@ -230,7 +236,14 @@ const UserDetailPage: React.FC = () => {
                 <Lock className="h-4 w-4" />
                 Đổi mật khẩu
               </Button>
-              <Button type="button" variant="destructive" onClick={handleDeleteAccount} disabled={updating}>
+              <Button 
+                type="button" 
+                variant="destructive" 
+                onClick={() => setIsDeleteDialogOpen(true)} 
+                disabled={updating}
+                className="flex items-center gap-2"
+              >
+                <Trash2 className="h-4 w-4" />
                 Xóa tài khoản
               </Button>
             </div>
@@ -244,6 +257,39 @@ const UserDetailPage: React.FC = () => {
         onSuccess={() => {
         }}
       />
+
+      {/* Delete Account Dialog */}
+      <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Trash2 className="h-5 w-5 text-destructive" />
+              Xóa tài khoản
+            </DialogTitle>
+            <DialogDescription>
+              Bạn có chắc chắn muốn xóa tài khoản? Hành động này không thể hoàn tác và sẽ xóa vĩnh viễn tất cả dữ liệu của bạn.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button 
+              variant="outline" 
+              onClick={() => setIsDeleteDialogOpen(false)}
+              disabled={updating}
+            >
+              Hủy
+            </Button>
+            <Button 
+              variant="destructive" 
+              onClick={handleDeleteAccount}
+              disabled={updating}
+              className="flex items-center gap-2"
+            >
+              <Trash2 className="h-4 w-4" />
+              {updating ? "Đang xóa..." : "Xóa tài khoản"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

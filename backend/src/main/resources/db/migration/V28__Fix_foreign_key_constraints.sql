@@ -57,3 +57,4 @@ ALTER TABLE projects
 ADD CONSTRAINT projects_creator_id_fkey 
     FOREIGN KEY (creator_id) REFERENCES users(id) ON DELETE SET NULL;
 
+

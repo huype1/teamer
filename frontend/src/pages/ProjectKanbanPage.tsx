@@ -76,7 +76,8 @@ const ProjectKanbanPage: React.FC = () => {
       }
       const mappedIssues = (response.result || [])
         .map(mapIssue)
-        .filter((issue): issue is Issue => issue !== null);
+        .filter((issue): issue is Issue => issue !== null)
+        .filter(issue => issue.issueType !== "SUBTASK"); // Ẩn subtask trong kanban
       setKanbanIssues(mappedIssues);
     } catch (error) {
       console.error("Error fetching kanban issues:", error);

@@ -258,6 +258,51 @@ public class ProjectController {
                 .result(responses)
                 .build();
     }
+
+    @PutMapping("/{projectId}/team/{teamId}")
+    public ApiResponse<ProjectResponse> addProjectToTeam(
+            @PathVariable("projectId") UUID projectId,
+            @PathVariable("teamId") UUID teamId
+    ) {
+        UUID userId = JwtUtils.getSubjectFromJwt();
+        log.info("Adding project: {} to team: {} by user: {}", projectId, teamId, userId);
+
+        if (!teamService.isUserTeamAdmin(teamId, userId)) {
+            throw new AppException(com.example.backend.exception.ErrorCode.UNAUTHORIZED);
+        }
+
+        if (!projectService.isUserAdmin(projectId, userId)) {
+            throw new AppException(com.example.backend.exception.ErrorCode.UNAUTHORIZED);
+        }
+
+        Project updatedProject = projectService.addProjectToTeam(projectId, teamId);
+        ProjectResponse response = projectMapper.toResponse(updatedProject);
+
+        return ApiResponse.<ProjectResponse>builder()
+                .message("Project added to team successfully")
+                .result(response)
+                .build();
+    }
+
+    @DeleteMapping("/{projectId}/team")
+    public ApiResponse<ProjectResponse> removeProjectFromTeam(
+            @PathVariable("projectId") UUID projectId
+    ) {
+        UUID userId = JwtUtils.getSubjectFromJwt();
+        log.info("Removing project: {} from team by user: {}", projectId, userId);
+
+        if (!projectService.isUserAdmin(projectId, userId)) {
+            throw new AppException(com.example.backend.exception.ErrorCode.UNAUTHORIZED);
+        }
+
+        Project updatedProject = projectService.removeProjectFromTeam(projectId);
+        ProjectResponse response = projectMapper.toResponse(updatedProject);
+
+        return ApiResponse.<ProjectResponse>builder()
+                .message("Project removed from team successfully")
+                .result(response)
+                .build();
+    }
     //not using the apis below for now, but keeping them for future use
 
     @GetMapping("/{projectId}/members")

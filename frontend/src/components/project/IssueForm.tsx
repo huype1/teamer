@@ -16,7 +16,7 @@ const issueSchema = z.object({
   issueType: z.enum(["STORY", "TASK", "BUG", "SUBTASK"]),
   assigneeId: z.string().optional(),
   sprintId: z.string().optional(),
-  storyPoints: z.number().optional(),
+  storyPoints: z.string().optional(),
   startDate: z.string().optional(),
   dueDate: z.string().optional(),
   parentId: z.string().optional(),
@@ -33,7 +33,18 @@ const issueSchema = z.object({
   }
 );
 
-export type IssueFormValues = z.infer<typeof issueSchema>;
+export type IssueFormValues = {
+  title: string;
+  description?: string;
+  priority: "P0" | "P1" | "P2" | "P3" | "P4" | "P5";
+  issueType: "STORY" | "TASK" | "BUG" | "SUBTASK";
+  assigneeId?: string;
+  sprintId?: string;
+  storyPoints?: number;
+  startDate?: string;
+  dueDate?: string;
+  parentId?: string;
+};
 
 interface IssueFormProps {
   initialValues?: Partial<IssueFormValues>;
@@ -74,7 +85,7 @@ export const IssueForm: React.FC<IssueFormProps> = ({
     setValue,
     watch,
     formState: { errors },
-  } = useForm<IssueFormValues>({
+  } = useForm<z.infer<typeof issueSchema>>({
     resolver: zodResolver(issueSchema),
     defaultValues: {
       title: initialValues?.title || "",
@@ -85,7 +96,7 @@ export const IssueForm: React.FC<IssueFormProps> = ({
       sprintId: params?.isSubtask && params?.parentIssue?.sprintId 
         ? params.parentIssue.sprintId 
         : initialValues?.sprintId || "backlog",
-      storyPoints: initialValues?.storyPoints || undefined,
+      storyPoints: initialValues?.storyPoints ? String(initialValues.storyPoints) : "",
       startDate: initialValues?.startDate || "",
       dueDate: initialValues?.dueDate || "",
       parentId: initialValues?.parentId || "",
@@ -107,8 +118,26 @@ export const IssueForm: React.FC<IssueFormProps> = ({
     }
   }, [params?.isSubtask, setValue]);
 
+  const handleFormSubmit = (data: z.infer<typeof issueSchema>) => {
+    const processedData: IssueFormValues = {
+      title: data.title,
+      description: data.description,
+      priority: data.priority,
+      issueType: data.issueType,
+      assigneeId: data.assigneeId === "none" ? undefined : data.assigneeId,
+      sprintId: data.sprintId === "backlog" ? undefined : data.sprintId,
+      storyPoints: data.storyPoints && data.storyPoints.trim() !== "" 
+        ? Number(data.storyPoints) 
+        : undefined,
+      startDate: data.startDate,
+      dueDate: data.dueDate,
+      parentId: data.parentId,
+    };
+    onSubmit(processedData);
+  };
+
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 overflow-y-auto max-h-[70vh]">
+    <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-4 overflow-y-auto max-h-[70vh]">
       <div>
         <Input
           placeholder="Tiêu đề"
@@ -206,19 +235,12 @@ export const IssueForm: React.FC<IssueFormProps> = ({
       )}
       <div>
         <Input
-          type="number"
+          type="text"
           placeholder={`Story Points${params?.isSubtask && params?.parentIssue?.storyPoints ? ` (Max: ${params.parentIssue.storyPoints})` : ''}`}
-          {...register("storyPoints", { 
-            valueAsNumber: true,
-            max: params?.isSubtask && params?.parentIssue?.storyPoints ? params.parentIssue.storyPoints : undefined
-          })}
+          {...register("storyPoints")}
           disabled={loading}
         />
-        {params?.isSubtask && params?.parentIssue?.storyPoints && (
-          <span className="text-xs text-muted-foreground">
-            Story points phải ít hơn hoặc bằng {params.parentIssue.storyPoints} của issue cha
-          </span>
-        )}
+         {errors.storyPoints && <span className="text-xs text-red-500">{errors.storyPoints.message}</span>}
       </div>
       <div className="flex gap-4">
         <div className="flex-1">

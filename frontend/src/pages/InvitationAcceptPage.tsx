@@ -15,6 +15,7 @@ const InvitationAcceptPage: React.FC = () => {
   const navigate = useNavigate();
   const hasTriedAccept = useRef(false);
 
+  // Xử lý invitation một lần duy nhất khi component mount
   useEffect(() => {
     const token = searchParams.get('token');
     if (!token) {
@@ -24,6 +25,7 @@ const InvitationAcceptPage: React.FC = () => {
     }
 
     if (isAuthenticated) {
+      // Đã đăng nhập, accept invitation ngay
       if (hasTriedAccept.current) return;
       hasTriedAccept.current = true;
       setStatus('loading');
@@ -31,12 +33,15 @@ const InvitationAcceptPage: React.FC = () => {
         .then(() => {
           setStatus('success');
           setMessage('Bạn đã tham gia dự án thành công!');
+          // Xóa token sau khi accept thành công
+          localStorage.removeItem('pendingInvitationToken');
         })
         .catch((err) => {
           setStatus('error');
           setMessage(err?.response?.data?.message || 'Không thể tham gia dự án.');
         });
     } else {
+      // Chưa đăng nhập, lưu token và yêu cầu đăng nhập
       try {
         localStorage.setItem('pendingInvitationToken', token);
         setStatus('success');
@@ -47,7 +52,7 @@ const InvitationAcceptPage: React.FC = () => {
         setMessage('Không thể xử lý lời mời. Vui lòng thử lại.');
       }
     }
-  }, [searchParams, isAuthenticated]);
+  }, []); // Chỉ chạy một lần khi component mount
 
   const getStatusIcon = () => {
     switch (status) {

@@ -9,12 +9,14 @@ import com.example.backend.mapper.ProjectMapper;
 import com.example.backend.repository.ProjectMemberRepository;
 import com.example.backend.repository.ProjectRepository;
 import com.example.backend.repository.SprintRepository;
+import com.example.backend.repository.IssueRepository;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.OffsetDateTime;
 import java.util.List;
@@ -34,6 +36,7 @@ public class ProjectService {
     ProjectMapper projectMapper;
     SprintRepository sprintRepository;
     AttachmentRepository attachmentRepository;
+    IssueRepository issueRepository;
 
     public Project createProject(Project project, User creator, UUID teamId) throws AppException {
         // Validate project key uniqueness
@@ -85,6 +88,7 @@ public class ProjectService {
         return project.get();
     }
 
+    @Transactional
     public void deleteProject(UUID projectId) throws AppException {
         Project project = getProjectById(projectId);
         
@@ -92,6 +96,30 @@ public class ProjectService {
         List<Attachment> attachments = attachmentRepository.findByProjectId(projectId);
         attachmentRepository.deleteAll(attachments);
         
+        // Delete all sprints for this project
+        List<Sprint> sprints = sprintRepository.findByProjectId(projectId);
+        for (Sprint sprint : sprints) {
+            // Move all issues from this sprint back to backlog (set sprint to null)
+            List<Issue> sprintIssues = issueRepository.findBySprintId(sprint.getId());
+            for (Issue issue : sprintIssues) {
+                issue.setSprint(null);
+                issueRepository.save(issue);
+            }
+        }
+        sprintRepository.deleteAll(sprints);
+        
+        // Delete all issues for this project (cascade will handle comments and attachments)
+        Optional<List<Issue>> issuesOptional = issueRepository.findByProjectId(projectId);
+        if (issuesOptional.isPresent()) {
+            List<Issue> issues = issuesOptional.get();
+            issueRepository.deleteAll(issues);
+        }
+        
+        // Delete all project members
+        List<ProjectMember> projectMembers = projectMemberRepository.findByProjectId(projectId);
+        projectMemberRepository.deleteAll(projectMembers);
+        
+        // Delete the project (cascade will handle chat)
         projectRepository.deleteById(projectId);
     }
 
@@ -268,6 +296,47 @@ public class ProjectService {
 
     public List<Project> getProjectsByTeam(UUID teamId) {
         return projectRepository.findByTeamId(teamId);
+    }
+
+    @Transactional
+    public Project addProjectToTeam(UUID projectId, UUID teamId) throws AppException {
+        Project project = getProjectById(projectId);
+        
+        if (project.getTeam() != null) {
+            throw new AppException(ErrorCode.ALREADY_EXISTS);
+        }
+        
+        Team team = teamService.getTeamById(teamId);
+        project.setTeam(team);
+        
+        // Add all project members as team viewers
+        List<ProjectMember> projectMembers = projectMemberRepository.findByProjectId(projectId);
+        for (ProjectMember projectMember : projectMembers) {
+            try {
+                if (!teamService.isUserTeamMember(teamId, projectMember.getUserId())) {
+                    teamService.addMemberToTeam(teamId, projectMember.getUserId(), "VIEWER");
+                    log.info("Added project member {} to team {} as VIEWER", projectMember.getUserId(), teamId);
+                }
+            } catch (Exception e) {
+                log.warn("Failed to add project member {} to team {}: {}", 
+                    projectMember.getUserId(), teamId, e.getMessage());
+            }
+        }
+        
+        return projectRepository.save(project);
+    }
+
+    @Transactional
+    public Project removeProjectFromTeam(UUID projectId) throws AppException {
+        Project project = getProjectById(projectId);
+        
+        if (project.getTeam() == null) {
+            throw new AppException(ErrorCode.NOT_FOUND);
+        }
+        
+        project.setTeam(null);
+        
+        return projectRepository.save(project);
     }
 
     public long getProjectMemberCount(UUID projectId) {

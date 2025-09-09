@@ -83,7 +83,8 @@ export const SprintIssuesCombinedTable: React.FC<SprintIssuesCombinedTableProps>
     try {
       setLoading(true);
       const response = await sprintService.getIssuesBySprint(sprint.id);
-      const mappedIssues = (response.result || []).map(mapIssue);
+      const mappedIssues = (response.result || []).map(mapIssue).filter((issue): issue is Issue => issue !== null)
+      .filter(issue => issue.issueType !== "SUBTASK");
       setIssues(mappedIssues);
     } catch {
       toastError("Không thể tải issues của sprint!");

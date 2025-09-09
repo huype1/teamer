@@ -414,7 +414,7 @@ const IssueDetailPage: React.FC = () => {
               <div className="flex items-center gap-2 mb-2">
                 <h1 className="text-3xl font-bold">{issue.title}</h1>
                 <Badge variant="outline">{issue.key}</Badge>
-                {canEditIssue() && <Button size="sm" variant="outline" className="ml-2" onClick={() => setIsCreateSubtaskOpen(true)}>
+                {canEditIssue() && issue.issueType !== "SUBTASK" && <Button size="sm" variant="outline" className="ml-2" onClick={() => setIsCreateSubtaskOpen(true)}>
                   <Zap className="w-4 h-4 mr-1" /> Tạo subtask
                 </Button>}
               </div>
@@ -840,6 +840,7 @@ const IssueDetailPage: React.FC = () => {
               projectUsers={projectUsers}
               sprints={sprints}
               isEdit={true}
+              disableIssueType={issue.issueType === "SUBTASK"}
             />
           </DialogContent>
         </Dialog>

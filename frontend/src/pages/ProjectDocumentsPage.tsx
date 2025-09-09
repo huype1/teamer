@@ -10,7 +10,8 @@ import {
   DialogContent, 
   DialogHeader, 
   DialogTitle, 
-  DialogFooter 
+  DialogFooter,
+  DialogDescription
 } from "@/components/ui/dialog";
 import { 
   Upload, 
@@ -75,10 +76,15 @@ const ProjectDocumentsPage: React.FC = () => {
   const [editingDocument, setEditingDocument] = useState<Document | null>(null);
   const [isEditDocumentDialogOpen, setIsEditDocumentDialogOpen] = useState(false);
   const [deletingDocument, setDeletingDocument] = useState<string | null>(null);
+  const [isDeleteDocumentDialogOpen, setIsDeleteDocumentDialogOpen] = useState(false);
+  const [documentToDelete, setDocumentToDelete] = useState<Document | null>(null);
+  const [isDeleteAttachmentDialogOpen, setIsDeleteAttachmentDialogOpen] = useState(false);
+  const [attachmentToDelete, setAttachmentToDelete] = useState<Attachment | null>(null);
   
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(10);
   const [searchTerm, setSearchTerm] = useState("");
+  const [documentSearchTerm, setDocumentSearchTerm] = useState("");
 
   const fetchData = useCallback(async () => {
     if (!projectId) return;
@@ -222,17 +228,22 @@ const ProjectDocumentsPage: React.FC = () => {
     }
   };
 
-  const handleDeleteDocument = async (documentId: string) => {
-    if (!window.confirm("Bạn có chắc chắn muốn xóa tài liệu này?")) {
-      return;
-    }
+  const handleDeleteDocumentClick = (document: Document) => {
+    setDocumentToDelete(document);
+    setIsDeleteDocumentDialogOpen(true);
+  };
+
+  const handleDeleteDocument = async () => {
+    if (!documentToDelete) return;
     
     try {
-      setDeletingDocument(documentId);
-      await documentService.deleteDocument(documentId);
+      setDeletingDocument(documentToDelete.id);
+      await documentService.deleteDocument(documentToDelete.id);
       toastSuccess("Xóa tài liệu thành công!");
       
       await fetchData();
+      setIsDeleteDocumentDialogOpen(false);
+      setDocumentToDelete(null);
     } catch (error) {
       console.error("Error deleting document:", error);
       toastError("Xóa tài liệu thất bại!");
@@ -254,15 +265,20 @@ const ProjectDocumentsPage: React.FC = () => {
     }
   };
 
-  const handleDeleteAttachment = async (attachmentId: string) => {
-    if (!window.confirm("Bạn có chắc chắn muốn xóa tệp đính kèm này?")) {
-      return;
-    }
+  const handleDeleteAttachmentClick = (attachment: Attachment) => {
+    setAttachmentToDelete(attachment);
+    setIsDeleteAttachmentDialogOpen(true);
+  };
+
+  const handleDeleteAttachment = async () => {
+    if (!attachmentToDelete) return;
 
     try {
-      await attachmentService.deleteAttachment(attachmentId);
+      await attachmentService.deleteAttachment(attachmentToDelete.id);
       toastSuccess("Xóa tệp đính kèm thành công!");
       await fetchData();
+      setIsDeleteAttachmentDialogOpen(false);
+      setAttachmentToDelete(null);
     } catch (error) {
       console.error("Error deleting attachment:", error);
       toastError("Xóa tệp đính kèm thất bại!");
@@ -296,6 +312,10 @@ const ProjectDocumentsPage: React.FC = () => {
   };
   const filteredAttachments = attachments.filter(attachment =>
     attachment.fileName.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  const filteredDocuments = documents.filter(document =>
+    document.title.toLowerCase().includes(documentSearchTerm.toLowerCase())
   );
 
   const totalPages = Math.ceil(filteredAttachments.length / itemsPerPage);
@@ -438,7 +458,7 @@ const ProjectDocumentsPage: React.FC = () => {
                         <Button
                           variant="destructive"
                           size="sm"
-                          onClick={() => handleDeleteAttachment(attachment.id)}
+                          onClick={() => handleDeleteAttachmentClick(attachment)}
                           className="w-full"
                         >
                           <Trash2 className="h-3 w-3 mr-1" />
@@ -496,10 +516,23 @@ const ProjectDocumentsPage: React.FC = () => {
               )}
             </div>
 
+          {/* Document Search */}
+          <div className="flex items-center space-x-4">
+            <div className="relative flex-1 max-w-sm">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Tìm kiếm tài liệu..."
+                value={documentSearchTerm}
+                onChange={(e) => setDocumentSearchTerm(e.target.value)}
+                className="pl-10"
+              />
+            </div>
+          </div>
+
           {/* Documents List */}
-          {documents.length > 0 ? (
+          {filteredDocuments.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {documents.map((document) => (
+              {filteredDocuments.map((document) => (
                 <Card key={document.id} className="hover:shadow-md transition-shadow">
                   <CardContent className="p-4">
                     <div className="flex items-start justify-between">
@@ -544,7 +577,7 @@ const ProjectDocumentsPage: React.FC = () => {
                               Sửa
                             </DropdownMenuItem>
                             <DropdownMenuItem 
-                              onClick={() => handleDeleteDocument(document.id)}
+                              onClick={() => handleDeleteDocumentClick(document)}
                               disabled={deletingDocument === document.id}
                               className="text-red-600 focus:text-red-600"
                             >
@@ -566,8 +599,18 @@ const ProjectDocumentsPage: React.FC = () => {
           ) : (
             <div className="text-center py-8 text-muted-foreground">
               <FileText className="h-12 w-12 mx-auto mb-4 opacity-50" />
-              <p>Chưa có tài liệu nào</p>
-              <p className="text-sm">Tạo tài liệu đầu tiên để bắt đầu</p>
+              <h3 className="text-lg font-medium text-muted-foreground mb-2">
+                {documentSearchTerm ? 'Không tìm thấy tài liệu nào' : 'Chưa có tài liệu nào'}
+              </h3>
+              <p className="text-sm text-muted-foreground mb-4">
+                {documentSearchTerm ? 'Thử tìm kiếm với từ khóa khác' : 'Tạo tài liệu đầu tiên để bắt đầu'}
+              </p>
+              {canUpload && !documentSearchTerm && (
+                <Button onClick={() => setIsCreateDocumentDialogOpen(true)}>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Tạo tài liệu
+                </Button>
+              )}
             </div>
           )}
         </div>
@@ -749,6 +792,57 @@ const ProjectDocumentsPage: React.FC = () => {
                     Cập nhật
                   </>
                 )}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Delete Document Dialog */}
+        <Dialog open={isDeleteDocumentDialogOpen} onOpenChange={setIsDeleteDocumentDialogOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Xóa tài liệu</DialogTitle>
+              <DialogDescription>
+                Bạn có chắc chắn muốn xóa tài liệu "{documentToDelete?.title}"? Hành động này không thể hoàn tác.
+              </DialogDescription>
+            </DialogHeader>
+            <DialogFooter>
+              <Button variant="secondary" onClick={() => setIsDeleteDocumentDialogOpen(false)}>
+                Hủy
+              </Button>
+              <Button 
+                variant="destructive" 
+                onClick={handleDeleteDocument}
+                disabled={deletingDocument === documentToDelete?.id}
+              >
+                {deletingDocument === documentToDelete?.id ? (
+                  <>
+                    <LoadingSpinner className="h-4 w-4 mr-2" />
+                    Đang xóa...
+                  </>
+                ) : (
+                  "Xóa tài liệu"
+                )}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Delete Attachment Dialog */}
+        <Dialog open={isDeleteAttachmentDialogOpen} onOpenChange={setIsDeleteAttachmentDialogOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Xóa tệp đính kèm</DialogTitle>
+              <DialogDescription>
+                Bạn có chắc chắn muốn xóa tệp đính kèm "{attachmentToDelete?.fileName}"? Hành động này không thể hoàn tác.
+              </DialogDescription>
+            </DialogHeader>
+            <DialogFooter>
+              <Button variant="secondary" onClick={() => setIsDeleteAttachmentDialogOpen(false)}>
+                Hủy
+              </Button>
+              <Button variant="destructive" onClick={handleDeleteAttachment}>
+                Xóa tệp đính kèm
               </Button>
             </DialogFooter>
           </DialogContent>

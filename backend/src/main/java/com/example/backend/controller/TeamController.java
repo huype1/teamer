@@ -64,12 +64,17 @@ public class TeamController {
     @DeleteMapping("/{teamId}")
     public ApiResponse<Void> deleteTeam(@PathVariable UUID teamId) {
         UUID currentUserId = JwtUtils.getSubjectFromJwt();
+        log.info("User {} attempting to delete team {}", currentUserId, teamId);
 
         // Check if current user is team admin
         if (!teamService.isUserTeamAdmin(teamId, currentUserId)) {
+            log.warn("User {} is not authorized to delete team {}", currentUserId, teamId);
             throw new com.example.backend.exception.AppException(com.example.backend.exception.ErrorCode.UNAUTHORIZED);
         }
+        
         teamService.deleteTeam(teamId);
+        log.info("Team {} deleted successfully by user {}", teamId, currentUserId);
+        
         return ApiResponse.<Void>builder()
                 .message("Team deleted successfully")
                 .build();

@@ -10,6 +10,9 @@ import com.example.backend.repository.ProjectMemberRepository;
 import com.example.backend.repository.ProjectRepository;
 import com.example.backend.repository.TeamMemberRepository;
 import com.example.backend.repository.TeamRepository;
+import com.example.backend.repository.AttachmentRepository;
+import com.example.backend.repository.SprintRepository;
+import com.example.backend.repository.IssueRepository;
 
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
@@ -38,12 +41,14 @@ public class TeamService {
     TeamMapper teamMapper;
     ProjectRepository projectRepository;
     ProjectMemberRepository projectMemberRepository;
+    AttachmentRepository attachmentRepository;
+    SprintRepository sprintRepository;
+    IssueRepository issueRepository;
 
     public Team createTeam(com.example.backend.dto.request.TeamCreationRequest request, User creator) {
         Team team = teamMapper.toEntity(request, creator);
         Team savedTeam = teamRepository.save(team);
         
-        // Automatically add creator as ADMIN member
         TeamMember creatorMember = TeamMember.builder()
                 .teamId(savedTeam.getId())
                 .userId(creator.getId())
@@ -61,11 +66,36 @@ public class TeamService {
         return teamRepository.save(team);
     }
 
+    @Transactional
     public void deleteTeam(UUID teamId) {
+        log.info("Starting deletion of team: {}", teamId);
+        
         if (!teamRepository.existsById(teamId)) {
+            log.error("Team not found for deletion: {}", teamId);
             throw new AppException(ErrorCode.NOT_FOUND);
         }
-        teamRepository.deleteById(teamId);
+        
+        try {
+            List<Project> projects = projectRepository.findByTeamId(teamId);
+            log.info("Found {} projects to update for team: {}", projects.size(), teamId);
+            
+            for (Project project : projects) {
+                project.setTeam(null);
+                projectRepository.saveAndFlush(project);
+                log.debug("Removed team association from project: {}", project.getId());
+            }
+            
+            List<TeamMember> teamMembers = teamMemberRepository.findByTeamId(teamId);
+            log.info("Found {} team members to delete for team: {}", teamMembers.size(), teamId);
+            teamMemberRepository.deleteAll(teamMembers);
+            
+            teamRepository.deleteById(teamId);
+            log.info("Successfully deleted team: {}", teamId);
+            
+        } catch (Exception e) {
+            log.error("Error deleting team {}: {}", teamId, e.getMessage(), e);
+            throw new AppException(ErrorCode.CREATION_FAILED);
+        }
     }
 
     public Team getTeamById(UUID teamId) {
@@ -88,7 +118,6 @@ public class TeamService {
     public TeamMember addMemberToTeam(UUID teamId, UUID userId, String role) {
         Team team = getTeamById(teamId);
         
-        // Check if member already exists
         if (teamMemberRepository.existsByTeamIdAndUserId(teamId, userId)) {
             throw new AppException(ErrorCode.ALREADY_EXISTS);
         }
@@ -149,9 +178,11 @@ public class TeamService {
     }
 
     public boolean isUserTeamAdmin(UUID teamId, UUID userId) {
-        TeamMember member = teamMemberRepository.findByTeamIdAndUserId(teamId, userId)
-                .orElseThrow(() -> new AppException(ErrorCode.NOT_FOUND));
-        return "ADMIN".equals(member.getRole());
+        Optional<TeamMember> member = teamMemberRepository.findByTeamIdAndUserId(teamId, userId);
+        if (member.isEmpty()) {
+            return false;
+        }
+        return "ADMIN".equals(member.get().getRole());
     }
 
     public boolean isUserTeamMember(UUID teamId, UUID userId) {

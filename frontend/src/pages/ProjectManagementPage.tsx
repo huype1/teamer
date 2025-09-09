@@ -12,6 +12,14 @@ import { useNavigate } from "react-router-dom";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle
+} from "@/components/ui/dialog";
 
 const ProjectManagementPage: React.FC = () => {
   const navigate = useNavigate();
@@ -21,6 +29,8 @@ const ProjectManagementPage: React.FC = () => {
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [editingProject, setEditingProject] = useState<Project | null>(null);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [projectToDelete, setProjectToDelete] = useState<Project | null>(null);
 
   useEffect(() => {
     fetchProjects();
@@ -72,14 +82,20 @@ const ProjectManagementPage: React.FC = () => {
     setIsEditDialogOpen(true);
   };
 
-  const handleDeleteProject = async (projectId: string) => {
-    if (!confirm("Bạn có chắc chắn muốn xóa dự án này?")) {
-      return;
-    }
+  const handleDeleteClick = (project: Project) => {
+    setProjectToDelete(project);
+    setIsDeleteDialogOpen(true);
+  };
+
+  const handleDeleteProject = async () => {
+    if (!projectToDelete) return;
+    
     try {
-      await ProjectService.deleteProject(projectId);
+      await ProjectService.deleteProject(projectToDelete.id);
       toastSuccess("Xóa dự án thành công!");
       fetchProjects();
+      setIsDeleteDialogOpen(false);
+      setProjectToDelete(null);
     } catch (error) {
       toastError("Xóa dự án thất bại!");
       console.error("Error deleting project:", error);
@@ -128,7 +144,7 @@ const ProjectManagementPage: React.FC = () => {
             key={project.id}
             project={project}
             onEdit={() => handleEditClick(project)}
-            onDelete={() => handleDeleteProject(project.id)}
+            onDelete={() => handleDeleteClick(project)}
             onManageMembers={() => handleManageMembers(project)}
           />
         ))}
@@ -150,6 +166,26 @@ const ProjectManagementPage: React.FC = () => {
         project={editingProject}
         onSubmit={handleEditProject}
       />
+
+      {/* Delete Project Dialog */}
+      <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Xóa dự án</DialogTitle>
+            <DialogDescription>
+              Bạn có chắc chắn muốn xóa dự án "{projectToDelete?.name}"? Hành động này không thể hoàn tác.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="secondary" onClick={() => setIsDeleteDialogOpen(false)}>
+              Hủy
+            </Button>
+            <Button variant="destructive" onClick={handleDeleteProject}>
+              Xóa dự án
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

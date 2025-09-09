@@ -196,6 +196,18 @@ Authorization: Bearer {{authToken}}
 
 ###
 
+# Add project to team
+PUT http://localhost:8080/api/projects/{{projectId}}/team/{{teamId}}
+Authorization: Bearer {{authToken}}
+
+###
+
+# Remove project from team
+DELETE http://localhost:8080/api/projects/{{projectId}}/team
+Authorization: Bearer {{authToken}}
+
+###
+
 ### Project Member APIs
 
 GET http://localhost:8080/api/projects/{{projectId}}/members

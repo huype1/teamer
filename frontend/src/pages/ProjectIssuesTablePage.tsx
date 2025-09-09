@@ -599,6 +599,7 @@ const ProjectIssuesTablePage: React.FC = () => {
               projectMembers={projectMembers}
               projectUsers={projectUsers}
                           sprints={visibleSprints}
+                          isEdit={true}
             initialValues={toIssueFormInitialValues(editIssue)}
             />
           )}
