@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useSelector } from "react-redux";
 import type { RootState } from "@/store";
 import { acceptProjectInvitation } from "@/service/projectService";
+import { isTokenExpired } from "@/utils/jwt";
 
 const InvitationAcceptPage: React.FC = () => {
   const [searchParams] = useSearchParams();
@@ -15,7 +16,7 @@ const InvitationAcceptPage: React.FC = () => {
   const navigate = useNavigate();
   const hasTriedAccept = useRef(false);
 
-  // Xử lý invitation một lần duy nhất khi component mount
+  // Xử lý invitation với retry logic
   useEffect(() => {
     const token = searchParams.get('token');
     if (!token) {
@@ -24,35 +25,74 @@ const InvitationAcceptPage: React.FC = () => {
       return;
     }
 
-    if (isAuthenticated) {
-      // Đã đăng nhập, accept invitation ngay
-      if (hasTriedAccept.current) return;
-      hasTriedAccept.current = true;
-      setStatus('loading');
-      acceptProjectInvitation(token)
-        .then(() => {
+    const handleInvitation = () => {
+      // Kiểm tra token trong localStorage trước (để xử lý race condition)
+      const storedToken = localStorage.getItem('token');
+      const isActuallyAuthenticated = storedToken && !isTokenExpired(storedToken);
+      
+      if (isActuallyAuthenticated) {
+        // Đã đăng nhập, accept invitation ngay
+        if (hasTriedAccept.current) return;
+        hasTriedAccept.current = true;
+        setStatus('loading');
+        acceptProjectInvitation(token)
+          .then(() => {
+            setStatus('success');
+            setMessage('Bạn đã tham gia dự án thành công!');
+            // Xóa token sau khi accept thành công
+            localStorage.removeItem('pendingInvitationToken');
+          })
+          .catch((err) => {
+            setStatus('error');
+            setMessage(err?.response?.data?.message || 'Không thể tham gia dự án.');
+          });
+      } else {
+        // Chưa đăng nhập, lưu token và yêu cầu đăng nhập
+        try {
+          localStorage.setItem('pendingInvitationToken', token);
           setStatus('success');
-          setMessage('Bạn đã tham gia dự án thành công!');
-          // Xóa token sau khi accept thành công
-          localStorage.removeItem('pendingInvitationToken');
-        })
-        .catch((err) => {
+          setMessage('Lời mời đã được lưu. Vui lòng đăng nhập hoặc tạo tài khoản để tham gia dự án.');
+        } catch (error) {
+          console.error('Error saving invitation token:', error);
           setStatus('error');
-          setMessage(err?.response?.data?.message || 'Không thể tham gia dự án.');
-        });
-    } else {
-      // Chưa đăng nhập, lưu token và yêu cầu đăng nhập
-      try {
-        localStorage.setItem('pendingInvitationToken', token);
-        setStatus('success');
-        setMessage('Lời mời đã được lưu. Vui lòng đăng nhập hoặc tạo tài khoản để tham gia dự án.');
-      } catch (error) {
-        console.error('Error saving invitation token:', error);
-        setStatus('error');
-        setMessage('Không thể xử lý lời mời. Vui lòng thử lại.');
+          setMessage('Không thể xử lý lời mời. Vui lòng thử lại.');
+        }
+      }
+    };
+
+    // Chạy ngay lập tức
+    handleInvitation();
+
+    // Retry sau 1 giây nếu chưa authenticated (để xử lý race condition)
+    const retryTimer = setTimeout(() => {
+      if (!hasTriedAccept.current) {
+        handleInvitation();
+      }
+    }, 1000);
+
+    return () => clearTimeout(retryTimer);
+  }, []); // Chỉ chạy một lần khi component mount
+
+  // Xử lý khi authentication state thay đổi
+  useEffect(() => {
+    if (isAuthenticated && !hasTriedAccept.current) {
+      const token = searchParams.get('token');
+      if (token) {
+        hasTriedAccept.current = true;
+        setStatus('loading');
+        acceptProjectInvitation(token)
+          .then(() => {
+            setStatus('success');
+            setMessage('Bạn đã tham gia dự án thành công!');
+            localStorage.removeItem('pendingInvitationToken');
+          })
+          .catch((err) => {
+            setStatus('error');
+            setMessage(err?.response?.data?.message || 'Không thể tham gia dự án.');
+          });
       }
     }
-  }, []); // Chỉ chạy một lần khi component mount
+  }, [isAuthenticated, searchParams]);
 
   const getStatusIcon = () => {
     switch (status) {

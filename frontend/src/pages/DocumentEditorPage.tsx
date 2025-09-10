@@ -335,7 +335,7 @@ const DocumentEditorPage = () => {
               </Button>
             )}
             
-                                      <Button 
+                                      {/* <Button 
                onClick={exportToWord}
                disabled={exporting}
                variant="ghost"
@@ -344,7 +344,7 @@ const DocumentEditorPage = () => {
              >
                <FileDown className="h-4 w-4 mr-2" />
                {exporting ? "Đang tải về..." : "Word"}
-             </Button>
+             </Button> */}
             
             <Button 
               onClick={() => navigate(-1)}

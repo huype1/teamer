@@ -430,10 +430,10 @@ const ProjectDocumentsPage: React.FC = () => {
                     </div>
                     
                     <div className="space-y-2">
-                      <div className="flex items-center text-xs text-muted-foreground">
+                      {/* <div className="flex items-center text-xs text-muted-foreground">
                         <User className="h-3 w-3 mr-1" />
                         <span className="truncate">{attachment?.uploader?.name ?? "undefined uploader"}</span>
-                      </div>
+                      </div> */}
                       
                       <div className="flex items-center text-xs text-muted-foreground">
                         <Calendar className="h-3 w-3 mr-1" />
@@ -453,7 +453,7 @@ const ProjectDocumentsPage: React.FC = () => {
                       </Button>
                     </div>
                     
-                    {attachment.uploader?.id === user?.id || isPM && (
+                    {/* {((attachment.uploader?.id === user?.id) || isPM) && ( */}
                       <div className="flex justify-end mt-2">
                         <Button
                           variant="destructive"
@@ -465,7 +465,7 @@ const ProjectDocumentsPage: React.FC = () => {
                           Xóa
                         </Button>
                       </div>
-                    )}
+                    {/* )} */}
                   </CardContent>
                 </Card>
               ))

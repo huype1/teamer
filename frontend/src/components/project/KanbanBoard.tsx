@@ -68,7 +68,6 @@ const STATUS_COLUMNS = [
 
 const getIssueTypeConfig = (issueType: string) => {
   switch (issueType) {
-    // EPIC removed from app; default mapping will be used if encountered
     case "STORY":
       return {
         icon: FileText,

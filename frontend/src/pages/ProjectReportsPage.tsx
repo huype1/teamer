@@ -16,7 +16,6 @@ import sprintService from '@/service/sprintService';
 import type { Sprint } from '@/types/sprint';
 import { format, addDays, differenceInCalendarDays } from 'date-fns';
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
-import { Progress } from "@/components/ui/progress";
 
 const mapIssue = (issue: unknown): Issue => {
   const i = issue as Record<string, unknown>;
@@ -80,27 +79,7 @@ function calculateBurndownData(sprint, issues) {
   }));
 }
 
-function calculateVelocity(sprint, issues) {
-  if (!sprint || !issues.length) return 0;
-  // Tính tổng story points của các issue đã hoàn thành (DONE)
-  return issues
-    .filter(issue => issue.status === 'DONE' && issue.storyPoints)
-    .reduce((sum, issue) => sum + (issue.storyPoints || 0), 0);
-}
 
-function calculateAllVelocities(sprints, allIssues) {
-  return sprints.map(sprint => {
-    const sprintIssues = allIssues.filter(issue => issue.sprintId === sprint.id);
-    const velocity = calculateVelocity(sprint, sprintIssues);
-    return {
-      name: sprint.name,
-      velocity: velocity,
-      status: sprint.status,
-      startDate: sprint.startDate,
-      endDate: sprint.endDate
-    };
-  }).filter(item => item.velocity > 0);
-}
 
 function calculateCompletionPercentage(issues: Issue[]): number {
   if (issues.length === 0) return 0;
@@ -142,68 +121,68 @@ function calculateCompletionPercentage(issues: Issue[]): number {
 }
 
 // Component biểu đồ tỷ lệ hoàn thành
-const CompletionProgressChart: React.FC<{ issues: Issue[] }> = ({ issues }) => {
-  const completionPercentage = calculateCompletionPercentage(issues);
-  const completedIssues = issues.filter(i => i.status === 'DONE').length;
-  const totalIssues = issues.length;
+// const CompletionProgressChart: React.FC<{ issues: Issue[] }> = ({ issues }) => {
+//   const completionPercentage = calculateCompletionPercentage(issues);
+//   const completedIssues = issues.filter(i => i.status === 'DONE').length;
+//   const totalIssues = issues.length;
 
-  return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center justify-between">
-          <span>Tỷ lệ hoàn thành</span>
-          <span className="text-2xl font-bold text-green-600">
-            {Math.round(completionPercentage)}%
-          </span>
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        <div className="space-y-2">
-          <div className="flex justify-between text-sm">
-            <span>Tiến độ dự án</span>
-            <span>{Math.round(completionPercentage)}%</span>
-          </div>
-          <Progress 
-            value={completionPercentage} 
-            className="h-3"
-          />
-          <div className="flex justify-between text-xs text-muted-foreground">
-            <span>Hoàn thành: {completedIssues} / {totalIssues} issues</span>
-            <span>Story Points: {issues.reduce((sum, issue) => sum + (issue.storyPoints || 0), 0)}</span>
-          </div>
-        </div>
+//   return (
+//     <Card>
+//       <CardHeader>
+//         <CardTitle className="flex items-center justify-between">
+//           <span>Tỷ lệ hoàn thành</span>
+//           <span className="text-2xl font-bold text-green-600">
+//             {Math.round(completionPercentage)}%
+//           </span>
+//         </CardTitle>
+//       </CardHeader>
+//       <CardContent className="space-y-4">
+//         <div className="space-y-2">
+//           <div className="flex justify-between text-sm">
+//             <span>Tiến độ dự án</span>
+//             <span>{Math.round(completionPercentage)}%</span>
+//           </div>
+//           <Progress 
+//             value={completionPercentage} 
+//             className="h-3"
+//           />
+//           <div className="flex justify-between text-xs text-muted-foreground">
+//             <span>Hoàn thành: {completedIssues} / {totalIssues} issues</span>
+//             <span>Story Points: {issues.reduce((sum, issue) => sum + (issue.storyPoints || 0), 0)}</span>
+//           </div>
+//         </div>
         
-        {/* Chi tiết theo status */}
-        <div className="grid grid-cols-2 gap-4 pt-4 border-t">
-          <div className="text-center">
-            <div className="text-2xl font-bold text-green-600">
-              {issues.filter(i => i.status === 'DONE').length}
-            </div>
-            <div className="text-xs text-muted-foreground">Đã hoàn thành</div>
-          </div>
-          <div className="text-center">
-            <div className="text-2xl font-bold text-blue-600">
-              {issues.filter(i => i.status === 'IN_PROGRESS').length}
-            </div>
-            <div className="text-xs text-muted-foreground">Đang làm</div>
-          </div>
-          <div className="text-center">
-            <div className="text-2xl font-bold text-yellow-600">
-              {issues.filter(i => i.status === 'IN_REVIEW').length}
-            </div>
-            <div className="text-xs text-muted-foreground">Đang review</div>
-          </div>
-          <div className="text-center">
-            <div className="text-2xl font-bold text-gray-600">
-              {issues.filter(i => i.status === 'TO_DO').length}
-            </div>
-            <div className="text-xs text-muted-foreground">Cần làm</div>
-          </div>
-        </div>
-      </CardContent>
-    </Card>
-  );
-};
+//         {/* Chi tiết theo status */}
+//         <div className="grid grid-cols-2 gap-4 pt-4 border-t">
+//           <div className="text-center">
+//             <div className="text-2xl font-bold text-green-600">
+//               {issues.filter(i => i.status === 'DONE').length}
+//             </div>
+//             <div className="text-xs text-muted-foreground">Đã hoàn thành</div>
+//           </div>
+//           <div className="text-center">
+//             <div className="text-2xl font-bold text-blue-600">
+//               {issues.filter(i => i.status === 'IN_PROGRESS').length}
+//             </div>
+//             <div className="text-xs text-muted-foreground">Đang làm</div>
+//           </div>
+//           <div className="text-center">
+//             <div className="text-2xl font-bold text-yellow-600">
+//               {issues.filter(i => i.status === 'IN_REVIEW').length}
+//             </div>
+//             <div className="text-xs text-muted-foreground">Đang review</div>
+//           </div>
+//           <div className="text-center">
+//             <div className="text-2xl font-bold text-gray-600">
+//               {issues.filter(i => i.status === 'TO_DO').length}
+//             </div>
+//             <div className="text-xs text-muted-foreground">Cần làm</div>
+//           </div>
+//         </div>
+//       </CardContent>
+//     </Card>
+//   );
+// };
 
 
 
@@ -330,15 +309,14 @@ const WorkDistributionChart: React.FC<{ issues: Issue[] }> = ({ issues }) => {
   const priorityData = getPriorityDistribution();
   const issueTypeData = getIssueTypeDistribution();
 
-  return (
+  return (<>
     <Card>
       <CardHeader>
-        <CardTitle>Phân bổ công việc</CardTitle>
+        <CardTitle>Theo độ ưu tiên</CardTitle>
       </CardHeader>
       <CardContent className="space-y-6">
         {/* Phân bổ theo priority */}
         <div>
-          <h4 className="text-sm font-medium mb-3">Theo độ ưu tiên</h4>
           <ResponsiveContainer width="100%" height={150}>
             <BarChart data={priorityData}>
               <CartesianGrid strokeDasharray="3 3" />
@@ -359,28 +337,6 @@ const WorkDistributionChart: React.FC<{ issues: Issue[] }> = ({ issues }) => {
           </ResponsiveContainer>
         </div>
 
-        {/* Phân bổ theo issue type */}
-        <div>
-          <h4 className="text-sm font-medium mb-3">Theo loại issue</h4>
-          <ResponsiveContainer width="100%" height={150}>
-            <BarChart data={issueTypeData}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="type" />
-              <YAxis />
-              <Tooltip 
-                formatter={(value, name) => [
-                  value, 
-                  name === 'total' ? 'Tổng số' :
-                  name === 'completed' ? 'Hoàn thành' :
-                  name === 'storyPoints' ? 'Story Points' : name
-                ]}
-              />
-              <Legend />
-              <Bar dataKey="total" name="Tổng số" fill="#8b5cf6" />
-              <Bar dataKey="completed" name="Hoàn thành" fill="#22c55e" />
-            </BarChart>
-          </ResponsiveContainer>
-        </div>
 
         {/* Summary stats */}
         <div className="grid grid-cols-2 md:grid-cols-3 gap-4 pt-4 border-t">
@@ -405,6 +361,71 @@ const WorkDistributionChart: React.FC<{ issues: Issue[] }> = ({ issues }) => {
         </div>
       </CardContent>
     </Card>
+    <Card>
+      <CardHeader>
+        <CardTitle>Theo loại issue</CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-6">
+        <div>
+          <ResponsiveContainer width="100%" height={150}>
+            <BarChart data={issueTypeData}>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="type" />
+              <YAxis />
+              <Tooltip 
+                formatter={(value, name) => [
+                  value, 
+                  name === 'total' ? 'Tổng số' :
+                  name === 'completed' ? 'Hoàn thành' :
+                  name === 'storyPoints' ? 'Story Points' : name
+                ]}
+              />
+              <Legend />
+              <Bar dataKey="total" name="Tổng số" fill="#8b5cf6" />
+              <Bar dataKey="completed" name="Hoàn thành" fill="#22c55e" />
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+        
+        {/* Thống kê chi tiết theo loại issue */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          {issueTypeData.map(item => {
+            const completionRate = item.total > 0 ? Math.round((item.completed / item.total) * 100) : 0;
+            const color = item.type === 'STORY' ? '#3b82f6' : 
+                         item.type === 'TASK' ? '#22c55e' : 
+                         item.type === 'BUG' ? '#ef4444' : '#f59e0b';
+            
+            return (
+              <div key={item.type} className="text-center p-4 border rounded-lg bg-card">
+                <div className="text-sm font-medium text-muted-foreground mb-2">
+                  {item.type}
+                </div>
+                <div className="text-2xl font-bold mb-1" style={{ color }}>
+                  {item.total}
+                </div>
+                <div className="text-xs text-muted-foreground mb-2">
+                  Tổng số issue
+                </div>
+                <div className="text-lg font-semibold text-green-600 mb-1">
+                  {item.completed}
+                </div>
+                <div className="text-xs text-muted-foreground mb-2">
+                  Đã hoàn thành
+                </div>
+                <div className="text-sm font-medium" style={{ color }}>
+                  {completionRate}%
+                </div>
+                <div className="text-xs text-muted-foreground">
+                  Tỷ lệ hoàn thành
+                </div>
+              </div>
+            );
+          })}
+        </div>
+       
+      </CardContent>
+    </Card>
+    </>
   );
 };
 
@@ -544,14 +565,12 @@ const ProjectReportsPage: React.FC = () => {
 
   const statusStats = getStatusStats(); // dùng cho chart
   const priorityStats = getPriorityStats(); // dùng cho chart
-  // sử dụng issues trong các hàm chart bên dưới để tránh linter warning
-  // (ví dụ: getBurndownData(issues), getPriorityBarData(getPriorityStats(issues)), ...)
 
   // Chart data
   const statusPieData = getStatusPieData(statusStats);
   const priorityBarData = getPriorityBarData(priorityStats);
   const burndownData = selectedSprint ? calculateBurndownData(selectedSprint, issues) : [];
-  const velocityData = calculateAllVelocities(sprints, issues);
+
 
   return (
     <div className="p-6 space-y-6">
@@ -582,7 +601,7 @@ const ProjectReportsPage: React.FC = () => {
       {/* Tổng số issues & Tỷ lệ hoàn thành */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <WorkDistributionChart issues={issues} />
-        <CompletionProgressChart issues={issues} />
+        {/* <CompletionProgressChart issues={issues} /> */}
       </div>
 
 
@@ -616,34 +635,6 @@ const ProjectReportsPage: React.FC = () => {
           </CardHeader>
           <CardContent>
             <div className="flex items-center justify-center h-40 text-muted-foreground">Chọn sprint để xem biểu đồ burndown</div>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Velocity Chart */}
-      {velocityData.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Velocity Chart (Story Points hoàn thành)</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <ResponsiveContainer width="100%" height={250}>
-              <BarChart data={velocityData}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="name" />
-                <YAxis allowDecimals={false} />
-                <Tooltip 
-                  formatter={(value) => [value, 'Story Points']}
-                  labelFormatter={label => `Sprint: ${label}`}
-                />
-                <Legend />
-                <Bar dataKey="velocity" name="Story Points hoàn thành" fill="#10B981">
-                  {velocityData.map((entry, index) => (
-                    <Cell key={`cell-velocity-${index}`} fill="#10B981" />
-                  ))}
-                </Bar>
-              </BarChart>
-            </ResponsiveContainer>
           </CardContent>
         </Card>
       )}
